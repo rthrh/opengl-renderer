@@ -12,6 +12,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(deps/glm)
@@ -66,7 +68,7 @@ include_directories(${CMAKE_SOURCE_DIR}/deps/)
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
-
+target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 #set_target_properties(${NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${chapter}")
 
@@ -80,6 +82,6 @@ file(GLOB SHADERS
 )
 file(GLOB DLLS "dlls/*.dll")
 
-foreach(SHADER ${SHADERS})
-    file(COPY ${SHADER} DESTINATION ${CMAKE_BINARY_DIR})
-endforeach(SHADER)
+#foreach(SHADER ${SHADERS})
+#    file(COPY ${SHADER} DESTINATION ${CMAKE_BINARY_DIR})
+#endforeach(SHADER)

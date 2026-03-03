@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <functional>
 
 #include "renderer/camera.h"
 #include "renderer/model.h"
@@ -17,7 +18,7 @@
 
 #include "gui.h"
 #include "input.h"
-
+#include "file_watcher.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -26,8 +27,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 1200;
-const unsigned int SCR_HEIGHT = 900;
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 1200;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -74,7 +75,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 
     // glfw window creation
     // --------------------
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE); // maximize window
+    //glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE); // maximize window
     GLFWwindow* window = glfwCreateWindow(width, height, name, NULL, NULL);
     if (window == NULL)
     {
@@ -95,7 +96,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 
     // tell GLFW to disable mouse and use raw mouse motion to avoid big delta mouse positions when in ui mode
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    //glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -120,7 +121,18 @@ int main()
 
     // build and compile shaders
     //Shader ourShader("shader.vs", "shader.fs");
-    Shader lightingShader("shader.vert", "lighting.frag");
+    std::filesystem::path root = PROJECT_SOURCE_DIR;
+    std::filesystem::path vertexPath = root / "src/shaders" / "shader.vert";
+    std::filesystem::path fragmentPath = root / "src/shaders" / "lighting.frag";
+    Shader lightingShader(vertexPath, fragmentPath);
+
+    // set up shader file watcher
+    FileWatcher fileWatcher;
+    auto fileCallback = [&lightingShader](const std::filesystem::path&){ lightingShader.Reload();};
+    fileWatcher.WatchFile(vertexPath, fileCallback);
+    fileWatcher.WatchFile(fragmentPath, fileCallback);
+    
+
     Renderer renderer;
     Scene scene;
     // load models
@@ -128,7 +140,7 @@ int main()
     //stbi_set_flip_vertically_on_load(true);
     //Model ourModel(FileSystem::getPath("resources/backpack/backpack.obj"));
     //Model ourModel(FileSystem::getPath("resources/barrack/Models/Obj/Barrack.obj"));
-    std::filesystem::path modelPath = std::filesystem::current_path() / ".." / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string());
 
@@ -157,9 +169,10 @@ int main()
     {
         // poll events
         glfwPollEvents();
+        fileWatcher.Update();
 
         // per-frame time logic
-        float currentFrame = static_cast<float>(glfwGetTime());
+        auto currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -238,7 +251,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
 
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureMouse && uiMode)
+    if (io.WantCaptureMouse || uiMode)
         return;  // ImGui is using the mouse
 
     float xpos = static_cast<float>(xposIn);

@@ -48,7 +48,7 @@ vec3 CalcDirectionalLight()
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
     spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
-    vec3 specular = lightColor * specMap * spec;
+    vec3 specular = specMap * spec;
     return (ambient + diffuse + specular);
 }
 /*

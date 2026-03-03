@@ -139,6 +139,7 @@ public:
             m_ID = newID;
             m_uniformMap.clear();
         }
+        std::cout << "Shader reloaded" << std::endl;
     }
 
     void Activate() const
