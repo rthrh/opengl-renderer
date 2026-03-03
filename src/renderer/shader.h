@@ -8,6 +8,8 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <unordered_map>
+#include <cassert>
 
 
 static std::string ReadTextFile(const std::filesystem::path& path)
@@ -28,9 +30,6 @@ static std::string ReadTextFile(const std::filesystem::path& path)
 class Shader
 {
 public:
-    // constructor generates the shader on the fly
-    // ------------------------------------------------------------------------
-
     Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath) : 
         m_vertexPath{vertexPath},
         m_fragmentPath{fragmentPath}
@@ -38,17 +37,41 @@ public:
         this->Reload();
     }
 
-    ~Shader() = default;
+    ~Shader() {
+        glDeleteProgram(m_ID);
+    }
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
-    Shader(Shader&&) noexcept = default;
-    Shader& operator=(Shader&&) noexcept = default;
+    Shader(Shader&& other) noexcept
+        : m_ID(other.m_ID),
+        m_uniformMap(std::move(other.m_uniformMap)),
+        m_vertexPath(std::move(other.m_vertexPath)),
+        m_fragmentPath(std::move(other.m_fragmentPath))
+    {
+        other.m_ID = 0;
+    }
 
-    GLuint Compile(GLenum type, std::string code) {
+    Shader& operator=(Shader&& other) noexcept
+    {
+        if (this != &other)
+        {
+            glDeleteProgram(m_ID);
+
+            m_ID = other.m_ID;
+            m_uniformMap = std::move(other.m_uniformMap);
+            m_vertexPath = std::move(other.m_vertexPath);
+            m_fragmentPath = std::move(other.m_fragmentPath);
+
+            other.m_ID = 0;
+        }
+        return *this;
+    }
+
+    GLuint Compile(GLenum type, std::string_view code) {
         GLuint shader = glCreateShader(type);
-        const char* src = code.c_str();
+        const char* src = code.data();
         glShaderSource(shader, 1, &src, nullptr);
         glCompileShader(shader);
 
@@ -64,6 +87,7 @@ public:
             glDeleteShader(shader);
 
             std::cout << "Shader compilation failed:\n" + log << std::endl;
+            return 0;
         }
         return shader;
     }
@@ -74,6 +98,21 @@ public:
         glAttachShader(ID, fragment);
         glLinkProgram(ID);
 
+        GLint success;
+        glGetProgramiv(ID, GL_LINK_STATUS, &success);
+        if (!success) {
+            GLint logLength = 0;
+            glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &logLength);
+
+            std::string log(logLength, '\0');
+            glGetProgramInfoLog(ID, logLength, nullptr, log.data());
+            std::cout << "Shader linking failed:\n" + log << std::endl;
+
+            glDeleteProgram(ID);
+            glDeleteShader(vertex);
+            glDeleteShader(fragment);
+            return 0;
+        }
         glDeleteShader(vertex);
         glDeleteShader(fragment);
 
@@ -85,78 +124,104 @@ public:
         const std::string fragmentCode = ReadTextFile(m_fragmentPath);
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
-        auto fragment = Compile(GL_FRAGMENT_SHADER, fragmentCode);
+        if (!vertex)
+            return;
 
-        m_ID = this->Link(vertex, fragment);
+        auto fragment = Compile(GL_FRAGMENT_SHADER, fragmentCode);
+        if (!fragment) {
+            glDeleteShader(vertex); // clean up vertex shader if we failed here
+            return;
+        }
+
+        auto newID = this->Link(vertex, fragment);
+        if (newID != 0) {
+            if (m_ID != 0) glDeleteProgram(m_ID);
+            m_ID = newID;
+            m_uniformMap.clear();
+        }
     }
 
-    // activate the shader
-    // ------------------------------------------------------------------------
     void Activate() const
-    { 
+    {
+        assert(m_ID != 0);
         glUseProgram(m_ID); 
     }
-    // utility uniform functions
+
+    // Utility uniform functions
     // ------------------------------------------------------------------------
-    void setBool(const std::string &name, bool value) const
+    void SetBool(const std::string &name, bool value) const
     {         
-        glUniform1i(glGetUniformLocation(m_ID, name.c_str()), (int)value); 
+        glUniform1i(this->GetLocation(name), (int)value); 
     }
-    // ------------------------------------------------------------------------
-    void setInt(const std::string &name, int value) const
+
+    void SetInt(const std::string &name, int value) const
     { 
-        glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value); 
+        glUniform1i(this->GetLocation(name), value); 
     }
-    // ------------------------------------------------------------------------
-    void setFloat(const std::string &name, float value) const
+
+    void SetFloat(const std::string &name, float value) const
     { 
-        glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value); 
+        glUniform1f(this->GetLocation(name), value); 
     }
-    // ------------------------------------------------------------------------
-    void setVec2(const std::string &name, const glm::vec2 &value) const
+
+    void SetVec2(const std::string &name, const glm::vec2 &value) const
     { 
-        glUniform2fv(glGetUniformLocation(m_ID, name.c_str()), 1, &value[0]); 
+        glUniform2fv(this->GetLocation(name), 1, &value[0]); 
     }
-    void setVec2(const std::string &name, float x, float y) const
+
+    void SetVec2(const std::string &name, float x, float y) const
     { 
-        glUniform2f(glGetUniformLocation(m_ID, name.c_str()), x, y); 
+        glUniform2f(this->GetLocation(name), x, y); 
     }
-    // ------------------------------------------------------------------------
-    void setVec3(const std::string &name, const glm::vec3 &value) const
+
+    void SetVec3(const std::string &name, const glm::vec3 &value) const
     { 
-        glUniform3fv(glGetUniformLocation(m_ID, name.c_str()), 1, &value[0]); 
+        glUniform3fv(this->GetLocation(name), 1, &value[0]); 
     }
-    void setVec3(const std::string &name, float x, float y, float z) const
+
+    void SetVec3(const std::string &name, float x, float y, float z) const
     { 
-        glUniform3f(glGetUniformLocation(m_ID, name.c_str()), x, y, z); 
+        glUniform3f(this->GetLocation(name), x, y, z); 
     }
-    // ------------------------------------------------------------------------
-    void setVec4(const std::string &name, const glm::vec4 &value) const
+
+    void SetVec4(const std::string &name, const glm::vec4 &value) const
     { 
-        glUniform4fv(glGetUniformLocation(m_ID, name.c_str()), 1, &value[0]); 
+        glUniform4fv(this->GetLocation(name), 1, &value[0]); 
     }
-    void setVec4(const std::string &name, float x, float y, float z, float w) const
+    void SetVec4(const std::string &name, float x, float y, float z, float w) const
     { 
-        glUniform4f(glGetUniformLocation(m_ID, name.c_str()), x, y, z, w); 
+        glUniform4f(this->GetLocation(name), x, y, z, w); 
     }
-    // ------------------------------------------------------------------------
-    void setMat2(const std::string &name, const glm::mat2 &mat) const
+
+    void SetMat2(const std::string &name, const glm::mat2 &mat) const
     {
-        glUniformMatrix2fv(glGetUniformLocation(m_ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        glUniformMatrix2fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
-    // ------------------------------------------------------------------------
-    void setMat3(const std::string &name, const glm::mat3 &mat) const
+
+    void SetMat3(const std::string &name, const glm::mat3 &mat) const
     {
-        glUniformMatrix3fv(glGetUniformLocation(m_ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        glUniformMatrix3fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
-    // ------------------------------------------------------------------------
-    void setMat4(const std::string &name, const glm::mat4 &mat) const
+
+    void SetMat4(const std::string &name, const glm::mat4 &mat) const
     {
-        glUniformMatrix4fv(glGetUniformLocation(m_ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        glUniformMatrix4fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
 
 private:
-    unsigned int m_ID;
-    std::filesystem::path m_vertexPath;
-    std::filesystem::path m_fragmentPath;
+    GLuint m_ID{0};
+    mutable std::unordered_map<std::string, GLint> m_uniformMap;
+    std::filesystem::path m_vertexPath{};
+    std::filesystem::path m_fragmentPath{};
+
+    GLint GetLocation(const std::string& name) const
+    {
+        if (auto it = m_uniformMap.find(name);
+            it != m_uniformMap.end())
+            return it->second;
+
+        GLint loc = glGetUniformLocation(m_ID, name.c_str());
+        m_uniformMap[name] = loc;
+        return loc;
+    }
 };

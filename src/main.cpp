@@ -85,6 +85,10 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    // TODO setup input in seperate class
+    // Input input;
+    // input.addKeyCallback(GLuint key, [](){});
+    // input.addFrameCallback()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
@@ -180,14 +184,14 @@ int main()
 
         // don't forget to enable shader before setting uniforms
         lightingShader.Activate();
-        lightingShader.setVec4("color", guiData.color);
+        lightingShader.SetVec4("color", guiData.color);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        lightingShader.setMat4("projection", projection);
-        lightingShader.setMat4("view", view);
-        lightingShader.setVec3("viewPos", camera.Position);
+        lightingShader.SetMat4("projection", projection);
+        lightingShader.SetMat4("view", view);
+        lightingShader.SetVec3("viewPos", camera.Position);
 
         // render scene
         renderer.Render(scene, lightingShader);

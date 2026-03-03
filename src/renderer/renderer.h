@@ -22,7 +22,7 @@ public:
 
     void Draw(Model& model, Shader& shader) {
         shader.Activate();
-        shader.setMat4("model", model.GetModelMatrix());
+        shader.SetMat4("model", model.GetModelMatrix());
 
         auto meshes = model.GetMeshes();
         for (auto& mesh : meshes) {
