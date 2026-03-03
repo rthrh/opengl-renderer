@@ -21,7 +21,7 @@ public:
     Renderer& operator=(Renderer&&) noexcept = default;
 
     void Draw(Model& model, Shader& shader) {
-        shader.use();
+        shader.Activate();
         shader.setMat4("model", model.GetModelMatrix());
 
         auto meshes = model.GetMeshes();

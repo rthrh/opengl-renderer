@@ -179,7 +179,7 @@ int main()
         guiLayer.build(guiData);
 
         // don't forget to enable shader before setting uniforms
-        lightingShader.use();
+        lightingShader.Activate();
         lightingShader.setVec4("color", guiData.color);
 
         // view/projection transformations
