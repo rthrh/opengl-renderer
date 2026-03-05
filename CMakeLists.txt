@@ -17,6 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(deps/glm)
+add_subdirectory(deps/assimp)
 
 # find the required packages
 find_package(GLM REQUIRED)
