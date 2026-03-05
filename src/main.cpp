@@ -140,7 +140,7 @@ int main()
     //stbi_set_flip_vertically_on_load(true);
     //Model ourModel(FileSystem::getPath("resources/backpack/backpack.obj"));
     //Model ourModel(FileSystem::getPath("resources/barrack/Models/Obj/Barrack.obj"));
-    std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    std::filesystem::path modelPath = root / "resources" / "99-intergalactic-spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string());
 
