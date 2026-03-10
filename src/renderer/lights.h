@@ -13,7 +13,6 @@ private:
 };
 
 
-
 struct PointLightBlockGPU {
     public:
         PointLightBlockGPU(glm::vec3 position, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f, float range = 10.0f, float constant = 1.0f, float linear = 0.09f, float quadratic = 0.032f) :
@@ -26,13 +25,13 @@ struct PointLightBlockGPU {
         {
         }
     private:
-        // data aligned for std120
+        // data aligned for std140
         glm::vec4 m_position;
         glm::vec4 m_colorAndIntensity;
         float m_range{10.0f}; // cut off range
         float m_constant{1.0f};
         float m_linear{0.09f};
-        float m_quadratic{0.032f};    
+        float m_quadratic{0.032f};
 };
 
 struct SpotLight {
