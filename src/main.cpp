@@ -16,10 +16,12 @@
 #include "renderer/light_cube.h"
 #include "renderer/scene.h"
 
+#include "renderer/material.h"
+
+
 #include "gui.h"
 #include "input.h"
 #include "file_watcher.h"
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -123,7 +125,7 @@ int main()
     //Shader ourShader("shader.vs", "shader.fs");
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     std::filesystem::path vertexPath = root / "src/shaders" / "shader.vert";
-    std::filesystem::path fragmentPath = root / "src/shaders" / "lighting.frag";
+    std::filesystem::path fragmentPath = root / "src/shaders" / "phong.frag";
     Shader lightingShader(vertexPath, fragmentPath);
 
     // set up shader file watcher
@@ -135,18 +137,21 @@ int main()
 
     Renderer renderer;
     Scene scene;
-    // load models
+    MaterialBuffer materialBuffer;
+
+
+
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //stbi_set_flip_vertically_on_load(true);
     //Model ourModel(FileSystem::getPath("resources/backpack/backpack.obj"));
     //Model ourModel(FileSystem::getPath("resources/barrack/Models/Obj/Barrack.obj"));
-    std::filesystem::path modelPath = root / "resources" / "99-intergalactic-spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
-    Model ourModel(absPath.string());
+    Model ourModel(absPath.string(), materialBuffer);
 
     // light cube model
     Mesh lightCubeMesh(cube_vertices, cube_indices);
-    Model lightCubeModel(lightCubeMesh);
+    Model lightCubeModel(lightCubeMesh, materialBuffer);
     glm::vec3 lightPos = {10.0f, 10.0f, 0.0f};
     lightCubeModel.Translate(lightPos);
     scene.AddModel(lightCubeModel);

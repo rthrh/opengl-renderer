@@ -5,22 +5,21 @@
 #include "model.h"
 
 
-
 // constructor, expects a filepath to a 3D model.
-Model::Model(std::string const &path, bool gamma) : gammaCorrection(gamma), m_modelMatrix(1.0f)
+Model::Model(std::string const &path, MaterialBuffer& materials) : m_modelMatrix(1.0f)
 {
-    loadModel(path);
+    loadModel(path, materials);
     m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
     m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
 }
 
-Model::Model(Mesh& mesh, bool gamma) : gammaCorrection(gamma), m_modelMatrix(1.0f) {
+Model::Model(Mesh& mesh, MaterialBuffer& materials) : m_modelMatrix(1.0f) {
     m_meshes.push_back(mesh);
 }
 
 
 // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-void Model::loadModel(std::string const &path)
+void Model::loadModel(std::string const &path, MaterialBuffer& materials)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
@@ -96,11 +95,6 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
             vector.y = mesh->mTangents[i].y;
             vector.z = mesh->mTangents[i].z;
             vertex.Tangent = vector;
-            // bitangent
-            vector.x = mesh->mBitangents[i].x;
-            vector.y = mesh->mBitangents[i].y;
-            vector.z = mesh->mBitangents[i].z;
-            vertex.Bitangent = vector;
         }
         else
             vertex.TexCoords = glm::vec2(0.0f, 0.0f);
@@ -117,26 +111,26 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     }
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
-    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-    // Same applies to other texture as the following list summarizes:
-    // diffuse: texture_diffuseN
-    // specular: texture_specularN
-    // normal: texture_normalN
 
-    // 1. diffuse maps
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Diffuse);
+    // 1. diffuse map aiTextureType_BASE_COLOR
+    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    // 2. specular maps
-    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, TextureType::Specular);
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-    // 3. normal maps
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, TextureType::Height);
+    // 2. normal maps aiTextureType_NORMAL_CAMERA
+    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-    // 4. height maps
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, TextureType::Ambient);
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-    
+    // 3. emissive maps     aiTextureType_EMISSION_COLOR
+    std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Emissive);
+    textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+    // 4. metallic maps aiTextureType_METALNESS
+    std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, TextureType::Metallic);
+    textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+    // 5. roughness maps aiTextureType_DIFFUSE_ROUGHNESS
+    std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Roughness);
+    textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+    // 6. ambient occlusion maps aiTextureType_AMBIENT_OCCLUSION
+    std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, TextureType::AO);
+    textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+
     // return a mesh object created from the extracted mesh data
     return Mesh(vertices, indices, textures);
 }

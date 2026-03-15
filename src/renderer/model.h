@@ -18,13 +18,9 @@
 
 #include "mesh.h"
 #include "shader.h"
+#include "material.h"
+#include "material_buffer.h"
 
-// phong
-struct Material {
-    float diffuse;
-    float specular;
-    float shininess;
-};
 
 class Model 
 {
@@ -35,8 +31,8 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, bool gamma = false);
-    Model(Mesh& mesh, bool gamma = false);
+    Model(std::string const &path, MaterialBuffer& materials);
+    Model(Mesh& mesh, MaterialBuffer& materials);
 
     void Translate(glm::vec3 position) {
         m_modelMatrix = glm::translate(m_modelMatrix, std::move(position));
@@ -59,13 +55,13 @@ public:
         return m_modelMatrix;
     }
 
-    std::vector<Mesh> GetMeshes() {
+    const std::vector<Mesh>& GetMeshes() {
         return m_meshes;
     }
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const &path);
+    void loadModel(std::string const &path, MaterialBuffer& materials);
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode *node, const aiScene *scene);
@@ -77,6 +73,5 @@ private:
     unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
 
     std::vector<Mesh> m_meshes;
-    //std::vector<Material> m_materials; //not used yet
     glm::mat4 m_modelMatrix;
 };
