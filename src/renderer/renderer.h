@@ -20,26 +20,26 @@ public:
     Renderer(Renderer&&) noexcept = default;
     Renderer& operator=(Renderer&&) noexcept = default;
 
-    void Draw(Model& model, Shader& shader) {
+    void Draw(const Model& model, Shader& shader) const {
         shader.Activate();
         shader.SetMat4("model", model.GetModelMatrix());
 
-        auto meshes = model.GetMeshes();
+        auto& meshes = model.GetMeshes();
         for (auto& mesh : meshes) {
             this->drawMesh(mesh, shader);
         }
     }
 
-    void Render(Scene& scene, Shader& shader) {
-        auto models = scene.GetModels();
+    void Render(Scene& scene, Shader& shader) const {
+        const auto& models = scene.GetModels();
 
-        for (auto& [handle, model] : models) {
+        for (const auto& [handle, model] : models) {
             Draw(model, shader);
         }
     }
 
 private:
-    void drawMesh(Mesh& mesh, Shader& shader) 
+    void drawMesh(const Mesh& mesh, Shader& shader) const
     {
         for (const auto& texture : mesh.GetTextures())
         {

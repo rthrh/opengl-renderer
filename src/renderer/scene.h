@@ -76,9 +76,11 @@ class Scene {
             return index;
         }
 
-        std::unordered_map<Handle, Model> GetModels() {
+        const std::unordered_map<Handle, Model>& GetModels() const {
             return m_models;
         }
+
+        Model& GetModel(Handle handle) {} // TODO
 
     private:
 

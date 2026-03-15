@@ -1,25 +1,23 @@
-#define STB_IMAGE_IMPLEMENTATION
-
 #include <stb_image.h>
 
 #include "model.h"
 
 
 // constructor, expects a filepath to a 3D model.
-Model::Model(std::string const &path, MaterialBuffer& materials) : m_modelMatrix(1.0f)
+Model::Model(std::string const &path, std::shared_ptr<MaterialBuffer>& materials, std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache}
 {
     loadModel(path, materials);
-    m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+    //m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    //m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
 }
 
-Model::Model(Mesh& mesh, MaterialBuffer& materials) : m_modelMatrix(1.0f) {
-    m_meshes.push_back(mesh);
+Model::Model(Mesh mesh, std::shared_ptr<MaterialBuffer>& materials, std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+    m_meshes.emplace_back(std::move(mesh));
 }
 
 
 // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-void Model::loadModel(std::string const &path, MaterialBuffer& materials)
+void Model::loadModel(std::string const &path, std::shared_ptr<MaterialBuffer>& materials)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
@@ -31,7 +29,7 @@ void Model::loadModel(std::string const &path, MaterialBuffer& materials)
         return;
     }
     // retrieve the directory path of the filepath
-    directory = path.substr(0, path.find_last_of('/'));
+    m_directory = path.substr(0, path.find_last_of('/'));
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
@@ -46,7 +44,7 @@ void Model::processNode(aiNode *node, const aiScene *scene)
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        m_meshes.push_back(processMesh(mesh, scene));
+        m_meshes.emplace_back(std::move(processMesh(mesh, scene)));
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -140,77 +138,17 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, TextureType textureType)
-{
-    std::vector<Texture> textures;
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type) {
+    std::vector<Texture> result;
+    for (unsigned int i = 0; i < mat->GetTextureCount(aiType); i++) {
+        aiString str;
+        mat->GetTexture(aiType, i, &str);
+        std::string fullPath = m_directory + '/' + str.C_Str();
 
-    const auto count = material->GetTextureCount(type);
-    std::cout << "Material count: " << count << std::endl;
-    for (auto i = 0u; i < count; ++i)
-    {
-        aiString aiPath;
-        material->GetTexture(type, i, &aiPath);
-
-        std::string path = aiPath.C_Str();
-        std::string fullPath = directory + "/" + path;
-        std::cout << fullPath << std::endl;
-
-        if (auto it = m_loadedTextures.find(fullPath);
-            it != m_loadedTextures.end())
-        {
-            textures.push_back(it->second);
-            continue;
-        }
-
-        // Not loaded yet → load it
-        Texture texture;
-        texture.id   = TextureFromFile(path.c_str(), directory);
-        texture.type = textureType;
-        texture.path = fullPath;
-        std::cout << "id: " << texture.id << " type: " << (int)texture.type << std::endl;
-        textures.push_back(texture);
-        m_loadedTextures.emplace(fullPath, texture);
+        bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
+        uint32_t id = m_textureCache->load(fullPath, type, gamma);
+        result.push_back(Texture{ id, type, fullPath });
     }
-
-    return textures;
+    return result;
 }
 
-unsigned int Model::TextureFromFile(const char *path, const std::string &directory, bool gamma)
-{
-    std::string filename = std::string(path);
-    filename = directory + '/' + filename;
-
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
-}

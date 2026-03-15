@@ -17,7 +17,7 @@
 #include "renderer/scene.h"
 
 #include "renderer/material.h"
-
+#include "renderer/texture_cache.h"
 
 #include "gui.h"
 #include "input.h"
@@ -137,8 +137,8 @@ int main()
 
     Renderer renderer;
     Scene scene;
-    MaterialBuffer materialBuffer;
-
+    auto materialBuffer = std::make_shared<MaterialBuffer>();
+    auto textureCache = std::make_shared<TextureCache>();
 
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
@@ -147,17 +147,17 @@ int main()
     //Model ourModel(FileSystem::getPath("resources/barrack/Models/Obj/Barrack.obj"));
     std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
-    Model ourModel(absPath.string(), materialBuffer);
+    Model ourModel(absPath.string(), materialBuffer, textureCache);
 
     // light cube model
     Mesh lightCubeMesh(cube_vertices, cube_indices);
-    Model lightCubeModel(lightCubeMesh, materialBuffer);
+    Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
     glm::vec3 lightPos = {10.0f, 10.0f, 0.0f};
     lightCubeModel.Translate(lightPos);
-    scene.AddModel(lightCubeModel);
+    scene.AddModel(std::move(lightCubeModel));
 
     PointLightBlockGPU light(lightPos);
-    scene.AddPointLight(light);
+    scene.AddPointLight(std::move(light));
     
     // init imgui
     GuiLayer guiLayer(window);
@@ -165,7 +165,7 @@ int main()
         .color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}
     };
 
-    scene.AddModel(ourModel);
+    scene.AddModel(std::move(ourModel));
     DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}};
     scene.AddDirectionalLight(lightDir);
 

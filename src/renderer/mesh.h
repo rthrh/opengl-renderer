@@ -9,17 +9,10 @@
 #include <vector>
 
 #include "shader.h"
+#include "texture_cache.h"
 
 
-enum class TextureType
-{
-    Albedo,
-    Normal,
-    Emissive,
-    Metallic,
-    Roughness,
-    AO
-};
+
 
 struct Vertex {
     glm::vec3 Position;
@@ -28,20 +21,15 @@ struct Vertex {
     glm::vec3 Tangent{};
 };
 
-struct Texture {
-    uint32_t id;
-    TextureType type;
-    std::string path;
-};
 
 
 class Mesh {
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
     {
-        this->vertices = vertices;
-        this->indices = indices;
-        this->textures = textures;
+        this->vertices = std::move(vertices);
+        this->indices = std::move(indices);
+        this->textures = std::move(textures);
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
@@ -49,27 +37,54 @@ public:
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)
     {
-        this->vertices = vertices;
-        this->indices = indices;
+        this->vertices = std::move(vertices);
+        this->indices = std::move(indices);
         setupMesh();
     }
 
-    unsigned int GetVAO()
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+    Mesh(Mesh&& o) noexcept : m_VAO(o.m_VAO), m_VBO(o.m_VBO), m_EBO(o.m_EBO),
+                              vertices(std::move(o.vertices)), indices(std::move(o.indices)), textures(std::move(o.textures)) {
+        o.m_VAO = o.m_VBO = o.m_EBO = 0;
+    }
+
+    Mesh& operator=(Mesh&& o) noexcept {
+        if (this == &o) return *this;
+        glDeleteVertexArrays(1, &m_VAO);
+        glDeleteBuffers(1, &m_VBO);
+        glDeleteBuffers(1, &m_EBO);
+
+        m_VAO = o.m_VAO; m_VBO = o.m_VBO; m_EBO = o.m_EBO;
+        o.m_VAO = o.m_VBO = o.m_EBO = 0;
+        vertices = std::move(o.vertices);
+        indices  = std::move(o.indices);
+        textures = std::move(o.textures);
+        return *this;
+    }
+
+    ~Mesh() {
+        glDeleteVertexArrays(1, &m_VAO);
+        glDeleteBuffers(1, &m_VBO);
+        glDeleteBuffers(1, &m_EBO);
+    }
+
+    unsigned int GetVAO() const
     {
         return m_VAO;
     }
 
-    std::vector<Texture> GetTextures() {
+    const std::vector<Texture>& GetTextures() const {
         return textures;
     }
 
-    std::vector<unsigned int> GetIndices() {
+    const std::vector<unsigned int>& GetIndices() const {
         return indices;
     }
 
 private:
     // render data 
-    unsigned int m_VAO, m_VBO, m_EBO;
+    unsigned int m_VAO{0}, m_VBO{0}, m_EBO{0};
 
     // mesh Data
     std::vector<Vertex>       vertices;
