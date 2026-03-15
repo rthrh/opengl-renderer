@@ -11,7 +11,7 @@
 struct MaterialSlots {
     GLuint albedoMap    = 0;
     GLuint normalMap    = 0;
-    GLuint emissiveMap    = 0;
+    GLuint emissiveMap  = 0;
     GLuint metallicMap  = 0;
     GLuint roughnessMap = 0;
     GLuint aoMap        = 0;

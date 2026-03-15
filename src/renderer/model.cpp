@@ -80,7 +80,10 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
             vector.y = mesh->mNormals[i].y;
             vector.z = mesh->mNormals[i].z;
             vertex.Normal = vector;
+        } else {
+            std::cout << "Warn: mesh has no normals" << std::endl;
         }
+
         // texture coordinates
         if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
@@ -119,16 +122,16 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
     // 3. emissive maps     aiTextureType_EMISSION_COLOR
-    std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Emissive);
+    std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
     textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
     // 4. metallic maps aiTextureType_METALNESS
     std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, TextureType::Metallic);
     textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
     // 5. roughness maps aiTextureType_DIFFUSE_ROUGHNESS
-    std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Roughness);
+    std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, TextureType::Roughness);
     textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
     // 6. ambient occlusion maps aiTextureType_AMBIENT_OCCLUSION
-    std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, TextureType::AO);
+    std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, TextureType::AO);
     textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 
     // return a mesh object created from the extracted mesh data
@@ -142,7 +145,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* material, aiTexture
     std::vector<Texture> textures;
 
     const auto count = material->GetTextureCount(type);
-
+    std::cout << "Material count: " << count << std::endl;
     for (auto i = 0u; i < count; ++i)
     {
         aiString aiPath;
@@ -150,6 +153,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* material, aiTexture
 
         std::string path = aiPath.C_Str();
         std::string fullPath = directory + "/" + path;
+        std::cout << fullPath << std::endl;
 
         if (auto it = m_loadedTextures.find(fullPath);
             it != m_loadedTextures.end())
@@ -163,7 +167,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* material, aiTexture
         texture.id   = TextureFromFile(path.c_str(), directory);
         texture.type = textureType;
         texture.path = fullPath;
-
+        std::cout << "id: " << texture.id << " type: " << (int)texture.type << std::endl;
         textures.push_back(texture);
         m_loadedTextures.emplace(fullPath, texture);
     }

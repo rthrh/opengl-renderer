@@ -44,7 +44,6 @@ private:
         for (const auto& texture : mesh.GetTextures())
         {
             const uint32_t slot = static_cast<uint32_t>(texture.type);
-
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(GL_TEXTURE_2D, texture.id);
         }

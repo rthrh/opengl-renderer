@@ -166,7 +166,7 @@ int main()
     };
 
     scene.AddModel(ourModel);
-    DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}, {1.0f,0.0f,0.0f}};
+    DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}};
     scene.AddDirectionalLight(lightDir);
 
     // render loop
