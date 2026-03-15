@@ -26,7 +26,6 @@ void main()
 }
 
 
-
 vec3 CalcDirectionalLight()
 {
     vec3 texColor = texture(diffuseTexture, TexCoords).rgb;
@@ -51,18 +50,3 @@ vec3 CalcDirectionalLight()
     vec3 specular = specMap * spec;
     return (ambient + diffuse + specular);
 }
-/*
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir) {
-  vec3 lightDir = normalize(-light.direction);
-  // Diffuse shading
-  float diff = max(dot(normal, lightDir), 0.0);
-  // Specular shading
-  vec3 reflectDir = reflect(-lightDir, normal);
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-  // Combine results
-  vec3 ambient = light.ambient * vec3(texture(gAlbedoSpec, TexCoords).rgb);
-  vec3 diffuse = light.diffuse * diff * vec3(texture(gAlbedoSpec, TexCoords).rgb);
-  vec3 specular = light.specular * spec * vec3(texture(gAlbedoSpec, TexCoords).a);
-  
-  return (ambient + diffuse + specular);
-}*/
