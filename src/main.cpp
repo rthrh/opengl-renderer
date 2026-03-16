@@ -162,9 +162,12 @@ int main()
     light.SetColor({0.0, 0.0, 125.0});
     light2.SetColor({0.0, 125.0, 0.0});
     light3.SetColor({125.0, 0.0, 0.0});
-    scene.AddPointLight(std::move(light));
-    scene.AddPointLight(std::move(light2));
-    scene.AddPointLight(std::move(light3));
+    //scene.AddPointLight(std::move(light));
+    //scene.AddPointLight(std::move(light2));
+    //scene.AddPointLight(std::move(light3));
+
+    SpotLightBlockGPU spotLight1({0.0f, 5.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
+    scene.AddSpotLight(std::move(spotLight1));
 
     // init imgui
     GuiLayer guiLayer(window);
