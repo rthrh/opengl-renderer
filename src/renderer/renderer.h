@@ -7,7 +7,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "scene.h"
-
+#include "logger.h"
 
 class Renderer {
 public:
@@ -49,11 +49,7 @@ private:
         }
 
         glBindVertexArray(mesh.GetVAO());
-        glDrawElements(
-            GL_TRIANGLES,
-            static_cast<GLsizei>(mesh.GetIndices().size()),
-            GL_UNSIGNED_INT,
-            nullptr
-        );
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndices().size()),
+            GL_UNSIGNED_INT, nullptr);
     }
 };

@@ -11,10 +11,8 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <unordered_map>
 
 #include "mesh.h"
-#include "shader.h"
 #include "material.h"
 #include "material_buffer.h"
 #include "texture_cache.h"
@@ -23,8 +21,8 @@ class Model
 {
 public:
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, std::shared_ptr<MaterialBuffer>& materials, std::shared_ptr<TextureCache>& textureCache);
-    Model(Mesh mesh, std::shared_ptr<MaterialBuffer>& materials, std::shared_ptr<TextureCache>& textureCache);
+    Model(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache);
+    Model(Mesh mesh, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache);
 
     Model(const Model&)            = delete;
     Model& operator=(const Model&) = delete;
@@ -43,12 +41,12 @@ public:
         m_modelMatrix = glm::scale(m_modelMatrix, std::move(scale));
     }
 
-    const glm::vec3 GetWorldPos() const {
+    glm::vec3 GetWorldPos() const {
         // will return the 4th column of model matrix -> translation part
-        return glm::vec3(m_modelMatrix * glm::vec4(0.f, 0.f, 0.f, 1.f));
+        return glm::vec3(m_modelMatrix[3]);
     }
 
-    const glm::mat4 GetModelMatrix() const {
+    glm::mat4 GetModelMatrix() const {
         return m_modelMatrix;
     }
 
@@ -58,7 +56,7 @@ public:
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const &path, std::shared_ptr<MaterialBuffer>& materials);
+    void loadModel(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials);
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode *node, const aiScene *scene);

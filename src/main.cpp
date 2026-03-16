@@ -152,13 +152,20 @@ int main()
     // light cube model
     Mesh lightCubeMesh(cube_vertices, cube_indices);
     Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
-    glm::vec3 lightPos = {10.0f, 10.0f, 0.0f};
-    lightCubeModel.Translate(lightPos);
-    scene.AddModel(std::move(lightCubeModel));
+    glm::vec3 lightPos = {10.0f, 0.0f, 0.0f};
+    //lightCubeModel.Translate(lightPos);
+    //scene.AddModel(std::move(lightCubeModel));
 
     PointLightBlockGPU light(lightPos);
+    PointLightBlockGPU light2({-10.0f, 0.0f, 0.0f});
+    PointLightBlockGPU light3({0.0f, 10.0f, 0.0f});
+    light.SetColor({0.0, 0.0, 125.0});
+    light2.SetColor({0.0, 125.0, 0.0});
+    light3.SetColor({125.0, 0.0, 0.0});
     scene.AddPointLight(std::move(light));
-    
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
+
     // init imgui
     GuiLayer guiLayer(window);
     GuiData guiData {
@@ -166,8 +173,8 @@ int main()
     };
 
     scene.AddModel(std::move(ourModel));
-    DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}};
-    scene.AddDirectionalLight(lightDir);
+    //DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}};
+    //scene.AddDirectionalLight(lightDir);
 
     // render loop
     while (!glfwWindowShouldClose(window))
