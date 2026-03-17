@@ -24,6 +24,24 @@ struct Texture {
 
 class TextureCache {
 public:
+    uint32_t whiteDummy, blackDummy, flatNormalDummy;
+    TextureCache() {
+        uint8_t white[]      = {255, 255, 255, 255};
+        uint8_t black[]      = {0, 0, 0, 0};
+        uint8_t flatNormal[] = {128, 128, 255, 255};
+        whiteDummy      = createDummy(white);
+        blackDummy      = createDummy(black);
+        flatNormalDummy = createDummy(flatNormal);
+
+        Texture whiteDummyTexture{.id = whiteDummy, .type = TextureType::Albedo, .path = "white_dummy"};
+        Texture blackDummyTexture{.id = blackDummy, .type = TextureType::Albedo, .path = "black_dummy"};
+        Texture flatNormalTexture{.id = flatNormalDummy, .type = TextureType::Albedo, .path = "flat_normal_dummy"};
+
+        m_cache.insert({whiteDummyTexture.path, whiteDummyTexture});
+        m_cache.insert({blackDummyTexture.path, blackDummyTexture});
+        m_cache.insert({flatNormalTexture.path, flatNormalTexture});
+    }
+
     // Returns existing texture id if path was already loaded.
     uint32_t load(const std::string& path, TextureType type, bool gammaCorrect = false) {
         if (auto it = m_cache.find(path); it != m_cache.end())
@@ -37,6 +55,16 @@ public:
     bool     has(const std::string& path) const { return m_cache.contains(path); }
     Texture  get(const std::string& path) const { return m_cache.at(path); }
     size_t   count()                      const { return m_cache.size(); }
+
+    std::vector<Texture> GetDummyTextureSet() {
+        Texture albedo{.id = whiteDummy, .type = TextureType::Albedo};
+        Texture normal{.id = flatNormalDummy, .type = TextureType::Normal};
+        Texture emissive{.id = blackDummy, .type = TextureType::Emissive};
+        Texture metallic{.id = whiteDummy, .type = TextureType::Metallic};
+        Texture roughness{.id = whiteDummy, .type = TextureType::Roughness};
+        Texture ao{.id = whiteDummy, .type = TextureType::AO};
+        return std::vector<Texture>{albedo, normal, emissive, metallic, roughness, ao};
+    }
 
     ~TextureCache() {
         for (auto& [path, tex] : m_cache)
@@ -80,5 +108,16 @@ private:
 
         stbi_image_free(data);
         return id;
+    }
+
+    static GLuint createDummy(uint8_t rgba[4]) {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+                     1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        return tex;
     }
 };

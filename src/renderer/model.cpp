@@ -9,11 +9,14 @@
 Model::Model(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache}
 {
     loadModel(path, materials);
-    //m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    //m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
 }
 
 Model::Model(Mesh mesh, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+
+    if (mesh.GetTextures().empty()) {
+        auto dummySet = textureCache->GetDummyTextureSet();
+        mesh.SetTextures(dummySet);
+    }
     m_meshes.emplace_back(std::move(mesh));
 }
 

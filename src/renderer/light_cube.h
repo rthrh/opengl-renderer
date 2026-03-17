@@ -35,3 +35,15 @@ std::vector<unsigned int> cube_indices {
     3, 2, 6,
     6, 7, 3
 };
+
+inline std::vector<Vertex> floor_vertices = {
+    { {-1.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
+    { { 1.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f} },
+    { { 1.0f, 0.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f} },
+    { {-1.0f, 0.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f} },
+};
+
+inline std::vector<unsigned int> floor_indices = {
+    0, 1, 2,
+    2, 3, 0
+};

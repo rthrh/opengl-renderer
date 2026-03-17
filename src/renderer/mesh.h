@@ -61,6 +61,10 @@ public:
         return m_textures;
     }
 
+    void SetTextures(const std::vector<Texture>& textures) {
+        m_textures = textures;
+    }
+
     const std::vector<unsigned int>& GetIndices() const {
         return m_indices;
     }

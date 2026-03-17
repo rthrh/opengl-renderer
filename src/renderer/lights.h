@@ -10,9 +10,8 @@ private:
 };
 
 struct DirectionalLightBlockGPU {
-    DirectionalLightBlockGPU(glm::vec3 direction, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f) : 
-    m_direction{direction, 0.0f},
-    m_colorAndIntensity{color, intensity} {}
+    explicit DirectionalLightBlockGPU(glm::vec3 direction, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f)
+        : m_direction{direction, 0.0f}, m_colorAndIntensity{color, intensity} {}
 
     void SetDirection(glm::vec3 direction) {m_direction = {direction, 0.0f}; }
     void SetColor(glm::vec3 color) { m_colorAndIntensity = {color, m_colorAndIntensity.a}; }

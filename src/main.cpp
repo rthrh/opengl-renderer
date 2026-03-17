@@ -155,6 +155,11 @@ int main()
     glm::vec3 lightPos = {10.0f, 0.0f, 0.0f};
     //lightCubeModel.Translate(lightPos);
     //scene.AddModel(std::move(lightCubeModel));
+    Mesh floorMesh(floor_vertices, floor_indices);
+    Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
+    floorModel.Scale({10.0f, 1.0f, 10.0f});   // make it big
+    floorModel.Translate({0.0f, -2.0f, 0.0f}); // push it below the model
+    scene.AddModel(std::move(floorModel));
 
     PointLightBlockGPU light(lightPos);
     PointLightBlockGPU light2({-10.0f, 0.0f, 0.0f});
@@ -163,10 +168,13 @@ int main()
     light2.SetColor({0.0, 125.0, 0.0});
     light3.SetColor({125.0, 0.0, 0.0});
     //scene.AddPointLight(std::move(light));
-    //scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light2));
     //scene.AddPointLight(std::move(light3));
+    DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
+    scene.AddDirectionalLight(std::move(dirLight));
 
-    SpotLightBlockGPU spotLight1({0.0f, 5.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
+    SpotLightBlockGPU spotLight1({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, -1.0f});
+    spotLight1.SetColor({0.0, 0.0, 125.0});
     scene.AddSpotLight(std::move(spotLight1));
 
     // init imgui
