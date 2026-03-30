@@ -125,7 +125,7 @@ int main()
     //Shader ourShader("shader.vs", "shader.fs");
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     std::filesystem::path vertexPath = root / "src/shaders" / "shader.vert";
-    std::filesystem::path fragmentPath = root / "src/shaders" / "phong.frag";
+    std::filesystem::path fragmentPath = root / "src/shaders" / "pbr.frag";
     Shader lightingShader(vertexPath, fragmentPath);
 
     // set up shader file watcher

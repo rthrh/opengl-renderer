@@ -56,6 +56,7 @@ public:
     Texture  get(const std::string& path) const { return m_cache.at(path); }
     size_t   count()                      const { return m_cache.size(); }
 
+    // todo move it somewhere
     std::vector<Texture> GetDummyTextureSet() {
         Texture albedo{.id = whiteDummy, .type = TextureType::Albedo};
         Texture normal{.id = flatNormalDummy, .type = TextureType::Normal};

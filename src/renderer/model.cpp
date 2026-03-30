@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "model.h"
-
+#include "logger.h"
 
 // constructor, expects a filepath to a 3D model.
 Model::Model(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache}
@@ -108,26 +108,35 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
             indices.push_back(face.mIndices[j]);        
     }
     // process materials
+    // TODO
+    auto textureTypes = {TextureType::Albedo, TextureType::Normal, TextureType::Emissive, TextureType::Metallic, TextureType::Roughness, TextureType::AO};
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
 
     // 1. diffuse map aiTextureType_BASE_COLOR
     std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
+    //if (diffuseMaps.empty()) diffuseMaps.push_back(WHITE_DUMMY);
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+    Info("Size diffuseMaps: {}", diffuseMaps.size());
     // 2. normal maps aiTextureType_NORMAL_CAMERA
     std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+    Info("Size normalMaps: {}", normalMaps.size());
     // 3. emissive maps     aiTextureType_EMISSION_COLOR
     std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
     textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+    Info("Size emissiveMaps: {}", emissiveMaps.size());
     // 4. metallic maps aiTextureType_METALNESS
     std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, TextureType::Metallic);
     textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+    Info("Size metallicMaps: {}", metallicMaps.size());
     // 5. roughness maps aiTextureType_DIFFUSE_ROUGHNESS
     std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, TextureType::Roughness);
     textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+    Info("Size roughnessMaps: {}", roughnessMaps.size());
     // 6. ambient occlusion maps aiTextureType_AMBIENT_OCCLUSION
-    std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, TextureType::AO);
+    std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, TextureType::AO);
     textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+    Info("Size aoMaps: {}", aoMaps.size());
 
     // return a mesh object created from the extracted mesh data
     return Mesh(vertices, indices, textures);
