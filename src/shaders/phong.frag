@@ -81,6 +81,9 @@ void main() {
     vec3 emissive = texture(emissiveTexture, TexCoords).rgb;
     vec3 result = directionalLight + pointlight + spotlight + emissive;
 
+    // tone mapping + gamma
+    result = result / (result + vec3(1.0)); // Reinhard
+    result = pow(result, vec3(1.0 / 2.2));
     FragColor = vec4(result, 1.0);
 }
 

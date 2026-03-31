@@ -7,7 +7,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "scene.h"
-#include "logger.h"
+#include "utils/logger.h"
 
 class Renderer {
 public:

@@ -114,6 +114,8 @@ void main() {
     vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;
     vec3 N = normalize(TBN * normalSample);
     vec3 V = normalize(viewPos - FragPos);
+    if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
+
 
     // F0: base reflectance
     // dielectrics: 0.04, metals: tinted by albedo

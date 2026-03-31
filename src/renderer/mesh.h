@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "texture_cache.h"
-
+#include "utils/stopwatch.h"
 struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal{};
@@ -20,96 +20,105 @@ struct Vertex {
 class Mesh {
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures = {})
-        : m_vertices(std::move(vertices)), m_indices(std::move(indices)), m_textures(std::move(textures))
+        : _vertices(std::move(vertices)), _indices(std::move(indices)), _textures(std::move(textures))
     {
         setupMesh();
     }
 
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
-    Mesh(Mesh&& o) noexcept : m_VAO(o.m_VAO), m_VBO(o.m_VBO), m_EBO(o.m_EBO),
-                              m_vertices(std::move(o.m_vertices)), m_indices(std::move(o.m_indices)), m_textures(std::move(o.m_textures)) {
-        o.m_VAO = o.m_VBO = o.m_EBO = 0;
+    Mesh(Mesh&& o) noexcept : _VAO(o._VAO), _VBO(o._VBO), _EBO(o._EBO),
+                              _vertices(std::move(o._vertices)), _indices(std::move(o._indices)), _textures(std::move(o._textures)) {
+        o._VAO = o._VBO = o._EBO = 0;
     }
 
     Mesh& operator=(Mesh&& o) noexcept {
         if (this == &o) return *this;
-        glDeleteVertexArrays(1, &m_VAO);
-        glDeleteBuffers(1, &m_VBO);
-        glDeleteBuffers(1, &m_EBO);
+        glDeleteVertexArrays(1, &_VAO);
+        glDeleteBuffers(1, &_VBO);
+        glDeleteBuffers(1, &_EBO);
 
-        m_VAO = o.m_VAO; m_VBO = o.m_VBO; m_EBO = o.m_EBO;
-        o.m_VAO = o.m_VBO = o.m_EBO = 0;
-        m_vertices = std::move(o.m_vertices);
-        m_indices  = std::move(o.m_indices);
-        m_textures = std::move(o.m_textures);
+        _VAO = o._VAO; _VBO = o._VBO; _EBO = o._EBO;
+        o._VAO = o._VBO = o._EBO = 0;
+        _vertices = std::move(o._vertices);
+        _indices  = std::move(o._indices);
+        _textures = std::move(o._textures);
         return *this;
     }
 
     ~Mesh() {
-        glDeleteVertexArrays(1, &m_VAO);
-        glDeleteBuffers(1, &m_VBO);
-        glDeleteBuffers(1, &m_EBO);
+        glDeleteVertexArrays(1, &_VAO);
+        glDeleteBuffers(1, &_VBO);
+        glDeleteBuffers(1, &_EBO);
     }
 
     unsigned int GetVAO() const
     {
-        return m_VAO;
+        return _VAO;
     }
 
     const std::vector<Texture>& GetTextures() const {
-        return m_textures;
+        return _textures;
     }
 
     void SetTextures(const std::vector<Texture>& textures) {
-        m_textures = textures;
+        _textures = textures;
     }
 
     const std::vector<unsigned int>& GetIndices() const {
-        return m_indices;
+        return _indices;
     }
 
 
 private:
     // render data 
-    unsigned int m_VAO{0}, m_VBO{0}, m_EBO{0};
+    unsigned int _VAO{0}, _VBO{0}, _EBO{0};
 
     // mesh Data
-    std::vector<Vertex>       m_vertices;
-    std::vector<unsigned int> m_indices;
-    std::vector<Texture>      m_textures;
+    std::vector<Vertex>       _vertices;
+    std::vector<unsigned int> _indices;
+    std::vector<Texture>      _textures;
 
     // initializes all the buffer objects/arrays
     void setupMesh()
     {
+        Stopwatch stopwatch;
+        stopwatch.Start();
+
         // create buffers/arrays
-        glGenVertexArrays(1, &m_VAO);
-        glGenBuffers(1, &m_VBO);
-        glGenBuffers(1, &m_EBO);
+        glCreateVertexArrays(1, &_VAO);
+        glCreateBuffers(1, &_VBO);
+        glCreateBuffers(1, &_EBO);
 
-        glBindVertexArray(m_VAO);
         // load data into vertex buffers
-        glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-        glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);  
+        glNamedBufferStorage(_VBO, _vertices.size() * sizeof(Vertex), _vertices.data(), GL_DYNAMIC_STORAGE_BIT);
+        glNamedBufferStorage(_EBO, _indices.size() * sizeof(unsigned int), _indices.data(), GL_DYNAMIC_STORAGE_BIT);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), m_indices.data(), GL_STATIC_DRAW);
+        // bind EBO to VAO
+        glVertexArrayElementBuffer(_VAO, _EBO);
 
-        // set the vertex attribute pointers
-        // vertex Positions
-        glEnableVertexAttribArray(0);	
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
+        // bind VBO to VAO at binding index 0
+        glVertexArrayVertexBuffer(_VAO, 0, _VBO, 0, sizeof(Vertex));
+
+        // set the vertex attributes
+        // vertex positions
+        glEnableVertexArrayAttrib(_VAO, 0);
+        glVertexArrayAttribFormat(_VAO, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Position));
+        glVertexArrayAttribBinding(_VAO, 0, 0);
         // vertex normals
-        glEnableVertexAttribArray(1);	
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+        glEnableVertexArrayAttrib(_VAO, 1);
+        glVertexArrayAttribFormat(_VAO, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Normal));
+        glVertexArrayAttribBinding(_VAO, 1, 0);
         // vertex texture coords
-        glEnableVertexAttribArray(2);	
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+        glEnableVertexArrayAttrib(_VAO, 2);
+        glVertexArrayAttribFormat(_VAO, 2, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, TexCoords));
+        glVertexArrayAttribBinding(_VAO, 2, 0);
         // vertex tangent
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-        // unbind VAO
-        glBindVertexArray(0);
+        glEnableVertexArrayAttrib(_VAO, 3);
+        glVertexArrayAttribFormat(_VAO, 3, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Tangent));
+        glVertexArrayAttribBinding(_VAO, 3, 0);
+
+        stopwatch.Stop();
 
     }
 };

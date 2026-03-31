@@ -61,11 +61,13 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.h
     ${CMAKE_SOURCE_DIR}/src/renderer/*.cpp
     ${CMAKE_SOURCE_DIR}/src/renderer/*.h
+    ${CMAKE_SOURCE_DIR}/src/utils/*.h
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/gui)
 include_directories(${CMAKE_SOURCE_DIR}/renderer)
+include_directories(${CMAKE_SOURCE_DIR}/utils)
 include_directories(${CMAKE_SOURCE_DIR}/deps/)
 include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
 include_directories(${CMAKE_BINARY_DIR}/deps/assimp/include)

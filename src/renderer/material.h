@@ -50,18 +50,18 @@ struct MaterialSlots {
 
 private:
     static void bindSlot(GLint unit, GLuint tex, GLuint fallback) {
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, tex != 0 ? tex : fallback);
+        glBindTextureUnit(unit, tex != 0 ? tex : fallback);
     }
 
     static GLuint createDummy(uint8_t rgba[4]) {
+        constexpr int dummySize = 1;
+
         GLuint tex;
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-                     1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+        glTextureStorage2D(tex, 1, GL_RGBA8, dummySize, dummySize);
+        glTextureSubImage2D(tex, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         return tex;
     }
 };
