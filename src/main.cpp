@@ -120,15 +120,19 @@ int main()
     // build and compile shaders
     //Shader ourShader("shader.vs", "shader.fs");
     std::filesystem::path root = PROJECT_SOURCE_DIR;
-    std::filesystem::path vertexPath = root / "src/shaders" / "shader.vert";
-    std::filesystem::path fragmentPath = root / "src/shaders" / "pbr.frag";
+    std::filesystem::path pathShaders = root / "src/shaders";
+    std::filesystem::path vertexPath = pathShaders / "shader.vert";
+    std::filesystem::path fragmentPath = pathShaders / "pbr.frag";
     Shader lightingShader(vertexPath, fragmentPath);
+
+    std::filesystem::path gBufferVertPath = pathShaders / "gBuffer.vert";
+    std::filesystem::path gBufferFragPath = pathShaders / "gBuffer.frag";
+    Shader gBufferShader(gBufferVertPath, gBufferFragPath);
 
     // set up shader file watcher
     FileWatcher fileWatcher;
-    auto fileCallback = [&lightingShader](const std::filesystem::path&){ lightingShader.Reload();};
-    fileWatcher.WatchFile(vertexPath, fileCallback);
-    fileWatcher.WatchFile(fragmentPath, fileCallback);
+    auto fileCallback = [&lightingShader](const std::filesystem::path&) { lightingShader.Reload();};
+    fileWatcher.WatchDirectory(pathShaders, fileCallback);
     
     auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
     Renderer renderer(camera);
@@ -224,6 +228,9 @@ int main()
         lightingShader.SetMat4("view", view);
         lightingShader.SetVec3("viewPos", camera->Position);
 
+
+        // TODO g-buffer stuff
+        //renderer.PassGeometry(scene, gBufferShader);
         // render scene
         renderer.Render(scene, lightingShader);
 

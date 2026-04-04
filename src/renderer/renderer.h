@@ -39,7 +39,6 @@ public:
 
     void Render(Scene& scene, Shader& shader) const {
         const auto& models = scene.GetModels();
-
         for (const auto& [handle, model] : models) {
             Draw(model, shader);
         }
@@ -71,4 +70,6 @@ private:
 
     std::shared_ptr<Camera> _cameraPtr;
     GBuffer _gBuffer;
+    GLuint _quadVAO {0};
+
 };
