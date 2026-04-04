@@ -122,6 +122,7 @@ public:
     void Reload() {
         const std::string vertexCode   = ReadTextFile(m_vertexPath);
         const std::string fragmentCode = ReadTextFile(m_fragmentPath);
+        Info("Reloading {} {}", m_vertexPath.c_str(), m_fragmentPath.c_str());
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
         if (!vertex)

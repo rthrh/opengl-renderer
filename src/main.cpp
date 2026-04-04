@@ -129,9 +129,13 @@ int main()
     std::filesystem::path gBufferFragPath = pathShaders / "gBuffer.frag";
     Shader gBufferShader(gBufferVertPath, gBufferFragPath);
 
+    std::filesystem::path debugVertPath = pathShaders / "debug.vert";
+    std::filesystem::path debugFragPath = pathShaders / "debug.frag";
+    Shader debugShader(debugVertPath, debugFragPath);
+
     // set up shader file watcher
     FileWatcher fileWatcher;
-    auto fileCallback = [&lightingShader](const std::filesystem::path&) { lightingShader.Reload();};
+    auto fileCallback = [&lightingShader, &gBufferShader, &debugShader](const std::filesystem::path&) { lightingShader.Reload(); gBufferShader.Reload(); debugShader.Reload();};
     fileWatcher.WatchDirectory(pathShaders, fileCallback);
     
     auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -230,11 +234,22 @@ int main()
 
 
         // TODO g-buffer stuff
-        gBufferShader.Activate();
         renderer.PassGeometry(scene, gBufferShader);
+
+        renderer.BindGBuffer();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // render debug
+        debugShader.Activate();
+        debugShader.SetInt("gPosition", 0);
+        debugShader.SetInt("gNormal",   1);
+        debugShader.SetInt("gAlbedo",   2);
+        debugShader.SetInt("gMaterial", 3);
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         // render scene
-        lightingShader.Activate();
-        renderer.Render(scene, lightingShader);
+        //lightingShader.Activate();
+        //renderer.Render(scene, lightingShader);
 
         // Renders the ImGUI elements
 		guiLayer.endFrame();

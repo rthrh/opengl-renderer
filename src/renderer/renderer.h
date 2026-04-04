@@ -17,7 +17,7 @@ class Renderer {
 public:
     explicit Renderer(std::shared_ptr<Camera> camera) :
         _cameraPtr(std::move(camera)),
-        _gBuffer(1024, 1024) {}
+        _gBuffer(SSCR_WIDTH, SSCR_HEIGHT) {} //TODO remove SCR_WIDTH and HEIGHT
 
     ~Renderer() = default;
 
@@ -52,6 +52,10 @@ public:
 
         Render(scene, shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
+    }
+
+    void BindGBuffer() {
+        _gBuffer.BindTextures();
     }
 
 private:
