@@ -51,6 +51,7 @@ public:
         shader.SetMat4("projection", _cameraPtr->GetProjectionMatrix());
 
         Render(scene, shader);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
     }
 
 private:

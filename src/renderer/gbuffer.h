@@ -20,12 +20,10 @@ enum GBufferTextureType {
 class GBuffer {
 public:
     explicit GBuffer(int width, int height) : _width(width), _height(height) {
-        glGenFramebuffers(1, &_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+        glCreateFramebuffers(1, &_fbo);
 
         constexpr int numTextures = GBufferTextureType::EnumSize;
         _textures.resize(numTextures);
-        glGenTextures(_textures.size(), _textures.data());
 
         this->createTexture(width, height, Position);
         this->createTexture(width, height, Normal);
@@ -34,15 +32,11 @@ public:
         this->createDepthTexture(width, height, Depth);
 
         std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-        glDrawBuffers(drawBuffers.size(), drawBuffers.data());
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        glNamedFramebufferDrawBuffers(_fbo, drawBuffers.size(), drawBuffers.data());
+        GLenum status = glCheckNamedFramebufferStatus(_fbo, GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             Error("Framebuffer error: {}", status);
         }
-
-        // restore default FBO
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
     ~GBuffer() {
         if (_fbo) {
@@ -72,13 +66,14 @@ public:
     }
 
     void BindForWriting() {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
+        //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
         //glViewport(0, 0, _width, _height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     void BindTextures() const {
-        for (int i = 0; i < _textures.size(); i++)
+        for (auto i = 0u; i < _textures.size(); i++)
             glBindTextureUnit(i, _textures[i]);
     }
 
@@ -90,23 +85,19 @@ public:
 private:
     void createTexture(int width, int height, GLuint slot) {
         auto& tex = _textures[slot];
-        //glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-        //glTextureStorage2D(tex, 1, GL_RGB32F, width, height);
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+        glTextureStorage2D(tex, 1, GL_RGB32F, width, height);
         //glTextureSubImage2D(tex, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, nullptr);        
-        //glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        //glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glBindTexture(GL_TEXTURE_2D, _textures[slot]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL); // TODO can save space by using different texture types
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, _textures[slot], 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + slot, tex, 0);
     }
 
     void createDepthTexture(int width, int height, GLuint slot) {
-        glBindTexture(GL_TEXTURE_2D, _textures[slot]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _textures[slot], 0);
+        auto& tex = _textures[slot];
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+        glTextureStorage2D(tex, 1, GL_DEPTH_COMPONENT32F, width, height);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, tex, 0);
     }
 
     GLuint _fbo {0};

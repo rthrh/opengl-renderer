@@ -51,7 +51,7 @@ inline std::vector<unsigned int> floor_indices = {
 
 // full screen quad
 inline float quad_vertices[] = {
-    // pos          // uv
+    // pos        // uv
    -1.0f,  1.0f,  0.0f, 1.0f,
    -1.0f, -1.0f,  0.0f, 0.0f,
     1.0f,  1.0f,  1.0f, 1.0f,

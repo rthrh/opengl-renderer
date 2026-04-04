@@ -230,8 +230,10 @@ int main()
 
 
         // TODO g-buffer stuff
-        //renderer.PassGeometry(scene, gBufferShader);
+        gBufferShader.Activate();
+        renderer.PassGeometry(scene, gBufferShader);
         // render scene
+        lightingShader.Activate();
         renderer.Render(scene, lightingShader);
 
         // Renders the ImGUI elements
