@@ -4,6 +4,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+// TODO remove these
+const unsigned int SSCR_WIDTH = 1600;
+const unsigned int SSCR_HEIGHT = 1200;
+
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
@@ -58,9 +62,12 @@ public:
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
-    {
+    glm::mat4 GetViewMatrix() {
         return glm::lookAt(Position, Position + Front, Up);
+    }
+
+    glm::mat4 GetProjectionMatrix() {
+        return glm::perspective(glm::radians(this->Zoom), (float)SSCR_WIDTH / (float)SSCR_HEIGHT, 0.1f, 100.0f); // TODO remove globals SRC WIDTH and HEIGHT
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)

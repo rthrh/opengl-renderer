@@ -26,17 +26,11 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow *window, const std::shared_ptr<Camera>&);
 
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
-
-// camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
 
 // timing
 float deltaTime = 0.0f;
@@ -45,6 +39,15 @@ float lastFrame = 0.0f;
 // wireframe
 bool wireframe = false;
 bool uiMode = false;
+
+
+struct CallbackData {
+    std::shared_ptr<Camera> cameraPtr;
+    float lastX { SCR_WIDTH / 2.0f };
+    float lastY { SCR_HEIGHT / 2.0f };
+    bool firstMouse = true;
+};
+
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_H && action == GLFW_PRESS) {
@@ -65,7 +68,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 GLFWwindow* create_glfw_window(int width, int height, const char* name)
 {
     // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -76,7 +78,6 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 #endif
 
     // glfw window creation
-    // --------------------
     //glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE); // maximize window
     GLFWwindow* window = glfwCreateWindow(width, height, name, NULL, NULL);
     if (window == NULL)
@@ -88,10 +89,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // TODO setup input in seperate class
-    // Input input;
-    // input.addKeyCallback(GLuint key, [](){});
-    // input.addFrameCallback()
+    // input callbacks
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
@@ -101,7 +99,6 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     //glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -109,7 +106,6 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     }
 
     // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
 
@@ -134,12 +130,15 @@ int main()
     fileWatcher.WatchFile(vertexPath, fileCallback);
     fileWatcher.WatchFile(fragmentPath, fileCallback);
     
-
-    Renderer renderer;
+    auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
+    Renderer renderer(camera);
     Scene scene;
     auto materialBuffer = std::make_shared<MaterialBuffer>();
     auto textureCache = std::make_shared<TextureCache>();
 
+    // App context data for callbacks
+    CallbackData callbackData {.cameraPtr{camera}};
+    glfwSetWindowUserPointer(window, &callbackData);
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //stbi_set_flip_vertically_on_load(true);
@@ -153,8 +152,6 @@ int main()
     Mesh lightCubeMesh(cube_vertices, cube_indices);
     Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
     glm::vec3 lightPos = {10.0f, 0.0f, 0.0f};
-    //lightCubeModel.Translate(lightPos);
-    //scene.AddModel(std::move(lightCubeModel));
     Mesh floorMesh(floor_vertices, floor_indices);
     Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
     floorModel.Scale({10.0f, 1.0f, 10.0f});   // make it big
@@ -167,9 +164,7 @@ int main()
     light.SetColor({0.0, 0.0, 125.0});
     light2.SetColor({0.0, 125.0, 0.0});
     light3.SetColor({125.0, 0.0, 0.0});
-    //scene.AddPointLight(std::move(light));
     scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
     scene.AddDirectionalLight(std::move(dirLight));
 
@@ -212,7 +207,7 @@ int main()
         }
         if (!guiLayer.wantCaptureKeyboard()) {
             // input
-            processInput(window);
+            processInput(window, camera);
         }
 
         // create gui items
@@ -223,11 +218,11 @@ int main()
         lightingShader.SetVec4("color", guiData.color);
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = camera->GetProjectionMatrix();
+        glm::mat4 view = camera->GetViewMatrix();
         lightingShader.SetMat4("projection", projection);
         lightingShader.SetMat4("view", view);
-        lightingShader.SetVec3("viewPos", camera.Position);
+        lightingShader.SetVec3("viewPos", camera->Position);
 
         // render scene
         renderer.Render(scene, lightingShader);
@@ -245,19 +240,19 @@ int main()
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow *window, const std::shared_ptr<Camera>& camera)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera->ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera->ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera->ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera->ProcessKeyboard(RIGHT, deltaTime);
 }
 
 
@@ -277,27 +272,29 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     if (io.WantCaptureMouse || uiMode)
         return;  // ImGui is using the mouse
 
+    auto* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
-    if (firstMouse)
+    if (data->firstMouse)
     {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+        data->lastX = xpos;
+        data->lastY = ypos;
+        data->firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float xoffset = xpos - data->lastX;
+    float yoffset = data->lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-    lastX = xpos;
-    lastY = ypos;
+    data->lastX = xpos;
+    data->lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    data->cameraPtr->ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    auto* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+    data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
 }

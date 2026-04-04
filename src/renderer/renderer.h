@@ -3,15 +3,22 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb_image.h>
+#include <memory>
 
-#include "model.h"
-#include "mesh.h"
-#include "scene.h"
+#include "renderer/model.h"
+#include "renderer/mesh.h"
+#include "renderer/scene.h"
+#include "renderer/gbuffer.h"
+#include "renderer/camera.h"
+
 #include "utils/logger.h"
 
 class Renderer {
 public:
-    Renderer() = default;
+    explicit Renderer(std::shared_ptr<Camera> camera) :
+        _cameraPtr(std::move(camera)),
+        _gBuffer(1024, 1024) {}
+
     ~Renderer() = default;
 
     Renderer(const Renderer&) = delete;
@@ -38,12 +45,21 @@ public:
         }
     }
 
+    void PassGeometry(Scene& scene, Shader& shader) {
+        _gBuffer.BindForWriting();
+        shader.Activate();
+        shader.SetMat4("view", _cameraPtr->GetViewMatrix());
+        shader.SetMat4("projection", _cameraPtr->GetProjectionMatrix());
+
+        Render(scene, shader);
+    }
+
 private:
     void drawMesh(const Mesh& mesh, Shader& shader) const
     {
         for (const auto& texture : mesh.GetTextures())
         {
-            const uint32_t slot = static_cast<uint32_t>(texture.type);
+            const auto slot = static_cast<uint32_t>(texture.type);
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(GL_TEXTURE_2D, texture.id);
         }
@@ -52,4 +68,7 @@ private:
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndices().size()),
             GL_UNSIGNED_INT, nullptr);
     }
+
+    std::shared_ptr<Camera> _cameraPtr;
+    GBuffer _gBuffer;
 };
