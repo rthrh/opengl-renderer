@@ -3,25 +3,55 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-layout(binding = 0) uniform sampler2D gPosition;
-layout(binding = 1) uniform sampler2D gNormal;
-layout(binding = 2) uniform sampler2D gAlbedo;
-layout(binding = 3) uniform sampler2D gMaterial;
-layout(binding = 4) uniform sampler2D gDepth;
+// binding indices match GBufferPbrTextureType enum exactly
+layout(binding = 0) uniform sampler2D gPosition;  // RGB16F
+layout(binding = 1) uniform sampler2D gAlbedo;    // RGB8
+layout(binding = 2) uniform sampler2D gNormal;    // RGB16F
+layout(binding = 3) uniform sampler2D gORM;       // RGB8  r=ao g=roughness b=metallic
+layout(binding = 4) uniform sampler2D gEmissive;  // RGB16F
+layout(binding = 5) uniform sampler2D gDepth;     // DEPTH24_STENCIL8
+
+
 
 float linearizeDepth(float depth, float near, float far) {
-    float z = depth * 2.0 - 1.0; // back to NDC
+    float z = depth * 2.0 - 1.0;
     return (2.0 * near * far) / (far - near - z * (far - near));
 }
 
 void main() {
-
-        FragColor = vec4(texture(gPosition, TexCoords).rgb, 1.0);
-        FragColor = vec4(texture(gNormal, TexCoords).rgb * 0.5 + 0.5, 1.0); // remap [-1,1] to [0,1]
-        //FragColor = vec4(texture(gAlbedo, TexCoords).rgb, 1.0);
-        //FragColor = vec4(texture(gMaterial, TexCoords).rgb, 1.0);
-        //FragColor = vec4(texture(gMaterial, TexCoords).rgb, 1.0);
-        float depth = texture(gDepth, TexCoords).r;
-        float linear = linearizeDepth(depth, 0.1, 100.0) / 100.0; // normalize to [0,1]
+    int debug = 6;
+    if (debug == 0) {
+        // position — may contain large world-space values, scale down to visualize
+        vec3 pos = texture(gPosition, TexCoords).rgb;
+        FragColor = vec4(abs(pos) * 0.1, 1.0);
+    }
+    else if (debug == 1) {
+        FragColor = vec4(texture(gAlbedo, TexCoords).rgb, 1.0);
+    }
+    else if (debug == 2) {
+        vec3 N = texture(gNormal, TexCoords).rgb;
+        FragColor = vec4(N * 0.5 + 0.5, 1.0);
+    }
+    else if (debug == 3) {
+        float ao = texture(gORM, TexCoords).r;
+        FragColor = vec4(vec3(ao), 1.0);
+    }
+    else if (debug == 4) {
+        float roughness = texture(gORM, TexCoords).g;
+        FragColor = vec4(vec3(roughness), 1.0);
+    }
+    else if (debug == 5) {
+        float metallic = texture(gORM, TexCoords).b;
+        FragColor = vec4(vec3(metallic), 1.0);
+    }
+    else if (debug == 6) {
+        vec3 emissive = texture(gEmissive, TexCoords).rgb;
+        //emissive = emissive / (emissive + vec3(1.0));
+        FragColor = vec4(emissive, 1.0);
+    }
+    else if (debug == 7) {
+        float depth  = texture(gDepth, TexCoords).r;
+        float linear = linearizeDepth(depth, 0.1, 100.0) / 100.0;
         FragColor = vec4(vec3(linear), 1.0);
+    }
 }

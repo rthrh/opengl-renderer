@@ -241,10 +241,7 @@ int main()
 
         // render debug
         debugShader.Activate();
-        debugShader.SetInt("gPosition", 0);
-        debugShader.SetInt("gNormal",   1);
-        debugShader.SetInt("gAlbedo",   2);
-        debugShader.SetInt("gMaterial", 3);
+
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
         // render scene
