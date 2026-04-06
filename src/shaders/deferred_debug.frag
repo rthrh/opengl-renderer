@@ -3,7 +3,7 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-// binding indices match GBufferPbrTextureType enum exactly
+// binding indices should match GBufferPbrTextureType enum
 layout(binding = 0) uniform sampler2D gPosition;  // RGB16F
 layout(binding = 1) uniform sampler2D gAlbedo;    // RGB8
 layout(binding = 2) uniform sampler2D gNormal;    // RGB16F
@@ -19,9 +19,9 @@ float linearizeDepth(float depth, float near, float far) {
 }
 
 void main() {
-    int debug = 6;
+    int debug = 4;
     if (debug == 0) {
-        // position — may contain large world-space values, scale down to visualize
+        // position — scaled down
         vec3 pos = texture(gPosition, TexCoords).rgb;
         FragColor = vec4(abs(pos) * 0.1, 1.0);
     }
@@ -46,7 +46,6 @@ void main() {
     }
     else if (debug == 6) {
         vec3 emissive = texture(gEmissive, TexCoords).rgb;
-        //emissive = emissive / (emissive + vec3(1.0));
         FragColor = vec4(emissive, 1.0);
     }
     else if (debug == 7) {

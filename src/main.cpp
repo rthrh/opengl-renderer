@@ -121,16 +121,18 @@ int main()
     //Shader ourShader("shader.vs", "shader.fs");
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     std::filesystem::path pathShaders = root / "src/shaders";
-    std::filesystem::path vertexPath = pathShaders / "shader.vert";
-    std::filesystem::path fragmentPath = pathShaders / "pbr.frag";
+
+
+    std::filesystem::path vertexPath = pathShaders / "forward.vert";
+    std::filesystem::path fragmentPath = pathShaders / "forward_pbr.frag";
     Shader lightingShader(vertexPath, fragmentPath);
 
     std::filesystem::path gBufferVertPath = pathShaders / "gBuffer.vert";
     std::filesystem::path gBufferFragPath = pathShaders / "gBuffer.frag";
     Shader gBufferShader(gBufferVertPath, gBufferFragPath);
 
-    std::filesystem::path debugVertPath = pathShaders / "debug.vert";
-    std::filesystem::path debugFragPath = pathShaders / "debug.frag";
+    std::filesystem::path debugVertPath = pathShaders / "deferred.vert";
+    std::filesystem::path debugFragPath = pathShaders / "deferred_pbr.frag";
     Shader debugShader(debugVertPath, debugFragPath);
 
     // set up shader file watcher
@@ -241,8 +243,6 @@ int main()
 
         // render debug
         debugShader.Activate();
-
-
         glDrawArrays(GL_TRIANGLES, 0, 3);
         // render scene
         //lightingShader.Activate();

@@ -54,9 +54,9 @@ public:
     GBuffer& operator=(const GBuffer&) = delete;
     GBuffer(GBuffer&& o) noexcept {
         _fbo = std::exchange(o._fbo, 0);
-        _textures = std::move(o._textures);
         _width = std::exchange(o._width, 0);
         _height = std::exchange(o._height, 0);
+        _textures = std::move(o._textures);
     }
 
     GBuffer& operator=(GBuffer&& o) noexcept {
