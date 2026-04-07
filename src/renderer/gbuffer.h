@@ -91,8 +91,8 @@ private:
         glCreateTextures(GL_TEXTURE_2D, 1, &tex);
         glTextureStorage2D(tex, 1, type, width, height);
         //glTextureSubImage2D(tex, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, nullptr);        
-        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + slot, tex, 0);
     }
 

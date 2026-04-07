@@ -123,8 +123,8 @@ int main()
     std::filesystem::path pathShaders = root / "src/shaders";
 
 
-    std::filesystem::path vertexPath = pathShaders / "forward.vert";
-    std::filesystem::path fragmentPath = pathShaders / "forward_pbr.frag";
+    std::filesystem::path vertexPath = pathShaders / "deferred.vert";
+    std::filesystem::path fragmentPath = pathShaders / "deferred_pbr.frag";
     Shader lightingShader(vertexPath, fragmentPath);
 
     std::filesystem::path gBufferVertPath = pathShaders / "gBuffer.vert";
@@ -242,11 +242,12 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render debug
-        debugShader.Activate();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        //debugShader.Activate();
+        //glDrawArrays(GL_TRIANGLES, 0, 3);
         // render scene
-        //lightingShader.Activate();
+        lightingShader.Activate();
         //renderer.Render(scene, lightingShader);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // Renders the ImGUI elements
 		guiLayer.endFrame();

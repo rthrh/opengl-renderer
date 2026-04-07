@@ -3,8 +3,6 @@
 out vec4 FragColor;
 
 in vec2 TexCoords;
-in vec3 FragPos;
-in mat3 TBN;
 
 layout(std140, binding = 0) uniform DirectionalLightBlock {
     vec4 direction;
@@ -110,20 +108,23 @@ vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos,
 vec3 CalcSpotLight(SpotLight light, vec3 N, vec3 V, vec3 fragPos,
                    vec3 albedo, float metallic, float roughness, vec3 F0);
 
-
 void main() {
-    vec3  albedo    = pow(texture(albedoMap,    TexCoords).rgb, vec3(2.2)); // sRGB → linear
-    float ao        = texture(ormMap,        TexCoords).r;
-    float roughness = texture(ormMap, TexCoords).g;
-    float metallic  = texture(ormMap,  TexCoords).b;
+    vec3  albedo    = texture(albedoMap,    TexCoords).rgb;
+    vec3  orm       = texture(ormMap,      TexCoords).rgb;
+    float ao        = orm.r;
+    float roughness = orm.g;
+    float metallic  = orm.b;
     vec3  emissive  = texture(emissiveMap,  TexCoords).rgb;
     vec3 FragPos = texture(positionMap,  TexCoords).rgb;
 
-    vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;
-    vec3 N = normalize(TBN * normalSample);
+    vec3 N = normalize(texture(normalMap, TexCoords).rgb); // TODO no TBN - shall be done in g buffer?
     vec3 V = normalize(viewPos - FragPos);
-    if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
-
+    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
+    float depth = texture(depthMap, TexCoords).r;
+    if (depth == 1.0) {
+        FragColor = vec4(0.05, 0.05, 0.05, 1.0);
+        return;
+    }
 
     // F0: base reflectance
     // dielectrics: 0.04, metals: tinted by albedo
