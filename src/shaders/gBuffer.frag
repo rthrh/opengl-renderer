@@ -10,6 +10,7 @@ layout (location = 4) out vec3 gEmissive;
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+in mat3 TBN;
 
 // samplers
 layout(binding = 0) uniform sampler2D albedoMap;
@@ -21,12 +22,16 @@ layout(binding = 5) uniform sampler2D aoMap;
 
 void main() {
     float ao = texture(aoMap, TexCoords).r;
-    float roughness = texture(aoMap, TexCoords).g;
-    float metallic = texture(metallicMap, TexCoords).b;
+    float roughness = texture(roughnessMap, TexCoords).r;
+    float metallic = texture(metallicMap, TexCoords).r;
+
+    // normal map → world space via TBN
+    vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;
+    vec3 N = normalize(TBN * normalSample);
 
     gPosition = FragPos;
     gAlbedo   = texture(albedoMap, TexCoords).rgb;
-    gNormal   = normalize(Normal);
+    gNormal   = N;//normalize(Normal);
     gORM      = vec3(ao, roughness, metallic);
     gEmissive = texture(emissiveMap, TexCoords).rgb;
 }

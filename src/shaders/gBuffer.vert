@@ -7,6 +7,7 @@ layout (location = 3) in vec3 aTangent;
 out vec3 FragPos;
 out vec2 TexCoords;
 out vec3 Normal;
+out mat3 TBN;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -18,8 +19,14 @@ void main()
     FragPos = worldPos.xyz; 
     TexCoords = aTexCoords;
     
+    //mat3 normalMatrix = transpose(inverse(mat3(model)));
+    //Normal = normalMatrix * aNormal;
+
     mat3 normalMatrix = transpose(inverse(mat3(model)));
-    Normal = normalMatrix * aNormal;
+    vec3 T = normalize(normalMatrix * aTangent.xyz);
+    vec3 N = normalize(normalMatrix * aNormal);
+    vec3 B = cross(N, T);// * aTangent.w; //TODO add handness sign
+    TBN = mat3(T, B, N);
 
     gl_Position = projection * view * worldPos;
 }

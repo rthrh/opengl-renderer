@@ -37,13 +37,6 @@ layout(std140, binding = 2) uniform SpotLightBlock {
 uniform vec3 viewPos;
 
 //gbuffer
-//layout(binding = 0) uniform sampler2D albedoMap;
-//layout(binding = 1) uniform sampler2D normalMap;
-//layout(binding = 2) uniform sampler2D emissiveMap;
-//layout(binding = 3) uniform sampler2D metallicMap;
-//layout(binding = 4) uniform sampler2D roughnessMap;
-//layout(binding = 5) uniform sampler2D aoMap;
-
 layout(binding = 0) uniform sampler2D positionMap;  // RGB16F
 layout(binding = 1) uniform sampler2D albedoMap;    // RGB8
 layout(binding = 2) uniform sampler2D normalMap;    // RGB16F
