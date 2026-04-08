@@ -38,10 +38,11 @@ public:
     }
 
     void Render(Scene& scene, Shader& shader) const {
-        const auto& models = scene.GetModels();
-        for (const auto& [handle, model] : models) {
+        const auto& deferred = scene.GetQueue(Deferred);
+        for (const auto& [handle, model] : deferred) {
             Draw(model, shader);
         }
+
     }
 
     void PassGeometry(Scene& scene, Shader& shader) {
@@ -75,6 +76,4 @@ private:
 
     std::shared_ptr<Camera> _cameraPtr;
     GBuffer _gBuffer;
-    GLuint _quadVAO {0};
-
 };

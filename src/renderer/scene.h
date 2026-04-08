@@ -14,6 +14,7 @@
 
 #include "model.h"
 #include "lights.h"
+#include "render_queue.h"
 
 const int MAX_LIGHTS = 16;
 // TODO add spotlights, pointlights, skybox, etc.
@@ -64,15 +65,30 @@ class Scene {
             return index;
         }
 
-        Handle AddModel(Model model) {
+        Handle AddModel(Model model, RenderQueueType queue = Deferred) {
             Handle index = m_handleNext;
-            m_models.insert({m_handleNext, std::move(model)});
+            switch (queue)
+            {
+                case Forward:
+                    _forwardQueue.insert({m_handleNext, std::move(model)});
+                    break;
+                case Deferred:
+                    _deferredQueue.insert({m_handleNext, std::move(model)});
+                    break;
+            }
+
             m_handleNext++;
             return index;
         }
 
-        const std::unordered_map<Handle, Model>& GetModels() const {
-            return m_models;
+        const std::unordered_map<Handle, Model>& GetQueue(RenderQueueType queue) const {
+            switch (queue)
+            {
+                case Forward:
+                    return _forwardQueue;
+                case Deferred:
+                    return _deferredQueue;
+            }
         }
 
         Model& GetModel(Handle handle) {} // TODO
@@ -108,7 +124,10 @@ class Scene {
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
 
-        std::unordered_map<Handle, Model> m_models;
+        std::unordered_map<Handle, Model> _forwardQueue;
+        std::unordered_map<Handle, Model> _deferredQueue;
+
+        
         std::optional<DirectionalLightBlockGPU> m_directionalLight;
         std::vector<PointLightBlockGPU> m_pointLights;
         std::vector<SpotLightBlockGPU> m_spotLights;
