@@ -7,12 +7,14 @@
 
 class ForwardPipeline {
 public:
-    ForwardPipeline(std::shared_ptr<Shader> shader)
+    explicit ForwardPipeline(std::shared_ptr<Shader> shader)
         : _shader(std::move(shader))
     {}
 
     ForwardPipeline(const ForwardPipeline&)            = delete;
     ForwardPipeline& operator=(const ForwardPipeline&) = delete;
+    ForwardPipeline(ForwardPipeline&& other) noexcept = default;
+    ForwardPipeline& operator=(ForwardPipeline&& other) noexcept = default;
 
     void PassForward(const Scene& scene, const std::shared_ptr<Camera>& camera) {
         // TODO do transparency
@@ -30,7 +32,7 @@ public:
                 drawMesh(mesh);
         }
 
-        glDisable(GL_BLEND);
+        //glDisable(GL_BLEND);
     }
 
     void ReloadShaders() { _shader->Reload(); }
@@ -43,9 +45,7 @@ private:
             glBindTexture(GL_TEXTURE_2D, texture.id);
         }
         glBindVertexArray(mesh.GetVAO());
-        glDrawElements(GL_TRIANGLES,
-                       static_cast<GLsizei>(mesh.GetIndices().size()),
-                       GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndices().size()), GL_UNSIGNED_INT, nullptr);
     }
 
     std::shared_ptr<Shader> _shader;
