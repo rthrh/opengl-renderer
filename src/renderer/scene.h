@@ -11,6 +11,7 @@
 #include <optional>
 #include <unordered_map>
 #include <cassert>
+#include <utility>
 
 #include "model.h"
 #include "lights.h"
@@ -82,16 +83,16 @@ class Scene {
         }
 
         const std::unordered_map<Handle, Model>& GetQueue(RenderQueueType queue) const {
-            switch (queue)
-            {
+            switch (queue) {
                 case Forward:
                     return _forwardQueue;
                 case Deferred:
                     return _deferredQueue;
             }
+            std::unreachable();
         }
 
-        Model& GetModel(Handle handle) {} // TODO
+        //Model& GetModel(Handle handle) {} // TODO
 
     private:
         void InitUBO(GLuint& ubo, size_t size, int binding) {

@@ -18,6 +18,7 @@
 
 #include "renderer/material.h"
 #include "renderer/texture_cache.h"
+#include "renderer/shader_cache.h"
 
 #include "gui.h"
 #include "input.h"
@@ -118,26 +119,18 @@ int main()
     auto* window = create_glfw_window(SCR_WIDTH, SCR_HEIGHT, "opengl-model-viewer");
 
     // build and compile shaders
-    //Shader ourShader("shader.vs", "shader.fs");
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     std::filesystem::path pathShaders = root / "src/shaders";
+    ShaderCache shaderCache;
+    shaderCache.LoadDirectory(pathShaders);
 
-
-    std::filesystem::path vertexPath = pathShaders / "deferred.vert";
-    std::filesystem::path fragmentPath = pathShaders / "deferred_pbr.frag";
-    Shader lightingShader(vertexPath, fragmentPath);
-
-    std::filesystem::path gBufferVertPath = pathShaders / "gBuffer.vert";
-    std::filesystem::path gBufferFragPath = pathShaders / "gBuffer.frag";
-    Shader gBufferShader(gBufferVertPath, gBufferFragPath);
-
-    std::filesystem::path debugVertPath = pathShaders / "deferred.vert";
-    std::filesystem::path debugFragPath = pathShaders / "deferred_pbr.frag";
-    Shader debugShader(debugVertPath, debugFragPath);
+    auto deferredLightShader = shaderCache.Build("deferred", "deferred.vert", "deferred_pbr.frag");
+    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
+    auto debugShader = shaderCache.Build("deferred_debug", "deferred.vert", "deferred_pbr.frag");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
-    auto fileCallback = [&lightingShader, &gBufferShader, &debugShader](const std::filesystem::path&) { lightingShader.Reload(); gBufferShader.Reload(); debugShader.Reload();};
+    auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
     fileWatcher.WatchDirectory(pathShaders, fileCallback);
     
     auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -152,15 +145,16 @@ int main()
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //stbi_set_flip_vertically_on_load(true);
-    //Model ourModel(FileSystem::getPath("resources/backpack/backpack.obj"));
-    //Model ourModel(FileSystem::getPath("resources/barrack/Models/Obj/Barrack.obj"));
+    //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
+    //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
+    //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet.gltf";
     std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), materialBuffer, textureCache);
 
     // light cube model
     Mesh lightCubeMesh(cube_vertices, cube_indices);
-    Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
+    //Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
     glm::vec3 lightPos = {10.0f, 0.0f, 0.0f};
     Mesh floorMesh(floor_vertices, floor_indices);
     Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
@@ -224,19 +218,19 @@ int main()
         guiLayer.build(guiData);
 
         // don't forget to enable shader before setting uniforms
-        lightingShader.Activate();
-        lightingShader.SetVec4("color", guiData.color);
+        deferredLightShader->Activate();
+        deferredLightShader->SetVec4("color", guiData.color);
 
         // view/projection transformations
         glm::mat4 projection = camera->GetProjectionMatrix();
         glm::mat4 view = camera->GetViewMatrix();
-        lightingShader.SetMat4("projection", projection);
-        lightingShader.SetMat4("view", view);
-        lightingShader.SetVec3("viewPos", camera->Position);
+        deferredLightShader->SetMat4("projection", projection);
+        deferredLightShader->SetMat4("view", view);
+        deferredLightShader->SetVec3("viewPos", camera->Position);
 
 
         // TODO g-buffer stuff
-        renderer.PassGeometry(scene, gBufferShader);
+        renderer.PassGeometry(scene, *gBufferShader);
 
         renderer.BindGBuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -245,7 +239,7 @@ int main()
         //debugShader.Activate();
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         // render scene
-        lightingShader.Activate();
+        deferredLightShader->Activate();
         //renderer.Render(scene, lightingShader);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
