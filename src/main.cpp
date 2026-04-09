@@ -134,7 +134,7 @@ int main()
     fileWatcher.WatchDirectory(pathShaders, fileCallback);
     
     auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
-    Renderer renderer(camera);
+    Renderer renderer(SCR_WIDTH, SCR_HEIGHT, camera);
     Scene scene;
     auto materialBuffer = std::make_shared<MaterialBuffer>();
     auto textureCache = std::make_shared<TextureCache>();

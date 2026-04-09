@@ -82,8 +82,7 @@ private:
     // initializes all the buffer objects/arrays
     void setupMesh()
     {
-        Stopwatch stopwatch;
-        stopwatch.Start();
+        Stopwatch stopwatch("setupMesh");
 
         // create buffers/arrays
         glCreateVertexArrays(1, &_VAO);

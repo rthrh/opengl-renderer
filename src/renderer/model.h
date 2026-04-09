@@ -191,6 +191,7 @@ private:
         }
         return result;
     }
+
     std::string m_directory;
     std::vector<Mesh> m_meshes;
     glm::mat4 m_modelMatrix;

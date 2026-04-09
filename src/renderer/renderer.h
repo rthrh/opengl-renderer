@@ -12,12 +12,13 @@
 #include "renderer/camera.h"
 
 #include "utils/logger.h"
+#include "utils/stopwatch.h"
 
 class Renderer {
 public:
-    explicit Renderer(std::shared_ptr<Camera> camera) :
+    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera) :
         _cameraPtr(std::move(camera)),
-        _gBuffer(SSCR_WIDTH, SSCR_HEIGHT) {} //TODO remove SCR_WIDTH and HEIGHT
+        _gBuffer(scrWidth, scrHeight) {}
 
     ~Renderer() = default;
 
@@ -38,11 +39,18 @@ public:
     }
 
     void Render(Scene& scene, Shader& shader) const {
+        Stopwatch stopwatch("Render");
+
         const auto& deferred = scene.GetQueue(Deferred);
         for (const auto& [handle, model] : deferred) {
             Draw(model, shader);
         }
-
+        stopwatch.Stamp("Deferred");
+        const auto& forward = scene.GetQueue(Forward);
+        for (const auto& [handle, model] : forward) {
+            Draw(model, shader);
+        }
+        stopwatch.Stop("Forward");
     }
 
     void PassGeometry(Scene& scene, Shader& shader) {

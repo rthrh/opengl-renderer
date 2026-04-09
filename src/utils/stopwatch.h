@@ -1,37 +1,40 @@
+#pragma once
+
 #include <chrono>
 #include <string>
-#include <format>
-
+#include <vector>
 #include "utils/logger.h"
 
 class Stopwatch {
 public:
-    Stopwatch() : _start(std::chrono::high_resolution_clock::now()), _last(_start) {}
+    using Clock     = std::chrono::high_resolution_clock;
+    using TimePoint = Clock::time_point;
 
-    void Reset() {
-        _start = std::chrono::high_resolution_clock::now();
-        _last  = _start;
-    }
+    explicit Stopwatch(std::string label)
+        : _label(std::move(label))
+        , _start(Clock::now())
+        , _last(_start)
+    {}
 
-    void Tick() {
-        auto now   = std::chrono::high_resolution_clock::now();
-        auto delta = std::chrono::duration<double, std::micro>(now - _last).count();
-        auto total = std::chrono::duration<double, std::micro>(now - _start).count();
+    void Stamp(const std::string& stepLabel = "") {
+        auto now   = Clock::now();
+        auto delta = toMs(now - _last);
         _last      = now;
-        Info("[Tick] — delta: {:.3f} ms | total: {:.3f} us", delta, total);
+        Info("[{}] {}: {:.3f} ms", _label, stepLabel, delta);
     }
 
-    void Start() {
-        _measure_start = std::chrono::high_resolution_clock::now();
-    }
-
-    void Stop() {
-        auto delta = std::chrono::duration<double, std::micro>(std::chrono::high_resolution_clock::now() - _measure_start).count();
-        Info("[Stop] — {:.6f} us", delta);
+    void Stop(const std::string& stepLabel = "") {
+        this->Stamp(stepLabel);
+        auto total = toMs(Clock::now() - _start);
+        Info("[{}] total: {:.3f} ms", _label, total);
     }
 
 private:
-    std::chrono::high_resolution_clock::time_point _start;
-    std::chrono::high_resolution_clock::time_point _last;
-    std::chrono::high_resolution_clock::time_point _measure_start;
+    double toMs(std::chrono::nanoseconds d) {
+        return std::chrono::duration<double, std::milli>(d).count();
+    }
+
+    std::string _label;
+    TimePoint   _start;
+    TimePoint   _last;
 };
