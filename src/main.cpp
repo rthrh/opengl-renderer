@@ -29,10 +29,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window, const std::shared_ptr<Camera>&);
 
-// settings
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1200;
-
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -42,10 +38,10 @@ bool wireframe = false;
 bool uiMode = false;
 
 
-struct CallbackData {
+struct MouseCallbackData {
     std::shared_ptr<Camera> cameraPtr;
-    float lastX { SCR_WIDTH / 2.0f };
-    float lastY { SCR_HEIGHT / 2.0f };
+    float lastX; //{ SCR_WIDTH / 2.0f };
+    float lastY; //{ SCR_HEIGHT / 2.0f };
     bool firstMouse = true;
 };
 
@@ -109,14 +105,15 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     // configure global opengl state
     glEnable(GL_DEPTH_TEST);
 
-
     return window;
 }
 
 
 int main()
 {
-    auto* window = create_glfw_window(SCR_WIDTH, SCR_HEIGHT, "opengl-model-viewer");
+    const unsigned int windowWidth = 1600u;
+    const unsigned int windowHeight = 1200u;
+    auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
 
     // build and compile shaders
     std::filesystem::path root = PROJECT_SOURCE_DIR;
@@ -127,27 +124,30 @@ int main()
     auto deferredLightShader = shaderCache.Build("deferred", "deferred.vert", "deferred_pbr.frag");
     auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
     auto debugShader = shaderCache.Build("deferred_debug", "deferred.vert", "deferred_pbr.frag");
+    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
     fileWatcher.WatchDirectory(pathShaders, fileCallback);
-    
-    auto camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
-    Renderer renderer(SCR_WIDTH, SCR_HEIGHT, camera);
+
+    float aspectRatio = (float)windowWidth / (float)windowHeight;
+    auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
+
+    Renderer renderer(windowWidth, windowHeight, camera);
     Scene scene;
     auto materialBuffer = std::make_shared<MaterialBuffer>();
     auto textureCache = std::make_shared<TextureCache>();
 
     // App context data for callbacks
-    CallbackData callbackData {.cameraPtr{camera}};
+    MouseCallbackData callbackData {.cameraPtr{camera}, .lastX = windowWidth / 2.0f, .lastY = windowHeight / 2.0f };
     glfwSetWindowUserPointer(window, &callbackData);
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //stbi_set_flip_vertically_on_load(true);
     //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
     //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
-    //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet.gltf";
+    //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), materialBuffer, textureCache);
@@ -226,7 +226,7 @@ int main()
         glm::mat4 view = camera->GetViewMatrix();
         deferredLightShader->SetMat4("projection", projection);
         deferredLightShader->SetMat4("view", view);
-        deferredLightShader->SetVec3("viewPos", camera->Position);
+        deferredLightShader->SetVec3("viewPos", camera->GetPosition());
 
 
         // TODO g-buffer stuff
@@ -288,7 +288,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     if (io.WantCaptureMouse || uiMode)
         return;  // ImGui is using the mouse
 
-    auto* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+    auto* data = static_cast<MouseCallbackData*>(glfwGetWindowUserPointer(window));
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -311,6 +311,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    auto* data = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+    auto* data = static_cast<MouseCallbackData*>(glfwGetWindowUserPointer(window));
     data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
 }
