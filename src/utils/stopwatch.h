@@ -1,40 +1,49 @@
 #pragma once
 
 #include <chrono>
-#include <string>
-#include <vector>
-#include "utils/logger.h"
+#include <string_view>
+#include "logger.h"
 
 class Stopwatch {
+    using Clock = std::chrono::steady_clock; // Better for durations than high_res
+    using MS    = std::chrono::duration<double, std::milli>;
+
 public:
-    using Clock     = std::chrono::high_resolution_clock;
-    using TimePoint = Clock::time_point;
+    explicit Stopwatch(std::string_view label) : _label(label) {}
 
-    explicit Stopwatch(std::string label)
-        : _label(std::move(label))
-        , _start(Clock::now())
-        , _last(_start)
-    {}
-
-    void Stamp(const std::string& stepLabel = "") {
-        auto now   = Clock::now();
-        auto delta = toMs(now - _last);
-        _last      = now;
-        Info("[{}] {}: {:.3f} ms", _label, stepLabel, delta);
+    void Start(MS delay = MS{0}, bool oneShot = false) {
+        _start   = _last = Clock::now();
+        _delay   = delay;
+        _oneShot = oneShot;
+        _running = true;
+        _fired   = false;
     }
 
-    void Stop(const std::string& stepLabel = "") {
-        this->Stamp(stepLabel);
-        auto total = toMs(Clock::now() - _start);
-        Info("[{}] total: {:.3f} ms", _label, total);
+    void Stamp(std::string_view stepLabel = "") {
+        auto now = Clock::now();
+        if (!can_log(now)) return;
+
+        Info("[{}] {}: {:.3f} ms", _label, stepLabel, MS(now - _last).count());
+        _last = now;
+    }
+
+    void Stop(std::string_view stepLabel = "") {
+        auto now = Clock::now();
+        if (can_log(now)) {
+            Stamp(stepLabel);
+            Info("[{}] total: {:.3f} ms", _label, MS(now - _start).count());
+        }
+        _running = false;
+        if (_oneShot) _fired = true;
     }
 
 private:
-    double toMs(std::chrono::nanoseconds d) {
-        return std::chrono::duration<double, std::milli>(d).count();
+    bool can_log(Clock::time_point now) const {
+        return _running && !_fired && (now - _start) >= _delay;
     }
 
-    std::string _label;
-    TimePoint   _start;
-    TimePoint   _last;
+    std::string_view  _label;
+    Clock::time_point _start{}, _last{};
+    MS                _delay{0};
+    bool              _running{false}, _oneShot{false}, _fired{false};
 };
