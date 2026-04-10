@@ -26,6 +26,7 @@ const int MAX_LIGHTS = 16;
 class Scene {
 public:
     using Handle = uint32_t;
+    using RenderQueue = std::unordered_map<Handle, Model>;
 
     Scene() {
         this->InitUBO(m_directionalLightUBO, sizeof(DirectionalLightBlockGPU) * MAX_LIGHTS, 0);
@@ -86,7 +87,7 @@ public:
         return index;
     }
 
-    const std::unordered_map<Handle, Model>& GetQueue(RenderQueueType queue) const {
+    const RenderQueue& GetQueue(RenderQueueType queue) const {
         switch (queue) {
             case Forward:
                 return _forwardQueue;
@@ -129,8 +130,8 @@ private:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-    std::unordered_map<Handle, Model> _forwardQueue;
-    std::unordered_map<Handle, Model> _deferredQueue;
+    RenderQueue _forwardQueue;
+    RenderQueue _deferredQueue;
 
     std::optional<DirectionalLightBlockGPU> m_directionalLight;
     std::vector<PointLightBlockGPU> m_pointLights;

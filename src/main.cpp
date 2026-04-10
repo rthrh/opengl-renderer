@@ -202,7 +202,6 @@ int main()
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Tell OpenGL a new frame is about to begin
 		guiLayer.beginFrame();
 
         // handle input
@@ -217,31 +216,10 @@ int main()
         // create gui items
         guiLayer.build(guiData);
 
-        // don't forget to enable shader before setting uniforms
-        deferredLightShader->Activate();
-        deferredLightShader->SetVec4("color", guiData.color);
-
-        // view/projection transformations
-        glm::mat4 projection = camera->GetProjectionMatrix();
-        glm::mat4 view = camera->GetViewMatrix();
-        deferredLightShader->SetMat4("projection", projection);
-        deferredLightShader->SetMat4("view", view);
-        deferredLightShader->SetVec3("viewPos", camera->GetPosition());
-
-
-        // TODO g-buffer stuff
-        renderer.PassGeometry(scene, *gBufferShader);
-
-        renderer.BindGBuffer();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // render debug
-        //debugShader.Activate();
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
-        // render scene
-        deferredLightShader->Activate();
-        //renderer.Render(scene, lightingShader);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // Render scene
+        renderer.PassGeometryBuffer(scene, *gBufferShader);
+        renderer.PassDeferred(scene, *deferredLightShader);
+        renderer.PassForward(scene, *forwardShader);
 
         // Renders the ImGUI elements
 		guiLayer.endFrame();

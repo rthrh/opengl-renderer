@@ -12,20 +12,6 @@
 #include <cassert>
 
 
-static std::string ReadTextFile(const std::filesystem::path& path)
-{
-    std::ifstream file(path, std::ios::binary);
-    if (!file) 
-        throw std::runtime_error("Failed to open file: " + path.string());
-
-    std::string content;
-    content.resize(std::filesystem::file_size(path));
-
-    if (!file.read(content.data(), content.size()))
-        throw std::runtime_error("Failed to read file: " + path.string());
-
-    return content;
-}
 
 class Shader
 {
@@ -215,19 +201,6 @@ private:
         return loc;
     }
 
-    static std::string ReadTextFile(const std::filesystem::path& path)
-    {
-        std::ifstream file(path, std::ios::binary);
-        if (!file)
-            throw std::runtime_error("Failed to open file: " + path.string());
-
-        std::string content;
-        if (!file.read(content.data(), content.size()))
-            throw std::runtime_error("Failed to read file: " + path.string());
-
-        return content;
-    }
-
     static std::string PreprocessShader(std::filesystem::path path, int depth = 0) {
         if (depth > 3) throw std::runtime_error("Include limit exceeded");
 
@@ -244,5 +217,20 @@ private:
             }
         }
         return result;
+    }
+
+    static std::string ReadTextFile(const std::filesystem::path& path)
+    {
+        std::ifstream file(path, std::ios::binary);
+        if (!file) 
+            throw std::runtime_error("Failed to open file: " + path.string());
+
+        std::string content;
+        content.resize(std::filesystem::file_size(path));
+
+        if (!file.read(content.data(), content.size()))
+            throw std::runtime_error("Failed to read file: " + path.string());
+
+        return content;
     }
 };

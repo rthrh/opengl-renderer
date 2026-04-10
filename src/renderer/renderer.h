@@ -18,7 +18,11 @@ class Renderer {
 public:
     explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera) :
         _cameraPtr(std::move(camera)),
-        _gBuffer(scrWidth, scrHeight) {}
+        _gBuffer(scrWidth, scrHeight),
+        _scrWidth(scrWidth), _scrHeight(scrHeight)
+    {
+        glCreateVertexArrays(1, &_emptyVAO);
+    }
 
     ~Renderer() = default;
 
@@ -38,36 +42,48 @@ public:
         }
     }
 
-    void Render(Scene& scene, Shader& shader) const {
-        Stopwatch stopwatch("Render");
-
-        const auto& deferred = scene.GetQueue(Deferred);
-        for (const auto& [handle, model] : deferred) {
-            Draw(model, shader);
-        }
-        stopwatch.Stamp("Deferred");
-        const auto& forward = scene.GetQueue(Forward);
-        for (const auto& [handle, model] : forward) {
-            Draw(model, shader);
-        }
-        stopwatch.Stop("Forward");
-    }
-
-    void PassGeometry(Scene& scene, Shader& shader) {
+    void PassGeometryBuffer(Scene& scene, Shader& shader) {
         _gBuffer.BindForWriting();
         shader.Activate();
         shader.SetMat4("view", _cameraPtr->GetViewMatrix());
         shader.SetMat4("projection", _cameraPtr->GetProjectionMatrix());
 
-        Render(scene, shader);
+        render(scene.GetQueue(Deferred), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
     }
 
-    void BindGBuffer() {
+     void PassDeferred(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("Render");
+        //stopwatch.Start(10, true);
         _gBuffer.BindTextures();
+
+        shader.Activate();
+        shader.SetVec3("viewPos", _cameraPtr->GetPosition());
+
+        // render empty fullscreen quad
+        glDepthMask(GL_FALSE);
+        glBindVertexArray(_emptyVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDepthMask(GL_TRUE);
+
+        stopwatch.Stop("Deferred");        
+    }
+
+    void PassForward(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("Render");
+        //stopwatch.Start(10, true);
+        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight); 
+        render(scene.GetQueue(Forward), shader);
+        stopwatch.Stop("Forward");
     }
 
 private:
+    void render(const Scene::RenderQueue& renderQueue, Shader& shader) const {
+        for (const auto& [handle, model] : renderQueue) {
+            Draw(model, shader);
+        }
+    }
+
     void drawMesh(const Mesh& mesh, Shader& shader) const
     {
         for (const auto& texture : mesh.GetTextures())
@@ -84,4 +100,6 @@ private:
 
     std::shared_ptr<Camera> _cameraPtr;
     GBuffer _gBuffer;
+    GLuint _emptyVAO {0};
+    int _scrWidth, _scrHeight;
 };
