@@ -30,8 +30,8 @@ void main() {
     vec3 N = normalize(TBN * normalSample);
 
     gPosition = FragPos;
-    gAlbedo   = texture(albedoMap, TexCoords).rgb;
+    gAlbedo = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
     gNormal   = N;//normalize(Normal);
     gORM      = vec3(ao, roughness, metallic);
-    gEmissive = texture(emissiveMap, TexCoords).rgb;
+    gEmissive = pow(texture(emissiveMap, TexCoords).rgb, vec3(2.2));
 }

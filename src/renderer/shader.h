@@ -149,64 +149,52 @@ public:
         glUseProgram(m_ID); 
     }
 
-    // Utility uniform functions
-    // ------------------------------------------------------------------------
-    void SetBool(const std::string &name, bool value) const
-    {         
+    // Uniform setters
+    void SetBool(const std::string &name, bool value) const {         
         glUniform1i(this->GetLocation(name), (int)value); 
     }
 
-    void SetInt(const std::string &name, int value) const
-    { 
+    void SetInt(const std::string &name, int value) const { 
         glUniform1i(this->GetLocation(name), value); 
     }
 
-    void SetFloat(const std::string &name, float value) const
-    { 
+    void SetFloat(const std::string &name, float value) const { 
         glUniform1f(this->GetLocation(name), value); 
     }
 
-    void SetVec2(const std::string &name, const glm::vec2 &value) const
-    { 
+    void SetVec2(const std::string &name, const glm::vec2 &value) const { 
         glUniform2fv(this->GetLocation(name), 1, &value[0]); 
     }
 
-    void SetVec2(const std::string &name, float x, float y) const
-    { 
+    void SetVec2(const std::string &name, float x, float y) const { 
         glUniform2f(this->GetLocation(name), x, y); 
     }
 
-    void SetVec3(const std::string &name, const glm::vec3 &value) const
-    { 
+    void SetVec3(const std::string &name, const glm::vec3 &value) const { 
         glUniform3fv(this->GetLocation(name), 1, &value[0]); 
     }
 
-    void SetVec3(const std::string &name, float x, float y, float z) const
-    { 
+    void SetVec3(const std::string &name, float x, float y, float z) const { 
         glUniform3f(this->GetLocation(name), x, y, z); 
     }
 
-    void SetVec4(const std::string &name, const glm::vec4 &value) const
-    { 
+    void SetVec4(const std::string &name, const glm::vec4 &value) const { 
         glUniform4fv(this->GetLocation(name), 1, &value[0]); 
     }
-    void SetVec4(const std::string &name, float x, float y, float z, float w) const
-    { 
+
+    void SetVec4(const std::string &name, float x, float y, float z, float w) const { 
         glUniform4f(this->GetLocation(name), x, y, z, w); 
     }
 
-    void SetMat2(const std::string &name, const glm::mat2 &mat) const
-    {
+    void SetMat2(const std::string &name, const glm::mat2 &mat) const {
         glUniformMatrix2fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
 
-    void SetMat3(const std::string &name, const glm::mat3 &mat) const
-    {
+    void SetMat3(const std::string &name, const glm::mat3 &mat) const {
         glUniformMatrix3fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
 
-    void SetMat4(const std::string &name, const glm::mat4 &mat) const
-    {
+    void SetMat4(const std::string &name, const glm::mat4 &mat) const {
         glUniformMatrix4fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
 
@@ -225,5 +213,36 @@ private:
         GLint loc = glGetUniformLocation(m_ID, name.c_str());
         m_uniformMap[name] = loc;
         return loc;
+    }
+
+    static std::string ReadTextFile(const std::filesystem::path& path)
+    {
+        std::ifstream file(path, std::ios::binary);
+        if (!file)
+            throw std::runtime_error("Failed to open file: " + path.string());
+
+        std::string content;
+        if (!file.read(content.data(), content.size()))
+            throw std::runtime_error("Failed to read file: " + path.string());
+
+        return content;
+    }
+
+    static std::string PreprocessShader(std::filesystem::path path, int depth = 0) {
+        if (depth > 3) throw std::runtime_error("Include limit exceeded");
+
+        std::ifstream file(path);
+        std::string line, result, tag, name;
+
+        while (std::getline(file, line)) {
+            std::istringstream ss(line);
+            // extract filename
+            if (ss >> tag && tag == "#include" && ss >> std::quoted(name)) {
+                result += PreprocessShader(path.parent_path() / name, depth + 1) + "\n";
+            } else {
+                result += line + "\n";
+            }
+        }
+        return result;
     }
 };
