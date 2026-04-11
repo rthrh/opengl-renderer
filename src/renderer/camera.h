@@ -67,6 +67,10 @@ public:
         return glm::perspective(glm::radians(this->_zoom), _aspectRatio, 0.1f, 100.0f);
     }
 
+    float GetZoom() {
+        return _zoom;
+    }
+
     void ProcessKeyboard(CameraMovement direction, float deltaTime)
     {
         float velocity = _movementSpeed * deltaTime;

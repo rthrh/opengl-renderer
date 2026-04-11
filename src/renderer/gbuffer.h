@@ -83,6 +83,11 @@ public:
     void BlitFramebuffer(GLuint targetFBO, int targetWidth, int targetHeight) const {
         //glBlitNamedFramebuffer(fbo_src, fbo_dst, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
         glBlitNamedFramebuffer(_fbo, targetFBO, 0, 0, _width, _height, 0, 0, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST); // TODO NEAREST for depth blits?
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            Error("BlitFramebuffer: {}", err);
+            throw std::runtime_error("glBlitNamedFramebuffer : " + err);
+        }
     }
 
 private:
@@ -99,8 +104,8 @@ private:
     void createDepthTexture(int width, int height, GLuint slot) {
         auto& tex = _textures[slot];
         glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-        glTextureStorage2D(tex, 1, GL_DEPTH_COMPONENT32F, width, height);
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, tex, 0);
+        glTextureStorage2D(tex, 1, GL_DEPTH24_STENCIL8, width, height);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_STENCIL_ATTACHMENT, tex, 0);
     }
 
     GLuint _fbo {0};

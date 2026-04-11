@@ -131,6 +131,9 @@ int main()
     auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
     auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
 
+    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
+    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
+
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
@@ -186,6 +189,23 @@ int main()
 
     scene.AddModel(std::move(ourModel), Forward);
 
+    // setup skybox rogland_clear_night_4k newport_loft.hdr
+    std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
+    //std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
+    Skybox skybox (skyboxPath.string(), *equirectShader);
+
+    // restore viewport of screen size // TODO move it somewhere?
+    int scrWidth, scrHeight;
+    glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
+    glViewport(0, 0, scrWidth, scrHeight);
+
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera->GetZoom()), (float)scrWidth / (float)scrHeight, 0.1f, 100.0f);
+    //pbrShader.use();
+    //pbrShader.setMat4("projection", projection);
+    skyboxShader->Activate();
+    skyboxShader->SetMat4("projection", projection);
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -221,6 +241,7 @@ int main()
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
+        renderer.PassSkybox(skybox, *skyboxShader);
 
         // Renders the ImGUI elements
 		guiLayer.endFrame();

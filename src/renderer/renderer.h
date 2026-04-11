@@ -10,6 +10,7 @@
 #include "renderer/scene.h"
 #include "renderer/gbuffer.h"
 #include "renderer/camera.h"
+#include "renderer/skybox.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -50,6 +51,9 @@ public:
 
         render(scene.GetQueue(Deferred), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
+        glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
+        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
+
         stopwatch.Stop("PassGeometryBuffer");
     }
 
@@ -61,10 +65,10 @@ public:
         shader.Activate();
 
         // render empty fullscreen quad
-        glDepthMask(GL_FALSE);
+        //glDepthMask(GL_FALSE);
         glBindVertexArray(_emptyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDepthMask(GL_TRUE);
+        //glDepthMask(GL_TRUE);
 
         stopwatch.Stop("PassDeferred");
     }
@@ -77,6 +81,15 @@ public:
         stopwatch.Stop("PassForward");
     }
 
+    void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
+        glDepthFunc(GL_LEQUAL);  // pass when depth equals 1.0
+        glDepthMask(GL_FALSE);   // disable depth buffer writes
+        auto view = _cameraPtr->GetViewMatrix();
+        auto projection = _cameraPtr->GetProjectionMatrix();
+        skybox.Draw(skyboxShader, view, projection);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS); // restore default
+    }
 private:
     void render(const Scene::RenderQueue& renderQueue, Shader& shader) const {
         for (const auto& [handle, model] : renderQueue) {
