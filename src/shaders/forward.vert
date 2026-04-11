@@ -11,8 +11,8 @@ out vec3 FragPos;
 out mat3 TBN;
 
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+
+#include "common/ubo.glsl"
 
 void main() {
     TexCoords = aTexCoords;
@@ -27,5 +27,5 @@ void main() {
     vec3 B = cross(aNormal, aTangent); //TODO broken handedness sign
     TBN = mat3(T, B, N);
 
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = camera.projection * camera.view * model * vec4(aPos, 1.0);
 }

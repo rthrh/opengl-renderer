@@ -9,46 +9,12 @@ in vec3 FragPos;
 in vec2 TexCoords;
 in mat3 TBN;
 
-layout(std140, binding = 0) uniform DirectionalLightBlock {
-    vec4 direction;
-    vec4 colorAndIntensity; // rgb = color, a = intensity
-};
-
-struct PointLight {
-    vec4  positionAndRange; // xyz = position, w = range
-    vec4  colorAndIntensity; // rgb = color, a = intensity
-};
-
-layout(std140, binding = 1) uniform PointLightBlock {
-    ivec4    count; // x - count
-    PointLight lights[16];
-} pointLights;
-
-
-
-struct SpotLight {
-    vec4  position;         // xyz = pos, w = unused
-    vec4  direction;        // xyz = dir, w = unused
-    vec4  colorAndIntensity; // rgb = color, a = intensity
-    float range;
-    float innerCone;        // cos(innerAngle)
-    float outerCone;        // cos(outerAngle)
-    float _pad;
-};
-
-layout(std140, binding = 2) uniform SpotLightBlock {
-    ivec4 count; // x = count
-    SpotLight lights[16];
-} spotLights;
-
-
-
-uniform vec3 viewPos;
-
 layout(binding = 0) uniform sampler2D diffuseTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D emissiveTexture;
 layout(binding = 3) uniform sampler2D specularTexture;
+
+#include "common/ubo.glsl"
 
 vec3 CalcDirectionalLight(vec3 normal, vec3 diffuseSample, vec3 specularSample, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 diffuseSample, vec3 specularSample, vec3 fragPos, vec3 viewDir);
@@ -57,7 +23,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 diffuseSample, vec3 specul
 void main() {
     // properties
     vec3 norm = normalize(Normal);
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(camera.position.xyz - FragPos);
 
     // samples
     vec3 normalSample = texture(normalTexture, TexCoords).rgb * 2.0 - 1.0;
@@ -88,9 +54,9 @@ void main() {
 }
 
 vec3 CalcDirectionalLight(vec3 N, vec3 diffuseSample, vec3 specSample, vec3 viewDir) {
-    vec3  lightColor = colorAndIntensity.rgb;
-    float intensity  = colorAndIntensity.a;
-    vec3  lightDir   = normalize(direction.xyz);
+    vec3  lightColor = dirLight.colorAndIntensity.rgb;
+    float intensity  = dirLight.colorAndIntensity.a;
+    vec3  lightDir   = normalize(dirLight.direction.xyz);
 
     // blinn-phong
     vec3 H = normalize(lightDir + viewDir);

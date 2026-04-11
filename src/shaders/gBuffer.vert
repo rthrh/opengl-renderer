@@ -11,11 +11,7 @@ out mat3 TBN;
 
 uniform mat4 model;
 
-layout(std140, binding = 3) uniform CameraBlock {
-    mat4 view;
-    mat4 projection;
-    vec4 position;   // xyz = camera world pos, w = unused
-} camera;
+#include "common/ubo.glsl"
 
 void main()
 {

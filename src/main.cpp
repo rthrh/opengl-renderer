@@ -129,6 +129,7 @@ int main()
     auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
     auto debugShader = shaderCache.Build("deferred_debug", "deferred.vert", "deferred_pbr.frag");
     auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
+    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
@@ -183,7 +184,7 @@ int main()
         .color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}
     };
 
-    scene.AddModel(std::move(ourModel));
+    scene.AddModel(std::move(ourModel), Forward);
 
     // render loop
     while (!glfwWindowShouldClose(window))
