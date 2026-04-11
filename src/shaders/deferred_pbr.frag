@@ -4,39 +4,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-layout(std140, binding = 0) uniform DirectionalLightBlock {
-    vec4 direction;
-    vec4 colorAndIntensity; // rgb = color, a = intensity
-};
-
-struct PointLight {
-    vec4 positionAndRange;  // xyz = position, w = range
-    vec4 colorAndIntensity; // rgb = color, a = intensity
-};
-
-layout(std140, binding = 1) uniform PointLightBlock {
-    ivec4      count;       // x = count
-    PointLight lights[16];
-} pointLights;
-
-struct SpotLight {
-    vec4  position;          // xyz = pos,   w = unused
-    vec4  direction;         // xyz = dir,   w = unused
-    vec4  colorAndIntensity; // rgb = color, a = intensity
-    float range;
-    float innerCone;         // cos(innerAngle)
-    float outerCone;         // cos(outerAngle)
-    float _pad;
-};
-
-layout(std140, binding = 2) uniform SpotLightBlock {
-    ivec4     count;         // x = count
-    SpotLight lights[16];
-} spotLights;
-
-uniform vec3 viewPos;
-
-//gbuffer
+//gbuffer                                           // TODO target formats
 layout(binding = 0) uniform sampler2D positionMap;  // RGB16F
 layout(binding = 1) uniform sampler2D albedoMap;    // RGB8
 layout(binding = 2) uniform sampler2D normalMap;    // RGB16F
@@ -44,74 +12,21 @@ layout(binding = 3) uniform sampler2D ormMap;       // RGB8  r=ao g=roughness b=
 layout(binding = 4) uniform sampler2D emissiveMap;  // RGB16F
 layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
-const float PI = 3.14159265359;
-
-float D_GGX(float NdotH, float roughness) {
-    float a  = roughness * roughness;
-    float a2 = a * a;
-    float d  = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
-    return a2 / (PI * d * d);
-}
-
-vec3 F_Schlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-float G_SchlickGGX(float NdotV, float roughness) {
-    float r = roughness + 1.0;
-    float k = (r * r) / 8.0;
-    return NdotV / (NdotV * (1.0 - k) + k);
-}
-
-float G_Smith(float NdotV, float NdotL, float roughness) {
-    return G_SchlickGGX(NdotV, roughness) * G_SchlickGGX(NdotL, roughness);
-}
-
-// Core BRDF — shared by all three light types
-// Takes pre-computed L (toward light) and radiance (light color * intensity * attenuation)
-vec3 CalcPBR(vec3 N, vec3 V, vec3 L,
-             vec3 albedo, float metallic, float roughness,
-             vec3 F0, vec3 radiance) {
-
-    vec3  H     = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotH = max(dot(N, H), 0.0);
-    float HdotV = max(dot(H, V), 0.0);
-
-    float D = D_GGX(NdotH, roughness);
-    vec3  F = F_Schlick(HdotV, F0);
-    float G = G_Smith(NdotV, NdotL, roughness);
-
-    vec3 specular = (D * F * G) / max(4.0 * NdotV * NdotL, 0.001);
-
-    vec3 kD      = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
-
-    return (diffuse + specular) * radiance * NdotL;
-}
-
-// Light calculation functions
-vec3 CalcDirectionalLight(vec3 N, vec3 V,
-                          vec3 albedo, float metallic, float roughness, vec3 F0);
-
-vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos,
-                    vec3 albedo, float metallic, float roughness, vec3 F0);
-
-vec3 CalcSpotLight(SpotLight light, vec3 N, vec3 V, vec3 fragPos,
-                   vec3 albedo, float metallic, float roughness, vec3 F0);
+#include "common/ubo.glsl"
+#include "common/brdf.glsl"
+#include "common/pbr_lights.glsl"
 
 void main() {
-    vec3  albedo    = texture(albedoMap,    TexCoords).rgb;
-    vec3  orm       = texture(ormMap,      TexCoords).rgb;
-    float ao        = orm.r;
+    vec3 albedo = texture(albedoMap,TexCoords).rgb;
+    vec3 orm = texture(ormMap, TexCoords).rgb;
+    float ao = orm.r;
     float roughness = orm.g;
-    float metallic  = orm.b;
-    vec3  emissive  = texture(emissiveMap,  TexCoords).rgb;
-    vec3 FragPos = texture(positionMap,  TexCoords).rgb;
+    float metallic = orm.b;
+    vec3 emissive = texture(emissiveMap, TexCoords).rgb;
+    vec3 FragPos = texture(positionMap, TexCoords).rgb;
 
-    vec3 N = normalize(texture(normalMap, TexCoords).rgb); // TODO no TBN - shall be done in g buffer?
-    vec3 V = normalize(viewPos - FragPos);
+    vec3 N = normalize(texture(normalMap, TexCoords).rgb);
+    vec3 V = normalize(camera.position.xyz - FragPos);
     //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
     float depth = texture(depthMap, TexCoords).r;
     if (depth == 1.0) {
@@ -149,54 +64,3 @@ void main() {
     FragColor = vec4(color, 1.0);
 }
 
-
-vec3 CalcDirectionalLight(vec3 N, vec3 V,
-                          vec3 albedo, float metallic, float roughness, vec3 F0) {
-    vec3  lightColor = colorAndIntensity.rgb;
-    float intensity  = colorAndIntensity.a;
-    vec3  L          = normalize(-direction.xyz); // toward light
-
-    vec3 radiance = lightColor * intensity;
-
-    return CalcPBR(N, V, L, albedo, metallic, roughness, F0, radiance);
-}
-
-vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos,
-                    vec3 albedo, float metallic, float roughness, vec3 F0) {
-    vec3  lightColor = light.colorAndIntensity.rgb;
-    float intensity  = light.colorAndIntensity.a;
-    vec3  position   = light.positionAndRange.xyz;
-    float range      = light.positionAndRange.w;
-
-    vec3  L        = normalize(position - fragPos);
-    float distance = length(position - fragPos);
-
-    float attenuation = clamp(1.0 - (distance / range), 0.0, 1.0);
-    attenuation = attenuation * attenuation;
-
-    vec3 radiance = lightColor * intensity * attenuation;
-
-    return CalcPBR(N, V, L, albedo, metallic, roughness, F0, radiance);
-}
-
-vec3 CalcSpotLight(SpotLight light, vec3 N, vec3 V, vec3 fragPos,
-                   vec3 albedo, float metallic, float roughness, vec3 F0) {
-    vec3  lightColor = light.colorAndIntensity.rgb;
-    float intensity  = light.colorAndIntensity.a;
-    vec3  position   = light.position.xyz;
-    float range      = light.range;
-
-    vec3  L        = normalize(position - fragPos);
-    float distance = length(position - fragPos);
-
-    float attenuation = clamp(1.0 - (distance / range), 0.0, 1.0);
-    attenuation = attenuation * attenuation;
-
-    float theta     = dot(L, normalize(-light.direction.xyz));
-    float epsilon   = light.innerCone - light.outerCone;
-    float spotFactor = clamp((theta - light.outerCone) / epsilon, 0.0, 1.0);
-
-    vec3 radiance = lightColor * intensity * attenuation * spotFactor;
-
-    return CalcPBR(N, V, L, albedo, metallic, roughness, F0, radiance);
-}

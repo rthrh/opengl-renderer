@@ -109,6 +109,10 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 }
 
 
+void setupScene() {
+    
+}
+
 int main()
 {
     const unsigned int windowWidth = 1600u;
@@ -152,28 +156,25 @@ int main()
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), materialBuffer, textureCache);
 
-    // light cube model
-    Mesh lightCubeMesh(cube_vertices, cube_indices);
-    //Model lightCubeModel(std::move(lightCubeMesh), materialBuffer, textureCache);
-    glm::vec3 lightPos = {10.0f, 0.0f, 0.0f};
+    // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
     Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
-    floorModel.Scale({10.0f, 1.0f, 10.0f});   // make it big
-    floorModel.Translate({0.0f, -2.0f, 0.0f}); // push it below the model
+    floorModel.Scale({10.0f, 1.0f, 10.0f});
+    floorModel.Translate({0.0f, -2.0f, 0.0f});
+
     scene.AddModel(std::move(floorModel));
 
-    PointLightBlockGPU light(lightPos);
-    PointLightBlockGPU light2({-10.0f, 0.0f, 0.0f});
-    PointLightBlockGPU light3({0.0f, 10.0f, 0.0f});
-    light.SetColor({0.0, 0.0, 125.0});
-    light2.SetColor({0.0, 125.0, 0.0});
-    light3.SetColor({125.0, 0.0, 0.0});
-    scene.AddPointLight(std::move(light2));
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
-    scene.AddDirectionalLight(std::move(dirLight));
+    auto light1 = PointLightBlockGPU({10,0,0}).SetColor({0,0,125});
+    auto light2 = PointLightBlockGPU({-10,0,0}).SetColor({0,125,0});
+    auto light3 = PointLightBlockGPU({10,10,0}).SetColor({125,0,0});
 
-    SpotLightBlockGPU spotLight1({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, -1.0f});
-    spotLight1.SetColor({0.0, 0.0, 125.0});
+    auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
+
+    scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
     scene.AddSpotLight(std::move(spotLight1));
 
     // init imgui
@@ -183,8 +184,6 @@ int main()
     };
 
     scene.AddModel(std::move(ourModel));
-    //DirectionalLightBlockGPU lightDir{{1.0f, 1.0f, 0.0f}};
-    //scene.AddDirectionalLight(lightDir);
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -217,6 +216,7 @@ int main()
         guiLayer.build(guiData);
 
         // Render scene
+        camera->UploadUBO();
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

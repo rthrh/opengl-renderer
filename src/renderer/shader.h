@@ -106,8 +106,8 @@ public:
     }
 
     void Reload() {
-        const std::string vertexCode   = ReadTextFile(m_vertexPath);
-        const std::string fragmentCode = ReadTextFile(m_fragmentPath);
+        const std::string vertexCode   = ReadFile(m_vertexPath);
+        const std::string fragmentCode = ReadFile(m_fragmentPath);
         Info("Reloading {} {}", m_vertexPath.c_str(), m_fragmentPath.c_str());
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
@@ -201,7 +201,8 @@ private:
         return loc;
     }
 
-    static std::string PreprocessShader(std::filesystem::path path, int depth = 0) {
+    // Reads shader files recursively and appends content 
+    static std::string ReadFile(std::filesystem::path path, int depth = 0) {
         if (depth > 3) throw std::runtime_error("Include limit exceeded");
 
         std::ifstream file(path);
@@ -211,26 +212,11 @@ private:
             std::istringstream ss(line);
             // extract filename
             if (ss >> tag && tag == "#include" && ss >> std::quoted(name)) {
-                result += PreprocessShader(path.parent_path() / name, depth + 1) + "\n";
+                result += ReadFile(path.parent_path() / name, depth + 1) + "\n";
             } else {
                 result += line + "\n";
             }
         }
         return result;
-    }
-
-    static std::string ReadTextFile(const std::filesystem::path& path)
-    {
-        std::ifstream file(path, std::ios::binary);
-        if (!file) 
-            throw std::runtime_error("Failed to open file: " + path.string());
-
-        std::string content;
-        content.resize(std::filesystem::file_size(path));
-
-        if (!file.read(content.data(), content.size()))
-            throw std::runtime_error("Failed to read file: " + path.string());
-
-        return content;
     }
 };

@@ -10,8 +10,12 @@ out vec3 Normal;
 out mat3 TBN;
 
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+
+layout(std140, binding = 3) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec4 position;   // xyz = camera world pos, w = unused
+} camera;
 
 void main()
 {
@@ -28,5 +32,5 @@ void main()
     vec3 B = cross(N, T);// * aTangent.w; //TODO add handness sign
     TBN = mat3(T, B, N);
 
-    gl_Position = projection * view * worldPos;
+    gl_Position = camera.projection * camera.view * worldPos;
 }

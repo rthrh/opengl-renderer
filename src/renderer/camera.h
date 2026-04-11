@@ -4,9 +4,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// TODO remove these
-const unsigned int SSCR_WIDTH = 1600;
-const unsigned int SSCR_HEIGHT = 1200;
+// aligned to std140
+struct CameraUBO {
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::vec4 position;  // w - unused
+};
+
 
 enum CameraMovement {
     FORWARD,
@@ -31,14 +35,28 @@ public:
         _mouseSensitivity(0.1f),
         _zoom(45.0f)
     {
-        updateCameraVectors();
+        this->updateCameraVectors();
+        this->initUBO();
     }
 
-    ~Camera() = default;
+    ~Camera() {
+        if (_ubo) glDeleteBuffers(1, &_ubo);        
+    }
+
     Camera(const Camera&) = delete;
     Camera& operator=(const Camera&) = delete;
     Camera(Camera&&) noexcept = default;
     Camera& operator=(Camera&&) noexcept = default;
+
+    // Call every frame
+    void UploadUBO() {
+        CameraUBO data {
+            .view = GetViewMatrix(),
+            .projection = GetProjectionMatrix(),
+            .position = glm::vec4(_position, 0.0f)
+        };
+        glNamedBufferSubData(_ubo, 0, sizeof(CameraUBO), &data);
+    }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix() {
@@ -46,10 +64,9 @@ public:
     }
 
     glm::mat4 GetProjectionMatrix() {
-        return glm::perspective(glm::radians(this->_zoom), _aspectRatio, 0.1f, 100.0f); // TODO remove globals SRC WIDTH and HEIGHT
+        return glm::perspective(glm::radians(this->_zoom), _aspectRatio, 0.1f, 100.0f);
     }
 
-    // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(CameraMovement direction, float deltaTime)
     {
         float velocity = _movementSpeed * deltaTime;
@@ -82,7 +99,7 @@ public:
         }
 
         // update _front, _right and _up Vectors using the updated Euler angles
-        updateCameraVectors();
+        this->updateCameraVectors();
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
@@ -100,6 +117,12 @@ public:
     }
 
 private:
+    void initUBO() {
+        glCreateBuffers(1, &_ubo);
+        glNamedBufferData(_ubo, sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 3, _ubo); // binding point 3
+    }
+
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
     {
@@ -128,4 +151,5 @@ private:
     float _movementSpeed;
     float _mouseSensitivity;
     float _zoom;
+    GLuint _ubo;
 };

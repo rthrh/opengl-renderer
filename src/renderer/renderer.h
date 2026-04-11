@@ -43,22 +43,22 @@ public:
     }
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassGeometryBuffer");
+        stopwatch.Start();
         _gBuffer.BindForWriting();
         shader.Activate();
-        shader.SetMat4("view", _cameraPtr->GetViewMatrix());
-        shader.SetMat4("projection", _cameraPtr->GetProjectionMatrix());
 
         render(scene.GetQueue(Deferred), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
+        stopwatch.Stop("PassGeometryBuffer");
     }
 
      void PassDeferred(Scene& scene, Shader& shader) {
-        Stopwatch stopwatch("Render");
-        //stopwatch.Start(10, true);
+        Stopwatch stopwatch("PassDeferred");
+        stopwatch.Start();
         _gBuffer.BindTextures();
 
         shader.Activate();
-        shader.SetVec3("viewPos", _cameraPtr->GetPosition());
 
         // render empty fullscreen quad
         glDepthMask(GL_FALSE);
@@ -66,15 +66,15 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glDepthMask(GL_TRUE);
 
-        stopwatch.Stop("Deferred");        
+        stopwatch.Stop("PassDeferred");
     }
 
     void PassForward(Scene& scene, Shader& shader) {
-        Stopwatch stopwatch("Render");
-        //stopwatch.Start(10, true);
-        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight); 
+        Stopwatch stopwatch("PassForward");
+        stopwatch.Start();
+        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
         render(scene.GetQueue(Forward), shader);
-        stopwatch.Stop("Forward");
+        stopwatch.Stop("PassForward");
     }
 
 private:
