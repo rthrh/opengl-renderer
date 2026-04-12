@@ -13,7 +13,7 @@
 #include "renderer/model.h"
 #include "renderer/shader.h"
 #include "renderer/renderer.h"
-#include "renderer/light_cube.h"
+#include "renderer/shapes.h"
 #include "renderer/scene.h"
 
 #include "renderer/material.h"
