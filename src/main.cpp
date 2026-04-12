@@ -21,7 +21,6 @@
 #include "renderer/shader_cache.h"
 
 #include "gui.h"
-#include "input.h"
 #include "utils/file_watcher.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -134,6 +133,8 @@ int main()
     auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
     auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
 
+    auto shadowShader = shaderCache.Build("shadow", "shadow.vert", "shadow.frag");
+
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
@@ -176,10 +177,13 @@ int main()
     auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
 
     scene.AddDirectionalLight(std::move(dirLight));
-    scene.AddPointLight(std::move(light1));
-    scene.AddPointLight(std::move(light2));
-    scene.AddPointLight(std::move(light3));
-    scene.AddSpotLight(std::move(spotLight1));
+    //scene.AddPointLight(std::move(light1));
+    //scene.AddPointLight(std::move(light2));
+    //scene.AddPointLight(std::move(light3));
+    //scene.AddSpotLight(std::move(spotLight1));
+
+    // shadow map
+    ShadowMap shadowMap;
 
     // init imgui
     GuiLayer guiLayer(window);
@@ -238,6 +242,8 @@ int main()
 
         // Render scene
         camera->UploadUBO();
+
+        renderer.PassShadow(scene, *shadowShader, shadowMap);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

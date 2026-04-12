@@ -11,6 +11,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/camera.h"
 #include "renderer/skybox.h"
+#include "renderer/shadowmap.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -41,6 +42,40 @@ public:
         for (auto& mesh : meshes) {
             this->drawMesh(mesh, shader);
         }
+    }
+
+    // TODO move
+    glm::mat4 GetLightSpaceMatrix(const glm::vec3& lightDir, float nearPlane = 1.0f, float farPlane  = 50.0f, float frustumSize = 20.0f) {
+        glm::mat4 lightProj = glm::ortho(-frustumSize, frustumSize, -frustumSize, frustumSize, nearPlane, farPlane);
+        //glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0)); //TODO
+        glm::mat4 lightView = glm::lookAt(-glm::normalize(lightDir) * 20.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        return lightProj * lightView;
+    }
+
+    void PassShadow(Scene& scene, Shader& shader, ShadowMap& shadowMap) {
+
+        auto directionalLight = scene.GetDirectionalLight().value(); //TODO can be null
+        auto lightSpaceMatrix = this->GetLightSpaceMatrix(directionalLight.GetDirection());
+
+        scene.UpdateShadowMapUBO(lightSpaceMatrix);
+        shadowMap.BindTexture(7); //TODO remove magic binding slot number
+        shadowMap.BindForWriting();
+        shader.Activate();
+
+        glEnable(GL_CULL_FACE); // TODO
+        glCullFace(GL_FRONT); // TODO
+
+        for (const auto& [handle, model] : scene.GetQueue(Deferred))
+            Draw(model, shader);
+        for (const auto& [handle, model] : scene.GetQueue(Forward))
+            Draw(model, shader);
+
+        glCullFace(GL_BACK);
+        glDisable(GL_CULL_FACE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {

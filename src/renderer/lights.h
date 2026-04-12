@@ -11,54 +11,55 @@ private:
 
 struct DirectionalLightBlockGPU {
     explicit DirectionalLightBlockGPU(glm::vec3 direction, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f)
-        : m_direction{direction, 0.0f}, m_colorAndIntensity{color, intensity} {}
+        : _direction{direction, 0.0f}, _colorAndIntensity{color, intensity} {}
 
-    DirectionalLightBlockGPU& SetDirection(glm::vec3 direction) {m_direction = {direction, 0.0f}; return *this; }
-    DirectionalLightBlockGPU& SetColor(glm::vec3 color) { m_colorAndIntensity = {color, m_colorAndIntensity.a}; return *this; }
-    DirectionalLightBlockGPU& SetIntensity(float intensity) { m_colorAndIntensity.a = intensity; return *this; }
+    DirectionalLightBlockGPU& SetDirection(glm::vec3 direction) {_direction = {direction, 0.0f}; return *this; }
+    DirectionalLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
+    DirectionalLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
 
+    glm::vec3 GetDirection() { return _direction; } //TODO
 private:
-    glm::vec4 m_direction;
-    glm::vec4 m_colorAndIntensity; // rgb, a = intensity
+    glm::vec4 _direction;
+    glm::vec4 _colorAndIntensity; // rgb, a = intensity
 };
 
 
 struct PointLightBlockGPU {
     explicit PointLightBlockGPU(glm::vec3 position, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f, float range = 10.0f)
-        : m_positionAndRange{glm::vec4(position, range)}, m_colorAndIntensity{glm::vec4(color, intensity)} {}
+        : _positionAndRange{glm::vec4(position, range)}, _colorAndIntensity{glm::vec4(color, intensity)} {}
 
-    PointLightBlockGPU& SetPosition(glm::vec3 position) { m_positionAndRange = {position, m_positionAndRange.w}; return *this; }
-    PointLightBlockGPU& SetRange(float range) { m_positionAndRange.w = range; return *this; }
-    PointLightBlockGPU& SetColor(glm::vec3 color) { m_colorAndIntensity = {color, m_colorAndIntensity.a}; return *this; }
-    PointLightBlockGPU& SetIntensity(float intensity) { m_colorAndIntensity.a = intensity; return *this; }
+    PointLightBlockGPU& SetPosition(glm::vec3 position) { _positionAndRange = {position, _positionAndRange.w}; return *this; }
+    PointLightBlockGPU& SetRange(float range) { _positionAndRange.w = range; return *this; }
+    PointLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
+    PointLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
 
 private:
     // data aligned for std140
-    glm::vec4 m_positionAndRange;
-    glm::vec4 m_colorAndIntensity;
+    glm::vec4 _positionAndRange;
+    glm::vec4 _colorAndIntensity;
 };
 
 
 struct SpotLightBlockGPU {
     explicit SpotLightBlockGPU(glm::vec3 position, glm::vec3 direction, glm::vec3 color = {1.0f, 1.0f, 1.0f}, float intensity = 1.0f, float range = 10.0f, float inner = 12.5f, float outer = 15.0f)
-        : m_position{glm::vec4(position, 1.0f)}, m_direction{glm::vec4(direction, 0.0f)}, m_colorAndIntensity{glm::vec4(color, intensity)},
-          m_range(range), m_innerCone{glm::cos(glm::radians(inner))}, m_outerCone{glm::cos(glm::radians(outer))} {}
+        : _position{glm::vec4(position, 1.0f)}, _direction{glm::vec4(direction, 0.0f)}, _colorAndIntensity{glm::vec4(color, intensity)},
+          _range(range), _innerCone{glm::cos(glm::radians(inner))}, _outerCone{glm::cos(glm::radians(outer))} {}
 
-    SpotLightBlockGPU& SetPosition(glm::vec3 position) { m_position = {position, 1.0f}; return *this; }
-    SpotLightBlockGPU& SetDirection(glm::vec3 direction) {m_direction = {direction, 0.0f}; return *this; }
-    SpotLightBlockGPU& SetColor(glm::vec3 color) { m_colorAndIntensity = {color, m_colorAndIntensity.a}; return *this; }
-    SpotLightBlockGPU& SetIntensity(float intensity) { m_colorAndIntensity.a = intensity; return *this; }
-    SpotLightBlockGPU& SetRange(float range) { m_range = range; return *this; }
-    SpotLightBlockGPU& SetCone(float inner, float outer) { m_innerCone = glm::cos(glm::radians(inner)); m_outerCone = glm::cos(glm::radians(outer)); return *this; } // input values in degrees, stored as cosine
+    SpotLightBlockGPU& SetPosition(glm::vec3 position) { _position = {position, 1.0f}; return *this; }
+    SpotLightBlockGPU& SetDirection(glm::vec3 direction) { _direction = {direction, 0.0f}; return *this; }
+    SpotLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
+    SpotLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
+    SpotLightBlockGPU& SetRange(float range) { _range = range; return *this; }
+    SpotLightBlockGPU& SetCone(float inner, float outer) { _innerCone = glm::cos(glm::radians(inner)); _outerCone = glm::cos(glm::radians(outer)); return *this; } // input values in degrees, stored as cosine
 
 private:
-    glm::vec4 m_position;
-    glm::vec4 m_direction;
-    glm::vec4 m_colorAndIntensity;
-    float m_range;
-    float m_innerCone;
-    float m_outerCone;
-    float m_padding_{0.0f};
+    glm::vec4 _position;
+    glm::vec4 _direction;
+    glm::vec4 _colorAndIntensity;
+    float _range;
+    float _innerCone;
+    float _outerCone;
+    float _padding_{0.0f};
 };
 
 

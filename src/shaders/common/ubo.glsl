@@ -34,3 +34,7 @@ layout(std140, binding = 3) uniform CameraBlock {
     mat4 projection;
     vec4 position;   // xyz = camera world pos, w = unused
 } camera;
+
+layout(std140, binding = 4) uniform ShadowBlock {
+    mat4 lightSpaceMatrix;
+};

@@ -18,7 +18,7 @@ public:
     // watch a file, call callback when modified
     void WatchFile(const std::filesystem::path& path, Callback callback) {
         _files[path] = { std::filesystem::last_write_time(path), std::move(callback) };
-        std::cout << "Watching file: " << path << std::endl;
+        //std::cout << "Watching file: " << path << std::endl;
     }
 
     void WatchDirectory(const std::filesystem::path& dir, Callback callback) {
