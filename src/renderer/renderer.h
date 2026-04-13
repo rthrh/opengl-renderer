@@ -55,8 +55,9 @@ public:
 
     void PassShadow(Scene& scene, Shader& shader, ShadowMap& shadowMap) {
 
-        auto directionalLight = scene.GetDirectionalLight().value(); //TODO can be null
-        auto lightSpaceMatrix = this->GetLightSpaceMatrix(directionalLight.GetDirection());
+        auto directionalLight = scene.GetDirectionalLight();
+        auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
+        auto lightSpaceMatrix = this->GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
         shadowMap.BindTexture(7); //TODO remove magic binding slot number

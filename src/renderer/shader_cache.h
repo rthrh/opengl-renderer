@@ -26,7 +26,7 @@ public:
 
     // Loads all shader files from the provided directory path
     void LoadDirectory(const std::filesystem::path& dir) {
-        for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
             if (!entry.is_regular_file()) continue;
 
             std::string ext = entry.path().extension().string();
