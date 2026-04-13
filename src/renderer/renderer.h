@@ -11,7 +11,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/camera.h"
 #include "renderer/skybox.h"
-#include "renderer/shadowmap.h"
+#include "renderer/shadow_map.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"

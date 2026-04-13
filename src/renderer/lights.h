@@ -33,6 +33,10 @@ struct PointLightBlockGPU {
     PointLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
     PointLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
 
+    glm::vec3 GetPosition() {
+        return glm::vec3(_positionAndRange); // strip range
+    }
+
 private:
     // data aligned for std140
     glm::vec4 _positionAndRange;

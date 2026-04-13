@@ -164,21 +164,21 @@ int main()
     // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
     Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
-    floorModel.Scale({10.0f, 1.0f, 10.0f});
+    floorModel.Scale({50.0f, 1.0f, 50.0f});
     floorModel.Translate({0.0f, -2.0f, 0.0f});
 
     scene.AddModel(std::move(floorModel));
 
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
     auto light1 = PointLightBlockGPU({10,0,0}).SetColor({0,0,125});
-    auto light2 = PointLightBlockGPU({-10,0,0}).SetColor({0,125,0});
+    auto light2 = PointLightBlockGPU({-10,0,0}).SetColor({0,125,0}).SetRange(25);
     auto light3 = PointLightBlockGPU({10,10,0}).SetColor({125,0,0});
 
     auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
 
     scene.AddDirectionalLight(std::move(dirLight));
     //scene.AddPointLight(std::move(light1));
-    //scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light2));
     //scene.AddPointLight(std::move(light3));
     //scene.AddSpotLight(std::move(spotLight1));
 

@@ -68,6 +68,10 @@ public:
         return index;
     }
 
+    std::vector<PointLightBlockGPU>& GetPointLights() {
+        return m_pointLights;
+    }
+
     Handle AddSpotLight(SpotLightBlockGPU light) {
         assert(m_spotLights.size() < MAX_LIGHTS);
         Handle index = m_handleNext;

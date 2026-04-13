@@ -16,41 +16,44 @@
 class Shader
 {
 public:
-    Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath) : 
-        m_vertexPath{vertexPath},
-        m_fragmentPath{fragmentPath}
+    explicit Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath, const std::filesystem::path& geometryPath = "") : 
+        _vertexPath{vertexPath},
+        _fragmentPath{fragmentPath},
+        _geometryPath{geometryPath}
     {
         this->Reload();
     }
 
     ~Shader() {
-        glDeleteProgram(m_ID);
+        glDeleteProgram(_ID);
     }
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
     Shader(Shader&& other) noexcept
-        : m_ID(other.m_ID),
-        m_uniformMap(std::move(other.m_uniformMap)),
-        m_vertexPath(std::move(other.m_vertexPath)),
-        m_fragmentPath(std::move(other.m_fragmentPath))
+        : _ID(other._ID),
+        _uniformMap(std::move(other._uniformMap)),
+        _vertexPath(std::move(other._vertexPath)),
+        _fragmentPath(std::move(other._fragmentPath)),
+        _geometryPath(std::move(other._geometryPath))
     {
-        other.m_ID = 0;
+        other._ID = 0;
     }
 
     Shader& operator=(Shader&& other) noexcept
     {
         if (this != &other)
         {
-            glDeleteProgram(m_ID);
+            glDeleteProgram(_ID);
 
-            m_ID = other.m_ID;
-            m_uniformMap = std::move(other.m_uniformMap);
-            m_vertexPath = std::move(other.m_vertexPath);
-            m_fragmentPath = std::move(other.m_fragmentPath);
+            _ID = other._ID;
+            _uniformMap = std::move(other._uniformMap);
+            _vertexPath = std::move(other._vertexPath);
+            _fragmentPath = std::move(other._fragmentPath);
+            _geometryPath = std::move(other._geometryPath);
 
-            other.m_ID = 0;
+            other._ID = 0;
         }
         return *this;
     }
@@ -78,10 +81,12 @@ public:
         return shader;
     }
 
-    GLuint Link(GLuint vertex, GLuint fragment) {
+    GLuint Link(GLuint vertex, GLuint fragment, GLuint geometry) {
         auto ID = glCreateProgram();
         glAttachShader(ID, vertex);
         glAttachShader(ID, fragment);
+        if (geometry) glAttachShader(ID, geometry);
+
         glLinkProgram(ID);
 
         GLint success;
@@ -97,18 +102,21 @@ public:
             glDeleteProgram(ID);
             glDeleteShader(vertex);
             glDeleteShader(fragment);
+            if (geometry) glDeleteShader(geometry);
             return 0;
         }
         glDeleteShader(vertex);
         glDeleteShader(fragment);
+        if (geometry) glDeleteShader(geometry);
 
         return ID;
     }
 
     void Reload() {
-        const std::string vertexCode   = ReadFile(m_vertexPath);
-        const std::string fragmentCode = ReadFile(m_fragmentPath);
-        Info("Reloading {} {}", m_vertexPath.c_str(), m_fragmentPath.c_str());
+        const std::string vertexCode   = ReadFile(_vertexPath);
+        const std::string fragmentCode = ReadFile(_fragmentPath);
+        const std::string geometryCode = !_geometryPath.empty() ? ReadFile(_geometryPath) : "";
+        Info("Reloading {} {} {}", _vertexPath.c_str(), _fragmentPath.c_str(), geometryCode.c_str());
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
         if (!vertex)
@@ -120,19 +128,29 @@ public:
             return;
         }
 
-        auto newID = this->Link(vertex, fragment);
-        if (newID != 0) {
-            if (m_ID != 0) glDeleteProgram(m_ID);
-            m_ID = newID;
-            m_uniformMap.clear();
+        GLuint geometry = 0;
+        if (!geometryCode.empty()) {
+            geometry = Compile(GL_GEOMETRY_SHADER, geometryCode);
+            if (!geometry) {
+                glDeleteShader(fragment); // clean up previous shaders
+                glDeleteShader(vertex);
+                return;
+            }
         }
-        std::cout << "Shader reloaded" << std::endl;
+
+        auto newID = this->Link(vertex, fragment, geometry);
+        if (newID != 0) {
+            if (_ID != 0) glDeleteProgram(_ID);
+            _ID = newID;
+            _uniformMap.clear();
+        }
+        Info("Shader reloaded");
     }
 
     void Activate() const
     {
-        assert(m_ID != 0);
-        glUseProgram(m_ID); 
+        assert(_ID != 0);
+        glUseProgram(_ID); 
     }
 
     // Uniform setters
@@ -185,19 +203,20 @@ public:
     }
 
 private:
-    GLuint m_ID{0};
-    mutable std::unordered_map<std::string, GLint> m_uniformMap;
-    std::filesystem::path m_vertexPath{};
-    std::filesystem::path m_fragmentPath{};
+    GLuint _ID{0};
+    mutable std::unordered_map<std::string, GLint> _uniformMap;
+    std::filesystem::path _vertexPath{};
+    std::filesystem::path _fragmentPath{};
+    std::filesystem::path _geometryPath{};
 
     GLint GetLocation(const std::string& name) const
     {
-        if (auto it = m_uniformMap.find(name);
-            it != m_uniformMap.end())
+        if (auto it = _uniformMap.find(name);
+            it != _uniformMap.end())
             return it->second;
 
-        GLint loc = glGetUniformLocation(m_ID, name.c_str());
-        m_uniformMap[name] = loc;
+        GLint loc = glGetUniformLocation(_ID, name.c_str());
+        _uniformMap[name] = loc;
         return loc;
     }
 

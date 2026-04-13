@@ -41,10 +41,15 @@ public:
     std::shared_ptr<Shader> Build(const ShaderName& name, const FileName& vert, const FileName& frag, const FileName& geom = "") {
         auto vertPath = getFile(vert);
         auto fragPath = getFile(frag);
-
         if (!vertPath || !fragPath) throw std::runtime_error("No vert or frag shader found");
 
-        auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath);
+        std::optional<std::filesystem::path> geomPath = "";
+        if (!geom.empty()) {
+            geomPath = getFile(geom);
+            if (!geomPath) throw std::runtime_error("No geometry shader found: " + geom);
+        }
+
+        auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath, *geomPath);
         _shaders[name] = shaderPtr;
         Info("Shader built: {}, {} + {}", name, vert, frag);
         return shaderPtr;
