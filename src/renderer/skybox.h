@@ -13,6 +13,7 @@
 #include "renderer/shader.h"
 #include "utils/logger.h"
 #include "renderer/shapes.h"
+#include "renderer/texture_slots.h"
 
 class Skybox {
 public:
@@ -45,7 +46,7 @@ public:
         skyboxShader.SetMat4("view", view);
         skyboxShader.SetMat4("projection", projection);
 
-        glBindTextureUnit(6, _envCubemap); //TODO texture slot 6 for skybox
+        glBindTextureUnit(slot(SlotOther::Skybox), _envCubemap);
         renderCube();
     }
 

@@ -5,33 +5,23 @@
 #include <utility>
 
 #include "utils/logger.h"
-
-
-enum GBufferPbrTextureType {
-    Position,
-    Albedo, // RGB8
-    Normal, // RGB16F
-    ORM, // Occlussion/Rougness/Metallic RGB8
-    Emissive, // RGB16F hdr emissive
-    Depth, //DEPTH24_STENCIL8
-    EnumSize
-};
-
+#include "renderer/texture_slots.h"
 
 class GBuffer {
 public:
     explicit GBuffer(int width, int height) : _width(width), _height(height) {
         glCreateFramebuffers(1, &_fbo);
 
-        constexpr int numTextures = GBufferPbrTextureType::EnumSize;
+        // TODO source of seg fault
+        constexpr int numTextures = 6;
         _textures.resize(numTextures);
 
-        this->createTexture(width, height, Position);
-        this->createTexture(width, height, Albedo);
-        this->createTexture(width, height, Normal);
-        this->createTexture(width, height, ORM);
-        this->createTexture(width, height, Emissive);
-        this->createDepthTexture(width, height, Depth);
+        this->createTexture(width, height, slot(SlotDeferred::Position));
+        this->createTexture(width, height, slot(SlotDeferred::Albedo));
+        this->createTexture(width, height, slot(SlotDeferred::Normal));
+        this->createTexture(width, height, slot(SlotDeferred::ORM));
+        this->createTexture(width, height, slot(SlotDeferred::Emissive));
+        this->createDepthTexture(width, height, slot(SlotDeferred::Depth));
 
         std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
         glNamedFramebufferDrawBuffers(_fbo, drawBuffers.size(), drawBuffers.data());

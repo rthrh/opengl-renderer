@@ -176,11 +176,11 @@ int main()
 
     auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
 
-    //scene.AddDirectionalLight(std::move(dirLight));
-    //scene.AddPointLight(std::move(light1));
+    scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddPointLight(std::move(light1));
     scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
-    //scene.AddSpotLight(std::move(spotLight1));
+    scene.AddPointLight(std::move(light3));
+    scene.AddSpotLight(std::move(spotLight1));
 
     // shadow map
     ShadowMap shadowMap;

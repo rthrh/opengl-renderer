@@ -5,6 +5,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 //gbuffer                                           // TODO target formats
+//TODO positionMap can be reconstructed from depthMap
 layout(binding = 0) uniform sampler2D positionMap;  // RGB16F
 layout(binding = 1) uniform sampler2D albedoMap;    // RGB8
 layout(binding = 2) uniform sampler2D normalMap;    // RGB16F

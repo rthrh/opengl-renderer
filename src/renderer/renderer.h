@@ -12,6 +12,7 @@
 #include "renderer/camera.h"
 #include "renderer/skybox.h"
 #include "renderer/shadow_map.h"
+#include "renderer/texture_slots.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -60,7 +61,7 @@ public:
         auto lightSpaceMatrix = this->GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
-        shadowMap.BindTexture(7); //TODO remove magic binding slot number
+        shadowMap.BindTexture(slot(SlotOther::ShadowDirectional));
         shadowMap.BindForWriting();
         shader.Activate();
 

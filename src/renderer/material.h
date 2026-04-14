@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "renderer/texture_slots.h"
 
 
 
@@ -20,23 +21,13 @@ struct MaterialSlots {
     inline static GLuint blackDummy      = 0;
     inline static GLuint flatNormalDummy = 0;
 
-    enum TextureType : GLint
-    {
-        Albedo,
-        Normal,
-        Emissive,
-        Metallic,
-        Roughness,
-        AO
-    };
-
     void bind() const {
-        bindSlot(Albedo,    albedoMap,    whiteDummy);
-        bindSlot(Normal,    normalMap,    flatNormalDummy);
-        bindSlot(Emissive,  emissiveMap,  blackDummy);
-        bindSlot(Metallic,  metallicMap,  whiteDummy);
-        bindSlot(Roughness, roughnessMap, whiteDummy);
-        bindSlot(AO,        aoMap,        whiteDummy);
+        bindSlot(slot(SlotGeometry::Albedo),    albedoMap,    whiteDummy);
+        bindSlot(slot(SlotGeometry::Normal),    normalMap,    flatNormalDummy);
+        bindSlot(slot(SlotGeometry::Emissive),  emissiveMap,  blackDummy);
+        bindSlot(slot(SlotGeometry::Metallic),  metallicMap,  whiteDummy);
+        bindSlot(slot(SlotGeometry::Roughness), roughnessMap, whiteDummy);
+        bindSlot(slot(SlotGeometry::AO),        aoMap,        whiteDummy);
     }
 
     void initDummies() {
