@@ -132,7 +132,7 @@ int main()
     auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
     auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
 
-    auto shadowShader = shaderCache.Build("shadow", "shadow.vert", "shadow.frag");
+    auto shadowShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "shadow_directional.frag");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
@@ -181,7 +181,7 @@ int main()
     scene.AddSpotLight(std::move(spotLight1));
 
     // shadow map
-    ShadowMap shadowMap;
+    ShadowMapDirectional shadowMapDirectional;
 
     // init imgui
     GuiLayer guiLayer(window);
@@ -241,7 +241,7 @@ int main()
         // Render scene
         camera->UploadUBO();
 
-        renderer.PassShadow(scene, *shadowShader, shadowMap);
+        renderer.PassShadow(scene, *shadowShader, shadowMapDirectional);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

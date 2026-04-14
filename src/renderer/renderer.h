@@ -11,7 +11,7 @@
 #include "renderer/gbuffer.h"
 #include "renderer/camera.h"
 #include "renderer/skybox.h"
-#include "renderer/shadow_map.h"
+#include "renderer/shadow_map_directional.h"
 #include "renderer/texture_slots.h"
 
 #include "utils/logger.h"
@@ -54,14 +54,15 @@ public:
         return lightProj * lightView;
     }
 
-    void PassShadow(Scene& scene, Shader& shader, ShadowMap& shadowMap) {
+    void PassShadow(Scene& scene, Shader& shader, ShadowMapDirectional& shadowMap) {
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
         auto lightSpaceMatrix = this->GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
-        shadowMap.Bind();
+        shadowMap.BindFramebuffer();
+        shadowMap.BindTexture();
         shader.Activate();
 
         glEnable(GL_CULL_FACE); // TODO
