@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -17,7 +19,11 @@ struct DirectionalLightBlockGPU {
     DirectionalLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
     DirectionalLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
 
-    glm::vec3 GetDirection() { return _direction; } //TODO
+    // Returning vec4 as vec3 should strip w and return xyz
+    glm::vec3 GetDirection() const { return _direction; }
+    glm::vec3 GetColor() const { return _colorAndIntensity; }
+    float GetIntensity() const { return _colorAndIntensity.w; }
+
 private:
     glm::vec4 _direction;
     glm::vec4 _colorAndIntensity; // rgb, a = intensity
@@ -33,9 +39,10 @@ struct PointLightBlockGPU {
     PointLightBlockGPU& SetColor(glm::vec3 color) { _colorAndIntensity = {color, _colorAndIntensity.a}; return *this; }
     PointLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
 
-    glm::vec3 GetPosition() {
-        return glm::vec3(_positionAndRange); // strip range
-    }
+    glm::vec3 GetPosition() const { return _positionAndRange; }
+    float GetRange() const { return _positionAndRange.w; }
+    glm::vec3 GetColor() const { return _colorAndIntensity; }
+    float GetIntensity() const { return _colorAndIntensity.w; }
 
 private:
     // data aligned for std140
@@ -55,6 +62,12 @@ struct SpotLightBlockGPU {
     SpotLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
     SpotLightBlockGPU& SetRange(float range) { _range = range; return *this; }
     SpotLightBlockGPU& SetCone(float inner, float outer) { _innerCone = glm::cos(glm::radians(inner)); _outerCone = glm::cos(glm::radians(outer)); return *this; } // input values in degrees, stored as cosine
+ 
+    glm::vec3 GetPosition() const { return _position; }
+    glm::vec3 GetDirection() const { return _direction; }
+    glm::vec3 GetColor() const { return _colorAndIntensity; }
+    float GetIntensity() const { return _colorAndIntensity.w; }
+    float GetRange() const { return _range; }
 
 private:
     glm::vec4 _position;
@@ -63,7 +76,5 @@ private:
     float _range;
     float _innerCone;
     float _outerCone;
-    float _padding_{0.0f};
+    float _padding{0.0f};
 };
-
-
