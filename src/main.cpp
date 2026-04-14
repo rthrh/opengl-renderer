@@ -132,7 +132,8 @@ int main()
     auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
     auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
 
-    auto shadowShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "shadow_directional.frag");
+    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "shadow_directional.frag");
+    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
@@ -168,9 +169,9 @@ int main()
     scene.AddModel(std::move(floorModel));
 
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
-    auto light1 = PointLightBlockGPU({10,0,0}).SetColor({0,0,125});
+    auto light1 = PointLightBlockGPU({0,10,0}).SetColor({0,0,125}).SetRange(25);
     auto light2 = PointLightBlockGPU({-10,0,0}).SetColor({0,125,0}).SetRange(25);
-    auto light3 = PointLightBlockGPU({10,10,0}).SetColor({125,0,0});
+    auto light3 = PointLightBlockGPU({0,10,0}).SetColor({125,0,0});
 
     auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
 
@@ -182,6 +183,7 @@ int main()
 
     // shadow map
     ShadowMapDirectional shadowMapDirectional;
+    ShadowMapPoint shadowMapPoint;
 
     // init imgui
     GuiLayer guiLayer(window);
@@ -241,7 +243,8 @@ int main()
         // Render scene
         camera->UploadUBO();
 
-        renderer.PassShadow(scene, *shadowShader, shadowMapDirectional);
+        renderer.PassShadow(scene, *shadowDirShader, shadowMapDirectional);
+        renderer.PassPointShadow(scene, *shadowPointShader, shadowMapPoint);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

@@ -23,6 +23,7 @@ enum class SlotDeferred : GLuint {
 enum class SlotOther : GLuint {
     Skybox = 6,
     ShadowDirectional = 7,
+    ShadowPoint = 8,
 };
 
 // Helper to get GLuint from slot enum

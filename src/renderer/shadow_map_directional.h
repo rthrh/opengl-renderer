@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "renderer/camera.h"
-
+#include "renderer/texture_slots.h"
 
 class ShadowMapDirectional {
 public:

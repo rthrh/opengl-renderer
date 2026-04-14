@@ -13,7 +13,10 @@ layout(binding = 3) uniform sampler2D ormMap;       // RGB8  r=ao g=roughness b=
 layout(binding = 4) uniform sampler2D emissiveMap;  // RGB16F
 layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
-layout(binding = 7) uniform sampler2D shadowMap;
+layout(binding = 7) uniform sampler2D shadowDirMap;
+layout(binding = 8) uniform samplerCube shadowPointMap;
+
+uniform float farPlane;
 
 #include "common/ubo.glsl"
 #include "common/brdf.glsl"
@@ -34,7 +37,7 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal)
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float closestDepth = texture(shadowDirMap, projCoords.xy).r; 
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // calculate bias (based on depth map resolution and slope)
@@ -44,17 +47,37 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal)
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF 3x3 kernel
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / textureSize(shadowDirMap, 0);
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            float pcfDepth = texture(shadowDirMap, projCoords.xy + vec2(x, y) * texelSize).r; 
             shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
         }    
     }
 
     shadow /= 9.0;  
+    return shadow;
+}
+
+
+float ShadowPointLight(vec3 fragPos, vec3 lightPos)
+{
+    // get vector between fragment position and light position
+    vec3 fragToLight = fragPos - lightPos;
+    // ise the fragment to light vector to sample from the depth map    
+    float closestDepth = texture(shadowPointMap, fragToLight).r;
+    // it is currently in linear range between [0,1], let's re-transform it back to original depth value
+    closestDepth *= farPlane;
+    // now get current linear depth as the length between the fragment and light position
+    float currentDepth = length(fragToLight);
+    // test for shadows
+    float bias = 0.05; // we use a much larger bias since depth is now in [near_plane, far_plane] range
+    float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;        
+    // display closestDepth as debug (to visualize depth cubemap)
+    // FragColor = vec4(vec3(closestDepth / far_plane), 1.0);    
+        
     return shadow;
 }
 
@@ -86,9 +109,15 @@ void main() {
     Lo += CalcDirectionalLight(N, V, albedo, metallic, roughness, F0) * (1.0 - shadow);
 
     int pointCount = pointLights.count.x;
-    for (int i = 0; i < pointCount; i++)
+    for (int i = 0; i < pointCount; i++) {
+        float shadow = 0.0;
+        if (i == 0) {
+            vec3 lightPos = pointLights.lights[0].positionAndRange.xyz;
+            shadow = ShadowPointLight(FragPos, lightPos);
+        }
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,
-                             albedo, metallic, roughness, F0);
+                             albedo, metallic, roughness, F0) * (1.0 - shadow);
+    }
 
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++)

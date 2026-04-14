@@ -12,7 +12,9 @@
 #include "renderer/camera.h"
 #include "renderer/skybox.h"
 #include "renderer/shadow_map_directional.h"
+#include "renderer/shadow_map_point.h"
 #include "renderer/texture_slots.h"
+#include "renderer/math.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -22,7 +24,7 @@ public:
     explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
-        _scrWidth(scrWidth), _scrHeight(scrHeight)
+        _scrWidth(scrWidth), _scrHeight(scrHeight), _aspectRatio(static_cast<float>(scrWidth) / scrHeight)
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -45,36 +47,41 @@ public:
         }
     }
 
-    // TODO move
-    glm::mat4 GetLightSpaceMatrix(const glm::vec3& lightDir, float nearPlane = 1.0f, float farPlane  = 50.0f, float frustumSize = 20.0f) {
-        glm::mat4 lightProj = glm::ortho(-frustumSize, frustumSize, -frustumSize, frustumSize, nearPlane, farPlane);
-        //glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0)); //TODO
-        glm::mat4 lightView = glm::lookAt(-glm::normalize(lightDir) * 20.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        return lightProj * lightView;
-    }
-
     void PassShadow(Scene& scene, Shader& shader, ShadowMapDirectional& shadowMap) {
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
-        auto lightSpaceMatrix = this->GetLightSpaceMatrix(lightDir);
+        auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
         shadowMap.BindFramebuffer();
         shadowMap.BindTexture();
         shader.Activate();
 
-        glEnable(GL_CULL_FACE); // TODO
-        glCullFace(GL_FRONT); // TODO
+        this->render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Forward), shader);
 
-        for (const auto& [handle, model] : scene.GetQueue(Deferred))
-            Draw(model, shader);
-        for (const auto& [handle, model] : scene.GetQueue(Forward))
-            Draw(model, shader);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
+    }
 
-        glCullFace(GL_BACK);
-        glDisable(GL_CULL_FACE);
+    void PassPointShadow(Scene& scene, Shader& shader, ShadowMapPoint& shadowMap) {
+        auto pointLights = scene.GetPointLights();
+        auto lightPos = pointLights[0].GetPosition();
+        auto shadowMatrices = math::GetShadowMatrices(lightPos);
+        const float farPlane = 25.0f;
+
+        shadowMap.BindFramebuffer();
+        shadowMap.BindTexture();
+
+        shader.Activate(); // simpleDepthShader
+        for (unsigned int i = 0; i < 6; ++i) {
+            shader.SetMat4("shadowMatrices[" + std::to_string(i) + "]", shadowMatrices[i]);
+        }
+        shader.SetFloat("farPlane", farPlane);
+        shader.SetVec3("lightPos", lightPos);
+        this->render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Forward), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -86,7 +93,7 @@ public:
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
-        render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Deferred), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
         _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
@@ -100,7 +107,7 @@ public:
         _gBuffer.BindTextures();
 
         shader.Activate();
-
+        shader.SetFloat("farPlane", 25.0f); // TODO move it!!!
         // render empty fullscreen quad
         //glDepthMask(GL_FALSE);
         glBindVertexArray(_emptyVAO);
@@ -114,7 +121,7 @@ public:
         Stopwatch stopwatch("PassForward");
         stopwatch.Start();
         _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
-        render(scene.GetQueue(Forward), shader);
+        this->render(scene.GetQueue(Forward), shader);
         stopwatch.Stop("PassForward");
     }
 
@@ -150,6 +157,7 @@ private:
 
     std::shared_ptr<Camera> _cameraPtr;
     GBuffer _gBuffer;
-    GLuint _emptyVAO {0};
+    GLuint _emptyVAO = 0;
     int _scrWidth, _scrHeight;
+    float _aspectRatio = 0;
 };
