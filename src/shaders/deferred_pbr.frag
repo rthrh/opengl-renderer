@@ -14,9 +14,10 @@ layout(binding = 4) uniform sampler2D emissiveMap;  // RGB16F
 layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
 layout(binding = 7) uniform sampler2D shadowDirMap;
-layout(binding = 8) uniform samplerCube shadowPointMap;
+layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
 
 uniform float farPlane;
+uniform int pointShadowCount; //TODO needed? move?
 
 #include "common/ubo.glsl"
 #include "common/brdf.glsl"
@@ -62,17 +63,19 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal)
 }
 
 
-float ShadowPointLight(vec3 fragPos, vec3 lightPos)
+float ShadowPointLight(vec3 fragPos, vec3 lightPos, int lightIndex)
 {
     // get vector between fragment position and light position
     vec3 fragToLight = fragPos - lightPos;
     // ise the fragment to light vector to sample from the depth map    
-    float closestDepth = texture(shadowPointMap, fragToLight).r;
+    //float closestDepth = texture(shadowPointMaps, fragToLight).r;
+    float closestDepth = texture(shadowPointMaps, vec4(fragToLight, float(lightIndex))).r; //TODO
     // it is currently in linear range between [0,1], let's re-transform it back to original depth value
     closestDepth *= farPlane;
     // now get current linear depth as the length between the fragment and light position
     float currentDepth = length(fragToLight);
-    // test for shadows
+
+
     float bias = 0.05; // we use a much larger bias since depth is now in [near_plane, far_plane] range
     float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;        
     // display closestDepth as debug (to visualize depth cubemap)
@@ -111,10 +114,12 @@ void main() {
     int pointCount = pointLights.count.x;
     for (int i = 0; i < pointCount; i++) {
         float shadow = 0.0;
-        if (i == 0) {
-            vec3 lightPos = pointLights.lights[0].positionAndRange.xyz;
-            shadow = ShadowPointLight(FragPos, lightPos);
+        if (i < 4) { // TODO max 4 shadow casters
+            vec3 lightPos = pointLights.lights[i].positionAndRange.xyz;
+            shadow = ShadowPointLight(FragPos, lightPos, i);  
         }
+
+
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,
                              albedo, metallic, roughness, F0) * (1.0 - shadow);
     }

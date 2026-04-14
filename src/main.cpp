@@ -169,9 +169,9 @@ int main()
     scene.AddModel(std::move(floorModel));
 
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
-    auto light1 = PointLightBlockGPU({0,10,0}).SetColor({0,0,125}).SetRange(25);
-    auto light2 = PointLightBlockGPU({-10,0,0}).SetColor({0,125,0}).SetRange(25);
-    auto light3 = PointLightBlockGPU({0,10,0}).SetColor({125,0,0});
+    auto light1 = PointLightBlockGPU({0,10,0}).SetColor({0,0,255}).SetRange(25);
+    auto light2 = PointLightBlockGPU({0,10,-10}).SetColor({0,255,0}).SetRange(25);
+    auto light3 = PointLightBlockGPU({0,2,10}).SetColor({255,0,0}).SetRange(25);
 
     auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
 
@@ -180,10 +180,6 @@ int main()
     scene.AddPointLight(std::move(light2));
     scene.AddPointLight(std::move(light3));
     scene.AddSpotLight(std::move(spotLight1));
-
-    // shadow map
-    ShadowMapDirectional shadowMapDirectional;
-    ShadowMapPoint shadowMapPoint;
 
     // init imgui
     GuiLayer guiLayer(window);
@@ -243,8 +239,8 @@ int main()
         // Render scene
         camera->UploadUBO();
 
-        renderer.PassShadow(scene, *shadowDirShader, shadowMapDirectional);
-        renderer.PassPointShadow(scene, *shadowPointShader, shadowMapPoint);
+        renderer.PassShadow(scene, *shadowDirShader);
+        renderer.PassPointShadow(scene, *shadowPointShader);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

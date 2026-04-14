@@ -24,7 +24,10 @@ public:
     explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
-        _scrWidth(scrWidth), _scrHeight(scrHeight), _aspectRatio(static_cast<float>(scrWidth) / scrHeight)
+        _scrWidth(scrWidth),
+        _scrHeight(scrHeight),
+        _shadowMapDirectional(),
+        _shadowMapPoint()
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -47,15 +50,15 @@ public:
         }
     }
 
-    void PassShadow(Scene& scene, Shader& shader, ShadowMapDirectional& shadowMap) {
+    void PassShadow(Scene& scene, Shader& shader) {
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
         auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
-        shadowMap.BindFramebuffer();
-        shadowMap.BindTexture();
+        _shadowMapDirectional.BindFramebuffer();
+        _shadowMapDirectional.BindTexture();
         shader.Activate();
 
         this->render(scene.GetQueue(Deferred), shader);
@@ -65,23 +68,27 @@ public:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassPointShadow(Scene& scene, Shader& shader, ShadowMapPoint& shadowMap) {
-        auto pointLights = scene.GetPointLights();
-        auto lightPos = pointLights[0].GetPosition();
-        auto shadowMatrices = math::GetShadowMatrices(lightPos);
+    void PassPointShadow(Scene& scene, Shader& shader) {
         const float farPlane = 25.0f;
+        const auto& pointLights = scene.GetPointLights();
+        int count = pointLights.size();
 
-        shadowMap.BindFramebuffer();
-        shadowMap.BindTexture();
-
+        _shadowMapPoint.BindFramebuffer();
+        _shadowMapPoint.BindTexture();
         shader.Activate(); // simpleDepthShader
-        for (unsigned int i = 0; i < 6; ++i) {
-            shader.SetMat4("shadowMatrices[" + std::to_string(i) + "]", shadowMatrices[i]);
-        }
         shader.SetFloat("farPlane", farPlane);
-        shader.SetVec3("lightPos", lightPos);
-        this->render(scene.GetQueue(Deferred), shader);
-        this->render(scene.GetQueue(Forward), shader);
+        for (int i = 0; i < count; i++) {
+            auto lightPos = pointLights[i].GetPosition();
+            auto shadowMatrices = math::GetShadowMatrices(lightPos);
+
+            shader.SetInt("lightIndex", i);
+            shader.SetVec3("lightPos", lightPos);
+            for (unsigned int face = 0; face < 6; ++face) {
+                shader.SetMat4("shadowMatrices[" + std::to_string(face) + "]", shadowMatrices[face]);
+            }
+            this->render(scene.GetQueue(Deferred), shader);
+            this->render(scene.GetQueue(Forward), shader);
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -160,4 +167,8 @@ private:
     GLuint _emptyVAO = 0;
     int _scrWidth, _scrHeight;
     float _aspectRatio = 0;
+
+    ShadowMapDirectional _shadowMapDirectional;
+    ShadowMapPoint _shadowMapPoint;
+
 };
