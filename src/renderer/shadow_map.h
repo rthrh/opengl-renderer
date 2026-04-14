@@ -41,7 +41,12 @@ public:
     ShadowMap(const ShadowMap&) = delete;
     ShadowMap& operator=(const ShadowMap&) = delete;
 
-    void BindForWriting() const {
+    void Bind() const {
+        BindFramebuffer();
+        BindTexture(static_cast<GLuint>(SlotOther::ShadowDirectional));
+    }
+
+    void BindFramebuffer() const {
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
         glViewport(0, 0, _width, _height);
         glClear(GL_DEPTH_BUFFER_BIT);

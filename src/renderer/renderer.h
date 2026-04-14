@@ -61,8 +61,7 @@ public:
         auto lightSpaceMatrix = this->GetLightSpaceMatrix(lightDir);
 
         scene.UpdateShadowMapUBO(lightSpaceMatrix);
-        shadowMap.BindTexture(slot(SlotOther::ShadowDirectional));
-        shadowMap.BindForWriting();
+        shadowMap.Bind();
         shader.Activate();
 
         glEnable(GL_CULL_FACE); // TODO
@@ -83,7 +82,7 @@ public:
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassGeometryBuffer");
         stopwatch.Start();
-        _gBuffer.BindForWriting();
+        _gBuffer.BindFramebuffer();
         shader.Activate();
 
         render(scene.GetQueue(Deferred), shader);

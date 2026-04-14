@@ -58,7 +58,7 @@ public:
         return *this;
     }
 
-    void BindForWriting() {
+    void BindFramebuffer() {
         //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
         glViewport(0, 0, _width, _height); // will render white stripe on top without this call
