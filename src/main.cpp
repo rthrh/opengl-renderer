@@ -16,7 +16,6 @@
 #include "renderer/shapes.h"
 #include "renderer/scene.h"
 
-#include "renderer/material.h"
 #include "renderer/texture_cache.h"
 #include "renderer/shader_cache.h"
 
@@ -145,7 +144,6 @@ int main()
 
     Renderer renderer(windowWidth, windowHeight, camera);
     Scene scene;
-    auto materialBuffer = std::make_shared<MaterialBuffer>();
     auto textureCache = std::make_shared<TextureCache>();
 
     // App context data for callbacks
@@ -159,11 +157,11 @@ int main()
     //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
-    Model ourModel(absPath.string(), materialBuffer, textureCache);
+    Model ourModel(absPath.string(), textureCache);
 
     // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
-    Model floorModel(std::move(floorMesh), materialBuffer, textureCache);
+    Model floorModel(std::move(floorMesh), textureCache);
     floorModel.Scale({50.0f, 1.0f, 50.0f});
     floorModel.Translate({0.0f, -2.0f, 0.0f});
 

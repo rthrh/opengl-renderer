@@ -13,19 +13,17 @@
 #include <vector>
 
 #include "mesh.h"
-#include "material.h"
-#include "material_buffer.h"
 #include "texture_cache.h"
 
 class Model 
 {
 public:
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
-        loadModel(path, materials);
+    Model(std::string const &path,const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+        loadModel(path);
     }
 
-    Model(Mesh mesh, const std::shared_ptr<MaterialBuffer>& materials, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+    Model(Mesh mesh, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
         if (mesh.GetTextures().empty()) {
             auto dummySet = textureCache->GetDummyTextureSet();
             mesh.SetTextures(dummySet);
@@ -65,7 +63,7 @@ public:
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const &path, const std::shared_ptr<MaterialBuffer>& materials)
+    void loadModel(std::string const &path)
     {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
