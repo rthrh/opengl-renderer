@@ -32,5 +32,13 @@ namespace math {
         };
     }
 
+    // TODO check validity
+    glm::mat4 GetSpotLightSpaceMatrix(glm::vec3 position, glm::vec3 direction, float outerConeAngleDeg, float nearPlane = 0.1f, float farPlane  = 25.0f) {
+        constexpr float aspect = 1.0f;
+        glm::mat4 proj = glm::perspective(glm::radians(outerConeAngleDeg * 2.0f), aspect, nearPlane, farPlane);
+        glm::mat4 view = glm::lookAt(position, position + glm::normalize(direction), glm::vec3(0.0f, 1.0f, 0.0f));
+        return proj * view;
+    }
+
 }
 

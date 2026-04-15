@@ -6,5 +6,5 @@ uniform mat4 model;
 #include "common/ubo.glsl"
 
 void main() {
-    gl_Position = Shadow.dirLightSpaceMatrix * model * vec4(aPos, 1.0);
+    gl_Position = Shadow.spotLightSpaceMatrix * model * vec4(aPos, 1.0);
 }

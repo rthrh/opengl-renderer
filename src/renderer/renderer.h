@@ -13,6 +13,7 @@
 #include "renderer/skybox.h"
 #include "renderer/shadow_map_directional.h"
 #include "renderer/shadow_map_point.h"
+#include "renderer/shadow_map_spot.h"
 #include "renderer/texture_slots.h"
 #include "renderer/math.h"
 
@@ -27,7 +28,8 @@ public:
         _scrWidth(scrWidth),
         _scrHeight(scrHeight),
         _shadowMapDirectional(),
-        _shadowMapPoint()
+        _shadowMapPoint(),
+        _shadowMapSpot()
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -56,7 +58,9 @@ public:
         auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
         auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
 
-        scene.UpdateShadowMapUBO(lightSpaceMatrix);
+        auto lsm = scene.GetLightSpaceMatrices();
+        lsm.dirLightProjMatrix = lightSpaceMatrix;
+        scene.UpdateShadowMapUBO(lsm);
         _shadowMapDirectional.BindFramebuffer();
         _shadowMapDirectional.BindTexture();
         shader.Activate();
@@ -89,6 +93,25 @@ public:
             this->render(scene.GetQueue(Deferred), shader);
             this->render(scene.GetQueue(Forward), shader);
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
+    }
+
+    void PassShadowSpot(Scene& scene, Shader& shader) {
+        auto spotLights = scene.GetSpotLights();
+        auto light = spotLights[0];
+        auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterCone());
+
+        auto lsm = scene.GetLightSpaceMatrices();
+        lsm.spotLightProjMatrix = lightSpaceMatrix;
+        scene.UpdateShadowMapUBO(lsm);
+        _shadowMapSpot.BindFramebuffer();
+        _shadowMapSpot.BindTexture();
+        shader.Activate();
+
+        this->render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Forward), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -170,5 +193,6 @@ private:
 
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;
+    ShadowMapSpot _shadowMapSpot;
 
 };

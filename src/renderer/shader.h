@@ -116,7 +116,7 @@ public:
         const std::string vertexCode   = ReadFile(_vertexPath);
         const std::string fragmentCode = ReadFile(_fragmentPath);
         const std::string geometryCode = !_geometryPath.empty() ? ReadFile(_geometryPath) : "";
-        Info("Reloading {} {} {}", _vertexPath.c_str(), _fragmentPath.c_str(), geometryCode.c_str());
+        Info("Reloading {} {} {}", _vertexPath.c_str(), _fragmentPath.c_str(), _geometryPath.c_str());
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
         if (!vertex)

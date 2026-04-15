@@ -15,6 +15,7 @@ layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
 layout(binding = 7) uniform sampler2D shadowDirMap;
 layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
+layout(binding = 9) uniform sampler2D shadowSpotMap;
 
 uniform float farPlane;
 uniform int pointShadowCount; //TODO needed? move?
@@ -27,7 +28,7 @@ uniform int pointShadowCount; //TODO needed? move?
 float ShadowDirectionalLight(vec3 fragPos, vec3 normal)
 {
     // calc frag position in light space
-    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+    vec4 fragPosLightSpace = Shadow.dirLightSpaceMatrix * vec4(fragPos, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
@@ -84,6 +85,45 @@ float ShadowPointLight(vec3 fragPos, vec3 lightPos, int lightIndex)
     return shadow;
 }
 
+
+float ShadowSpotLight(vec3 fragPos, vec3 normal)
+{
+    // calc frag position in light space
+    vec4 fragPosLightSpace = Shadow.spotLightSpaceMatrix * vec4(fragPos, 1.0);
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+    if(projCoords.z > 1.0)
+        return 0.0;
+
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowSpotMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // calculate bias (based on depth map resolution and slope)
+    vec3 lightDir = normalize(-spotLights.lights[0].direction.xyz);
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    // check whether current frag pos is in shadow
+    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    // PCF 3x3 kernel
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowSpotMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowSpotMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
+        }    
+    }
+
+    shadow /= 9.0;  
+    return shadow;
+}
+
 void main() {
     vec3 albedo = texture(albedoMap,TexCoords).rgb;
     vec3 orm = texture(ormMap, TexCoords).rgb;
@@ -125,10 +165,11 @@ void main() {
     }
 
     int spotCount = spotLights.count.x;
-    for (int i = 0; i < spotCount; i++)
+    for (int i = 0; i < spotCount; i++) {
+        float shadow = ShadowSpotLight(FragPos, N);
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
-                            albedo, metallic, roughness, F0);
-
+                            albedo, metallic, roughness, F0) * (1.0 - shadow);
+    }
     // ambient + AO
     vec3 ambient = vec3(0.03) * albedo * ao;
 

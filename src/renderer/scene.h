@@ -14,7 +14,7 @@
 #include <utility>
 
 #include "model.h"
-#include "lights.h"
+#include "ubo.h"
 
 enum RenderQueueType {
     Forward,
@@ -32,7 +32,7 @@ public:
         this->InitUBO(m_directionalLightUBO, sizeof(DirectionalLightBlockGPU) * MAX_LIGHTS, 0);
         this->InitUBO(m_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
         this->InitUBO(m_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
-        this->InitUBO(m_shadowMapUBO, sizeof(glm::mat4), 4);
+        this->InitUBO(m_shadowMapUBO, sizeof(ShadowMapBlockGPU), 4);
     };
 
     ~Scene() {
@@ -81,6 +81,10 @@ public:
         return index;
     }
 
+    std::vector<SpotLightBlockGPU>& GetSpotLights() {
+        return m_spotLights;
+    }
+
     Handle AddModel(Model model, RenderQueueType queue = Deferred) {
         Handle index = m_handleNext;
         switch (queue)
@@ -107,11 +111,17 @@ public:
         std::unreachable();
     }
 
-    void UpdateShadowMapUBO(const glm::mat4& lightSpaceMatrix) {
+    //TODO rename to Upload? remove param?
+    void UpdateShadowMapUBO(const ShadowMapBlockGPU lightSpaceMatrix) {
+        _lightSpaceMatrices = lightSpaceMatrix;
         glBindBuffer(GL_UNIFORM_BUFFER, m_shadowMapUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &lightSpaceMatrix);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ShadowMapBlockGPU), &_lightSpaceMatrices);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
+
+    ShadowMapBlockGPU GetLightSpaceMatrices() {
+        return _lightSpaceMatrices;
+    };
 
 private:
     void InitUBO(GLuint& ubo, size_t size, int binding) {
@@ -152,6 +162,7 @@ private:
     std::optional<DirectionalLightBlockGPU> m_directionalLight;
     std::vector<PointLightBlockGPU> m_pointLights;
     std::vector<SpotLightBlockGPU> m_spotLights;
+    ShadowMapBlockGPU _lightSpaceMatrices;
 
     uint32_t m_handleNext{0};
     GLuint m_directionalLightUBO{0};

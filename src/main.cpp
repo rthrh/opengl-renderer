@@ -134,6 +134,7 @@ int main()
 
     auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "shadow_directional.frag");
     auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
+    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "shadow_directional.frag");
 
     // set up shader file watcher
     FileWatcher fileWatcher;
@@ -173,12 +174,12 @@ int main()
     auto light2 = PointLightBlockGPU({0,10,-10}).SetColor({0,255,0}).SetRange(25);
     auto light3 = PointLightBlockGPU({0,2,10}).SetColor({255,0,0}).SetRange(25);
 
-    auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, 0, -1}).SetColor({0.0, 0.0, 125.0});
+    auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, -0.2, -1}).SetColor({0.0, 0.0, 125.0}).SetRange(50.0);
 
-    scene.AddDirectionalLight(std::move(dirLight));
-    scene.AddPointLight(std::move(light1));
-    scene.AddPointLight(std::move(light2));
-    scene.AddPointLight(std::move(light3));
+    //scene.AddDirectionalLight(std::move(dirLight));
+    //scene.AddPointLight(std::move(light1));
+    //scene.AddPointLight(std::move(light2));
+    //scene.AddPointLight(std::move(light3));
     scene.AddSpotLight(std::move(spotLight1));
 
     // init imgui
@@ -241,6 +242,7 @@ int main()
 
         renderer.PassShadow(scene, *shadowDirShader);
         renderer.PassPointShadow(scene, *shadowPointShader);
+        renderer.PassShadowSpot(scene, *shadowSpotShader);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);

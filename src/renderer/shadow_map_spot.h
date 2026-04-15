@@ -10,9 +10,9 @@
 #include "camera.h"
 #include "texture_slots.h"
 
-class ShadowMapDirectional {
+class ShadowMapSpot {
 public:
-    ShadowMapDirectional(int width = 2048, int height = 2048) : 
+    ShadowMapSpot(int width = 2048, int height = 2048) : 
         _width(width), _height(height)
     {
         glCreateFramebuffers(1, &_fbo);
@@ -33,13 +33,13 @@ public:
         glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
         glNamedFramebufferReadBuffer(_fbo, GL_NONE);
     }
-    ~ShadowMapDirectional() {
+    ~ShadowMapSpot() {
         glDeleteFramebuffers(1, &_fbo);
         glDeleteTextures(1, &_depthMap);
     }
 
-    ShadowMapDirectional(const ShadowMapDirectional&) = delete;
-    ShadowMapDirectional& operator=(const ShadowMapDirectional&) = delete;
+    ShadowMapSpot(const ShadowMapSpot&) = delete;
+    ShadowMapSpot& operator=(const ShadowMapSpot&) = delete;
 
     void BindFramebuffer() const {
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
@@ -48,7 +48,7 @@ public:
     }
 
     void BindTexture() const {
-        glBindTextureUnit(slot(SlotOther::ShadowDirectional), _depthMap);
+        glBindTextureUnit(slot(SlotOther::ShadowSpot), _depthMap);
     }
 
     int GetWidth()  const { return _width; }

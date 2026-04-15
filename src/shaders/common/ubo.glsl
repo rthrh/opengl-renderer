@@ -36,5 +36,6 @@ layout(std140, binding = 3) uniform CameraBlock {
 } camera;
 
 layout(std140, binding = 4) uniform ShadowBlock {
-    mat4 lightSpaceMatrix;
-};
+    mat4 dirLightSpaceMatrix;
+    mat4 spotLightSpaceMatrix;
+} Shadow;

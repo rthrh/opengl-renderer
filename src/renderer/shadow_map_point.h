@@ -4,13 +4,13 @@
 #include <string>
 #include <stdexcept>
 
-#include "renderer/texture_slots.h"
+#include "texture_slots.h"
 
 constexpr int MAX_POINT_SHADOWS = 4;
 
 class ShadowMapPoint {
 public:
-    explicit ShadowMapPoint(int size = 1024) : _size(size) {
+    explicit ShadowMapPoint(int size = 2048) : _size(size) {
         // create depth cubemap texture
         glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_depthCubemapArray);
         glTextureStorage3D(_depthCubemapArray, 1, GL_DEPTH_COMPONENT32F,

@@ -68,6 +68,8 @@ struct SpotLightBlockGPU {
     glm::vec3 GetColor() const { return _colorAndIntensity; }
     float GetIntensity() const { return _colorAndIntensity.w; }
     float GetRange() const { return _range; }
+    float GetInnerCone() const { return _innerCone; }
+    float GetOuterCone() const { return glm::degrees(glm::acos(_outerCone)); }
 
 private:
     glm::vec4 _position;
@@ -77,4 +79,10 @@ private:
     float _innerCone;
     float _outerCone;
     float _padding{0.0f};
+};
+
+
+struct ShadowMapBlockGPU {
+    glm::mat4 dirLightProjMatrix;
+    glm::mat4 spotLightProjMatrix;
 };
