@@ -52,7 +52,7 @@ public:
         }
     }
 
-    void PassShadow(Scene& scene, Shader& shader) {
+    void PassShadowDirectional(Scene& scene, Shader& shader) {
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
@@ -99,7 +99,7 @@ public:
     }
 
     void PassShadowSpot(Scene& scene, Shader& shader) {
-        auto spotLights = scene.GetSpotLights();
+        auto& spotLights = scene.GetSpotLights();
         auto light = spotLights[0];
         auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterCone());
 

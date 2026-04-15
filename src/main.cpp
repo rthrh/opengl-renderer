@@ -174,12 +174,12 @@ int main()
     auto light2 = PointLightBlockGPU({0,10,-10}).SetColor({0,255,0}).SetRange(25);
     auto light3 = PointLightBlockGPU({0,2,10}).SetColor({255,0,0}).SetRange(25);
 
-    auto spotLight1 = SpotLightBlockGPU({0, 0, 5}, {0, -0.2, -1}).SetColor({0.0, 0.0, 125.0}).SetRange(50.0);
+    auto spotLight1 = SpotLightBlockGPU({0, 3, 6}, {0, -0.5, -1}).SetColor({0.0, 0.0, 125.0}).SetRange(25.0);
 
-    //scene.AddDirectionalLight(std::move(dirLight));
-    //scene.AddPointLight(std::move(light1));
-    //scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
+    scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
     scene.AddSpotLight(std::move(spotLight1));
 
     // init imgui
@@ -188,7 +188,7 @@ int main()
         .color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}
     };
 
-    scene.AddModel(std::move(ourModel), Forward);
+    scene.AddModel(std::move(ourModel), Deferred);
 
     // setup skybox rogland_clear_night_4k newport_loft.hdr
     std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
@@ -240,7 +240,7 @@ int main()
         // Render scene
         camera->UploadUBO();
 
-        renderer.PassShadow(scene, *shadowDirShader);
+        renderer.PassShadowDirectional(scene, *shadowDirShader);
         renderer.PassPointShadow(scene, *shadowPointShader);
         renderer.PassShadowSpot(scene, *shadowSpotShader);
         renderer.PassGeometryBuffer(scene, *gBufferShader);

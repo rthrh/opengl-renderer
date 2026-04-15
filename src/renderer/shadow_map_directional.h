@@ -12,14 +12,14 @@
 
 class ShadowMapDirectional {
 public:
-    ShadowMapDirectional(int width = 2048, int height = 2048) : 
-        _width(width), _height(height)
+    ShadowMapDirectional(int size = 2048) :
+        _size(size)
     {
         glCreateFramebuffers(1, &_fbo);
 
         // create depth texture
         glCreateTextures(GL_TEXTURE_2D, 1, &_depthMap);
-        glTextureStorage2D(_depthMap, 1, GL_DEPTH_COMPONENT32F, width, height);
+        glTextureStorage2D(_depthMap, 1, GL_DEPTH_COMPONENT32F, _size, _size);
         glTextureParameteri(_depthMap, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTextureParameteri(_depthMap, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTextureParameteri(_depthMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -43,7 +43,7 @@ public:
 
     void BindFramebuffer() const {
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
-        glViewport(0, 0, _width, _height);
+        glViewport(0, 0, _size, _size);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
 
@@ -51,13 +51,9 @@ public:
         glBindTextureUnit(slot(SlotOther::ShadowDirectional), _depthMap);
     }
 
-    int GetWidth()  const { return _width; }
-    int GetHeight() const { return _height; }
-
 private:
     GLuint _depthMap = 0;
     GLuint _fbo = 0;
     GLuint _planeVAO = 0;
-    int _width;
-    int _height;
+    int _size;
 };
