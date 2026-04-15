@@ -37,5 +37,5 @@ layout(std140, binding = 3) uniform CameraBlock {
 
 layout(std140, binding = 4) uniform ShadowBlock {
     mat4 dirLightSpaceMatrix;
-    mat4 spotLightSpaceMatrix;
+    mat4 spotLightSpaceMatrices[4]; // TODO 4 MAX move it
 } Shadow;

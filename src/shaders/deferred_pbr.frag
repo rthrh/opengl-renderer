@@ -15,7 +15,7 @@ layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
 layout(binding = 7) uniform sampler2D shadowDirMap;
 layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
-layout(binding = 9) uniform sampler2D shadowSpotMap;
+layout(binding = 9) uniform sampler2DArray shadowSpotMap;
 
 uniform float farPlane;
 
@@ -65,7 +65,7 @@ void main() {
 
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++) {
-        float shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrix);
+        float shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrices[i], i);
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
@@ -79,5 +79,6 @@ void main() {
     color = pow(color, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);
+    
 }
 

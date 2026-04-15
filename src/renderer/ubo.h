@@ -81,8 +81,8 @@ private:
     float _padding{0.0f};
 };
 
-
+const int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
 struct ShadowMapBlockGPU {
     glm::mat4 dirLightProjMatrix;
-    glm::mat4 spotLightProjMatrix;
+    glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];
 };

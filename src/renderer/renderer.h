@@ -100,19 +100,23 @@ public:
 
     void PassShadowSpot(Scene& scene, Shader& shader) {
         auto& spotLights = scene.GetSpotLights();
-        auto light = spotLights[0];
-        auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterCone());
-
-        auto lsm = scene.GetLightSpaceMatrices();
-        lsm.spotLightProjMatrix = lightSpaceMatrix;
-        scene.UpdateShadowMapUBO(lsm);
-        _shadowMapSpot.BindFramebuffer();
+        auto lsm = scene.GetLightSpaceMatrices(); //TODO remove this call
         _shadowMapSpot.BindTexture();
         shader.Activate();
+        int count = spotLights.size(); // TODO check for MAX SHADOW CASTERS
+        for (int i = 0; i < count; i++) {
+            auto& light = spotLights[i];
+            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterCone());
 
-        this->render(scene.GetQueue(Deferred), shader);
-        this->render(scene.GetQueue(Forward), shader);
+            lsm.spotLightProjMatrices[i] = lightSpaceMatrix;
+            _shadowMapSpot.BindFramebufferLayer(i);
 
+            shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
+            this->render(scene.GetQueue(Deferred), shader);
+            this->render(scene.GetQueue(Forward), shader);
+        }
+
+        scene.UpdateShadowMapUBO(lsm);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
