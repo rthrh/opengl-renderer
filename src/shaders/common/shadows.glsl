@@ -1,8 +1,8 @@
 
-float ShadowDirectionalLight(vec3 fragPos, vec3 normal)
+float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix)
 {
     // calc frag position in light space
-    vec4 fragPosLightSpace = Shadow.dirLightSpaceMatrix * vec4(fragPos, 1.0);
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
@@ -60,10 +60,10 @@ float ShadowPointLight(vec3 fragPos, vec3 lightPos, int lightIndex)
 }
 
 
-float ShadowSpotLight(vec3 fragPos, vec3 normal)
+float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix)
 {
     // calc frag position in light space
-    vec4 fragPosLightSpace = Shadow.spotLightSpaceMatrix * vec4(fragPos, 1.0);
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.

@@ -18,7 +18,6 @@ layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
 layout(binding = 9) uniform sampler2D shadowSpotMap;
 
 uniform float farPlane;
-uniform int pointShadowCount; //TODO needed? move?
 
 #include "common/ubo.glsl"
 #include "common/brdf.glsl"
@@ -49,7 +48,7 @@ void main() {
 
     // accumulate lights
     vec3 Lo = vec3(0.0);
-    float shadow = ShadowDirectionalLight(FragPos, N);
+    float shadow = ShadowDirectionalLight(FragPos, N, Shadow.dirLightSpaceMatrix);
     Lo += CalcDirectionalLight(N, V, albedo, metallic, roughness, F0) * (1.0 - shadow);
 
     int pointCount = pointLights.count.x;
@@ -60,14 +59,13 @@ void main() {
             shadow = ShadowPointLight(FragPos, lightPos, i);  
         }
 
-
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,
                              albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
 
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++) {
-        float shadow = ShadowSpotLight(FragPos, N);
+        float shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrix);
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }

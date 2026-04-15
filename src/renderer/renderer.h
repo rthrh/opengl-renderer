@@ -119,7 +119,7 @@ public:
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassGeometryBuffer");
-        stopwatch.Start();
+        //stopwatch.Start();
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
@@ -133,7 +133,7 @@ public:
 
      void PassDeferred(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassDeferred");
-        stopwatch.Start();
+        //stopwatch.Start();
         _gBuffer.BindTextures();
 
         shader.Activate();
@@ -149,7 +149,7 @@ public:
 
     void PassForward(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassForward");
-        stopwatch.Start();
+        //stopwatch.Start();
         _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
         this->render(scene.GetQueue(Forward), shader);
         stopwatch.Stop("PassForward");

@@ -29,17 +29,17 @@ public:
     using RenderQueue = std::unordered_map<Handle, Model>;
 
     Scene() {
-        this->InitUBO(m_directionalLightUBO, sizeof(DirectionalLightBlockGPU) * MAX_LIGHTS, 0);
-        this->InitUBO(m_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
-        this->InitUBO(m_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
-        this->InitUBO(m_shadowMapUBO, sizeof(ShadowMapBlockGPU), 4);
+        this->InitUBO(_directionalLightUBO, sizeof(DirectionalLightBlockGPU) * MAX_LIGHTS, 0);
+        this->InitUBO(_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
+        this->InitUBO(_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
+        this->InitUBO(_shadowMapUBO, sizeof(ShadowMapBlockGPU), 4);
     };
 
     ~Scene() {
-        glDeleteBuffers(1, &m_directionalLightUBO);
-        glDeleteBuffers(1, &m_pointLightUBO);
-        glDeleteBuffers(1, &m_spotLightUBO);
-        glDeleteBuffers(1, &m_shadowMapUBO);
+        glDeleteBuffers(1, &_directionalLightUBO);
+        glDeleteBuffers(1, &_pointLightUBO);
+        glDeleteBuffers(1, &_spotLightUBO);
+        glDeleteBuffers(1, &_shadowMapUBO);
     }
 
     Scene(const Scene&) = delete;
@@ -48,56 +48,56 @@ public:
     Scene& operator=(Scene&&) noexcept = default;
 
     Handle AddDirectionalLight(DirectionalLightBlockGPU light) {
-        Handle index = m_handleNext;
-        m_directionalLight = std::move(light);
-        m_handleNext++;
-        this->UpdateDirectionalLightUBO(m_directionalLightUBO, m_directionalLight.value());
+        Handle index = _handleNext;
+        _directionalLight = std::move(light);
+        _handleNext++;
+        this->UpdateDirectionalLightUBO(_directionalLightUBO, _directionalLight.value());
         return index;
     }
 
     std::optional<DirectionalLightBlockGPU>& GetDirectionalLight() {
-        return m_directionalLight;
+        return _directionalLight;
     }
 
     Handle AddPointLight(PointLightBlockGPU light) {
-        assert(m_pointLights.size() < MAX_LIGHTS);
-        Handle index = m_handleNext;
-        m_pointLights.emplace_back(std::move(light));
-        m_handleNext++;
-        this->UpdatePointLightsUBO(m_pointLightUBO, m_pointLights);
+        assert(_pointLights.size() < MAX_LIGHTS);
+        Handle index = _handleNext;
+        _pointLights.emplace_back(std::move(light));
+        _handleNext++;
+        this->UpdatePointLightsUBO(_pointLightUBO, _pointLights);
         return index;
     }
 
     std::vector<PointLightBlockGPU>& GetPointLights() {
-        return m_pointLights;
+        return _pointLights;
     }
 
     Handle AddSpotLight(SpotLightBlockGPU light) {
-        assert(m_spotLights.size() < MAX_LIGHTS);
-        Handle index = m_handleNext;
-        m_spotLights.emplace_back(std::move(light));
-        m_handleNext++;
-        this->UpdateSpotLightsUBO(m_spotLightUBO, m_spotLights);
+        assert(_spotLights.size() < MAX_LIGHTS);
+        Handle index = _handleNext;
+        _spotLights.emplace_back(std::move(light));
+        _handleNext++;
+        this->UpdateSpotLightsUBO(_spotLightUBO, _spotLights);
         return index;
     }
 
     std::vector<SpotLightBlockGPU>& GetSpotLights() {
-        return m_spotLights;
+        return _spotLights;
     }
 
     Handle AddModel(Model model, RenderQueueType queue = Deferred) {
-        Handle index = m_handleNext;
+        Handle index = _handleNext;
         switch (queue)
         {
             case Forward:
-                _forwardQueue.insert({m_handleNext, std::move(model)});
+                _forwardQueue.insert({_handleNext, std::move(model)});
                 break;
             case Deferred:
-                _deferredQueue.insert({m_handleNext, std::move(model)});
+                _deferredQueue.insert({_handleNext, std::move(model)});
                 break;
         }
 
-        m_handleNext++;
+        _handleNext++;
         return index;
     }
 
@@ -114,7 +114,7 @@ public:
     //TODO rename to Upload? remove param?
     void UpdateShadowMapUBO(const ShadowMapBlockGPU lightSpaceMatrix) {
         _lightSpaceMatrices = lightSpaceMatrix;
-        glBindBuffer(GL_UNIFORM_BUFFER, m_shadowMapUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, _shadowMapUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ShadowMapBlockGPU), &_lightSpaceMatrices);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
@@ -154,19 +154,17 @@ private:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-
-
     RenderQueue _forwardQueue;
     RenderQueue _deferredQueue;
 
-    std::optional<DirectionalLightBlockGPU> m_directionalLight;
-    std::vector<PointLightBlockGPU> m_pointLights;
-    std::vector<SpotLightBlockGPU> m_spotLights;
+    std::optional<DirectionalLightBlockGPU> _directionalLight;
+    std::vector<PointLightBlockGPU> _pointLights;
+    std::vector<SpotLightBlockGPU> _spotLights;
     ShadowMapBlockGPU _lightSpaceMatrices;
 
-    uint32_t m_handleNext{0};
-    GLuint m_directionalLightUBO{0};
-    GLuint m_pointLightUBO{0};
-    GLuint m_spotLightUBO{0};
-    GLuint m_shadowMapUBO{0};
+    uint32_t _handleNext{0};
+    GLuint _directionalLightUBO{0};
+    GLuint _pointLightUBO{0};
+    GLuint _spotLightUBO{0};
+    GLuint _shadowMapUBO{0};
 };

@@ -12,30 +12,31 @@
 
 class ShadowMapSpot {
 public:
-    ShadowMapSpot(int size = 2048) : 
-        _size(size)
+    ShadowMapSpot(int size = 2048, int maxShadowCasters = 4) :
+        _size(size), _maxShadowCasters(maxShadowCasters)
     {
         glCreateFramebuffers(1, &_fbo);
 
         // create depth texture
-        glCreateTextures(GL_TEXTURE_2D, 1, &_depthMap);
-        glTextureStorage2D(_depthMap, 1, GL_DEPTH_COMPONENT32F, _size, _size);
-        glTextureParameteri(_depthMap, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthMap, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(_depthMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glCreateTextures(GL_TEXTURE_2D, 1, &_depthTexture);
+        glTextureStorage2D(_depthTexture, 1, GL_DEPTH_COMPONENT32F, _size, _size);
+        glTextureParameteri(_depthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(_depthTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(_depthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTextureParameteri(_depthTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
         float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glTextureParameterfv(_depthMap, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTextureParameterfv(_depthTexture, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthMap, 0);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture, 0);
         // don't render any color data
         glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
         glNamedFramebufferReadBuffer(_fbo, GL_NONE);
     }
+
     ~ShadowMapSpot() {
         glDeleteFramebuffers(1, &_fbo);
-        glDeleteTextures(1, &_depthMap);
+        glDeleteTextures(1, &_depthTexture);
     }
 
     ShadowMapSpot(const ShadowMapSpot&) = delete;
@@ -48,12 +49,12 @@ public:
     }
 
     void BindTexture() const {
-        glBindTextureUnit(slot(SlotOther::ShadowSpot), _depthMap);
+        glBindTextureUnit(slot(SlotOther::ShadowSpot), _depthTexture);
     }
 
 private:
-    GLuint _depthMap = 0;
     GLuint _fbo = 0;
-    GLuint _planeVAO = 0;
+    GLuint _depthTexture = 0;
     int _size;
+    int _maxShadowCasters; // TODO unused yet
 };
