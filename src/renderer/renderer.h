@@ -16,6 +16,7 @@
 #include "renderer/shadow_map_spot.h"
 #include "renderer/texture_slots.h"
 #include "renderer/math.h"
+#include "renderer/bloom.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -29,7 +30,8 @@ public:
         _scrHeight(scrHeight),
         _shadowMapDirectional(),
         _shadowMapPoint(),
-        _shadowMapSpot()
+        _shadowMapSpot(),
+        _bloom(scrWidth, scrHeight)
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -130,7 +132,7 @@ public:
         this->render(scene.GetQueue(Deferred), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
-        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
+        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
 
         stopwatch.Stop("PassGeometryBuffer");
     }
@@ -139,6 +141,7 @@ public:
         Stopwatch stopwatch("PassDeferred");
         //stopwatch.Start();
         _gBuffer.BindTextures();
+        _bloom.BindHdrFramebuffer();
 
         shader.Activate();
         shader.SetFloat("farPlane", 25.0f); // TODO move it!!!
@@ -154,12 +157,15 @@ public:
     void PassForward(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassForward");
         //stopwatch.Start();
-        _gBuffer.BlitFramebuffer(0, _scrWidth, _scrHeight);
+        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
+        _bloom.BindHdrFramebuffer();
         this->render(scene.GetQueue(Forward), shader);
         stopwatch.Stop("PassForward");
     }
 
     void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
+        _bloom.BindHdrFramebuffer();
+
         glDepthFunc(GL_LEQUAL);  // pass when depth equals 1.0
         glDepthMask(GL_FALSE);   // disable depth buffer writes
         auto view = _cameraPtr->GetViewMatrix();
@@ -168,6 +174,40 @@ public:
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS); // restore default
     }
+
+    void PassBloom(Shader& blurShader, Shader& bloomShader) {
+        // 2. blur bright fragments with two-pass Gaussian Blur 
+        bool horizontal = true, first_iteration = true;
+        int amount = 10;
+        blurShader.Activate();
+        glBindTextureUnit(0, _bloom.GetTexture(0)); // seed with bright regions
+        glBindVertexArray(_emptyVAO);
+        for (int i = 0; i < 10; i++) {
+            _bloom.BindFramebuffer(i % 2);
+            blurShader.SetInt("horizontal", i % 2);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindTextureUnit(0, _bloom.GetPingPongTexture((i + 1) % 2));
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // 3. now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
+        // --------------------------------------------------------------------------------------------------------------------------
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        bloomShader.Activate();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, _bloom.GetTexture(0));
+        glBindTextureUnit(0, _bloom.GetTexture(0)); // seed with bright regions
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, _bloom.GetPingPongTexture(0));
+        int bloom = 1; float exposure = 1.0;
+        bloomShader.SetFloat("exposure", exposure);
+        bloomShader.SetInt("scene", 0); // TODO remove
+        bloomShader.SetInt("bloomBlur", 1); // remove
+        bloomShader.SetInt("bloom", 1); // // remove //bool as int
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+
 private:
     void render(const Scene::RenderQueue& renderQueue, Shader& shader) const {
         for (const auto& [handle, model] : renderQueue) {
@@ -198,5 +238,6 @@ private:
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;
     ShadowMapSpot _shadowMapSpot;
+    Bloom _bloom;
 
 };

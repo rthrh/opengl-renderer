@@ -136,6 +136,9 @@ int main()
     auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
     auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "shadow_directional.frag");
 
+    auto blurShader = shaderCache.Build("blur", "deferred.vert", "blur.frag");
+    auto bloomShader = shaderCache.Build("bloom", "deferred.vert", "bloom.frag");
+
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
@@ -264,6 +267,7 @@ int main()
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
         renderer.PassSkybox(skybox, *skyboxShader);
+        renderer.PassBloom(*blurShader, *bloomShader);
 
         // Renders the ImGUI elements
 		guiLayer.endFrame();
