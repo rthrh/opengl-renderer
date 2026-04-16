@@ -16,10 +16,14 @@
 class Shader
 {
 public:
-    explicit Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath, const std::filesystem::path& geometryPath = "") : 
+    explicit Shader(const std::filesystem::path& vertexPath,
+        const std::filesystem::path& fragmentPath,
+        const std::filesystem::path& geometryPath = "",
+        const std::filesystem::path& rootPath = "") :
         _vertexPath{vertexPath},
         _fragmentPath{fragmentPath},
-        _geometryPath{geometryPath}
+        _geometryPath{geometryPath},
+        _rootPath{rootPath.empty() ? vertexPath.parent_path() : rootPath}
     {
         this->Reload();
     }
@@ -36,7 +40,8 @@ public:
         _uniformMap(std::move(other._uniformMap)),
         _vertexPath(std::move(other._vertexPath)),
         _fragmentPath(std::move(other._fragmentPath)),
-        _geometryPath(std::move(other._geometryPath))
+        _geometryPath(std::move(other._geometryPath)),
+        _rootPath(std::move(other._rootPath))
     {
         other._ID = 0;
     }
@@ -52,6 +57,7 @@ public:
             _vertexPath = std::move(other._vertexPath);
             _fragmentPath = std::move(other._fragmentPath);
             _geometryPath = std::move(other._geometryPath);
+            _rootPath = std::move(other._rootPath);
 
             other._ID = 0;
         }
@@ -205,6 +211,7 @@ public:
 private:
     GLuint _ID{0};
     mutable std::unordered_map<std::string, GLint> _uniformMap;
+    std::filesystem::path _rootPath{};
     std::filesystem::path _vertexPath{};
     std::filesystem::path _fragmentPath{};
     std::filesystem::path _geometryPath{};
@@ -221,17 +228,19 @@ private:
     }
 
     // Reads shader files recursively and appends content 
-    static std::string ReadFile(std::filesystem::path path, int depth = 0) {
+    std::string ReadFile(const std::filesystem::path& path, int depth = 0) {
         if (depth > 3) throw std::runtime_error("Include limit exceeded");
 
         std::ifstream file(path);
-        std::string line, result, tag, name;
+        if (!file.is_open())
+            throw std::runtime_error("Failed to open shader file: " + path.string());
 
+        std::string line, result, tag, name;
         while (std::getline(file, line)) {
             std::istringstream ss(line);
-            // extract filename
             if (ss >> tag && tag == "#include" && ss >> std::quoted(name)) {
-                result += ReadFile(path.parent_path() / name, depth + 1) + "\n";
+                // Use root as parent path
+                result += ReadFile(_rootPath / name, depth + 1) + "\n";
             } else {
                 result += line + "\n";
             }

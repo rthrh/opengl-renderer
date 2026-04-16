@@ -42,6 +42,7 @@ set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
 # sources
 file(GLOB GLAD_SRC ${CMAKE_SOURCE_DIR}/deps/glad/glad.*)
+file(GLOB STB_IMAGE_SRC ${CMAKE_SOURCE_DIR}/deps/stb_image/*.*)
 file(GLOB IMGUI_SRC 
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.h
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.cpp
@@ -70,8 +71,9 @@ include_directories(${CMAKE_SOURCE_DIR}/renderer)
 include_directories(${CMAKE_SOURCE_DIR}/utils)
 include_directories(${CMAKE_SOURCE_DIR}/deps/)
 include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
+include_directories(${CMAKE_SOURCE_DIR}/deps/stb_image)
 include_directories(${CMAKE_BINARY_DIR}/deps/assimp/include)
-add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

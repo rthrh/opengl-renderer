@@ -26,6 +26,7 @@ public:
 
     // Loads all shader files from the provided directory path
     void LoadDirectory(const std::filesystem::path& dir) {
+        _rootPath = dir;
         for (const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
             if (!entry.is_regular_file()) continue;
 
@@ -49,7 +50,7 @@ public:
             if (!geomPath) throw std::runtime_error("No geometry shader found: " + geom);
         }
 
-        auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath, *geomPath);
+        auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath, *geomPath, _rootPath);
         _shaders[name] = shaderPtr;
         Info("Shader built: {}, {} + {}", name, vert, frag);
         return shaderPtr;
@@ -83,4 +84,5 @@ private:
 
     std::unordered_map<FileName, std::filesystem::path> _files;
     std::unordered_map<ShaderName, std::shared_ptr<Shader>> _shaders;
+    std::filesystem::path _rootPath;
 };

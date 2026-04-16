@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <iostream>
-#include "stb_image.h"
+#include <stb_image.h>
 
 
 enum class TextureType {
