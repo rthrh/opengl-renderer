@@ -164,8 +164,8 @@ int main()
     // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
     Model floorModel(std::move(floorMesh), textureCache);
-    floorModel.Translate({0.0f, -2.0f, 0.0f});
-    floorModel.Scale({50.0f, 1.0f, 50.0f});
+    floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
+    floorModel.SetScale({50.0f, 1.0f, 50.0f});
     scene.AddModel(std::move(floorModel));
 
 
@@ -183,14 +183,14 @@ int main()
     // debug mesh
     Mesh lightDebugMesh(floor_vertices, floor_indices);
     Model lightDebugModel(std::move(lightDebugMesh), textureCache);
-    lightDebugModel.Translate(spotLight1.GetPosition());
-    lightDebugModel.Scale({0.1f, 1.0f, 0.1f});
+    lightDebugModel.SetTranslation(spotLight1.GetPosition());
+    lightDebugModel.SetScale({0.1f, 1.0f, 0.1f});
     scene.AddModel(std::move(lightDebugModel), Forward);
 
     Mesh lightDebugMesh2(floor_vertices, floor_indices);
     Model lightDebugModel2(std::move(lightDebugMesh2), textureCache);
-    lightDebugModel2.Translate(spotLight2.GetPosition());
-    lightDebugModel2.Scale({0.1f, 1.0f, 0.1f});
+    lightDebugModel2.SetTranslation(spotLight2.GetPosition());
+    lightDebugModel2.SetScale({0.1f, 1.0f, 0.1f});
     scene.AddModel(std::move(lightDebugModel2), Forward);
     //scene.AddDirectionalLight(std::move(dirLight));
     //scene.AddPointLight(std::move(light1));

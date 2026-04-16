@@ -19,16 +19,16 @@ class Model
 {
 public:
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path,const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+    Model(std::string const &path,const std::shared_ptr<TextureCache>& textureCache) : _modelMatrix(1.0f), _textureCache{textureCache} {
         loadModel(path);
     }
 
-    Model(Mesh mesh, const std::shared_ptr<TextureCache>& textureCache) : m_modelMatrix(1.0f), m_textureCache{textureCache} {
+    Model(Mesh mesh, const std::shared_ptr<TextureCache>& textureCache) : _modelMatrix(1.0f), _textureCache{textureCache} {
         if (mesh.GetTextures().empty()) {
             auto dummySet = textureCache->GetDummyTextureSet();
             mesh.SetTextures(dummySet);
         }
-        m_meshes.emplace_back(std::move(mesh));
+        _meshes.emplace_back(std::move(mesh));
     }
 
     Model(const Model&)            = delete;
@@ -36,29 +36,37 @@ public:
     Model(Model&&)                 = default;
     Model& operator=(Model&&)      = default;
 
-    void Translate(glm::vec3 position) {
-        m_modelMatrix = glm::translate(m_modelMatrix, std::move(position));
+    void SetTranslation(glm::vec3 position) {
+        _translation = position;
+        _dirty = true;
     }
 
-    void Rotate(float radians, glm::vec3 axis) {
-        m_modelMatrix = glm::rotate(m_modelMatrix, radians, std::move(axis));
+    void SetRotation(float radians, glm::vec3 axis) {
+        _rotation = glm::angleAxis(radians, glm::normalize(axis));
+        _dirty = true;
     }
 
-    void Scale(glm::vec3 scale) {
-        m_modelMatrix = glm::scale(m_modelMatrix, std::move(scale));
+    void SetScale(glm::vec3 scale) {
+        _scale = scale;
+        _dirty = true;
     }
 
     glm::vec3 GetWorldPos() const {
-        // will return the 4th column of model matrix -> translation part
-        return glm::vec3(m_modelMatrix[3]);
+        return _translation;
     }
 
     glm::mat4 GetModelMatrix() const {
-        return m_modelMatrix;
+        if (_dirty) {
+            _modelMatrix = glm::translate(glm::mat4(1.0f), _translation)
+                          * glm::mat4_cast(_rotation)
+                          * glm::scale(glm::mat4(1.0f), _scale);
+            _dirty = false;
+        }
+        return _modelMatrix;
     }
 
     const std::vector<Mesh>& GetMeshes() const {
-        return m_meshes;
+        return _meshes;
     }
 
 private:
@@ -74,7 +82,7 @@ private:
             return;
         }
 
-        m_directory = path.substr(0, path.find_last_of('/'));
+        _directory = path.substr(0, path.find_last_of('/'));
         processNode(scene->mRootNode, scene);
     }
 
@@ -86,7 +94,7 @@ private:
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            m_meshes.emplace_back(std::move(processMesh(mesh, scene)));
+            _meshes.emplace_back(std::move(processMesh(mesh, scene)));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -181,17 +189,23 @@ private:
         for (unsigned int i = 0; i < mat->GetTextureCount(aiType); i++) {
             aiString str;
             mat->GetTexture(aiType, i, &str);
-            std::string fullPath = m_directory + '/' + str.C_Str();
+            std::string fullPath = _directory + '/' + str.C_Str();
 
             bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
-            uint32_t id = m_textureCache->load(fullPath, type, gamma);
+            uint32_t id = _textureCache->load(fullPath, type, gamma);
             result.push_back(Texture{ id, type, fullPath });
         }
         return result;
     }
 
-    std::string m_directory;
-    std::vector<Mesh> m_meshes;
-    glm::mat4 m_modelMatrix;
-    std::shared_ptr<TextureCache> m_textureCache;
+    std::string _directory;
+    std::vector<Mesh> _meshes;
+
+    mutable glm::mat4 _modelMatrix{1.0f};
+    glm::vec3 _translation{0.0f, 0.0f, 0.0f};
+    glm::quat _rotation{1.0f, 0.0f, 0.0f, 0.0f};
+    glm::vec3 _scale{1.0f, 1.0f, 1.0f};
+    mutable bool _dirty{true};
+
+    std::shared_ptr<TextureCache> _textureCache;
 };
