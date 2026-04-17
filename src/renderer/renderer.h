@@ -142,6 +142,7 @@ public:
         //stopwatch.Start();
         _gBuffer.BindTextures();
         _bloom.BindHdrFramebuffer();
+        glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
 
         shader.Activate();
         shader.SetFloat("farPlane", 25.0f); // TODO move it!!!
