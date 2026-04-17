@@ -8,7 +8,6 @@ public:
         _width(scrWidth), _height(scrHeight)
     {
         // configure (floating point) framebuffers
-        // ---------------------------------------
         glGenFramebuffers(1, &_hdrFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, _hdrFBO);
         // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
@@ -32,9 +31,12 @@ public:
         // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
         unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         glDrawBuffers(2, attachments);
-        // finally check if framebuffer is complete
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+
+        if (auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             std::cout << "Framebuffer not complete!" << std::endl;
+            Error("[Bloom]: Framebuffer incomplete: {} ", status);
+            throw std::runtime_error("[Bloom]: Framebuffer incomplete");
+        }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // ping-pong-framebuffer for blurring
@@ -47,22 +49,30 @@ public:
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _width, _height, 0, GL_RGBA, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _pingpongColorbuffers[i], 0);
-            // also check if framebuffers are complete (no need for depth buffer)
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+
+            if (auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
                 std::cout << "Framebuffer not complete!" << std::endl;
+                Error("[Bloom]: Framebuffer incomplete: {} ", status);
+                throw std::runtime_error("[Bloom]: Framebuffer incomplete");
+            }
         }
+
+    }
+
+    ~Bloom() {
+        glDeleteFramebuffers(2, _pingpongFBO);
+        glDeleteFramebuffers(1, &_hdrFBO);
+        glDeleteFramebuffers(1, &_rboDepth);
+        glDeleteTextures(2, _pingpongColorbuffers);
+        glDeleteTextures(2, _colorBuffers);
 
     }
 
     void BindFramebuffer(int index) {
         glBindFramebuffer(GL_FRAMEBUFFER, _pingpongFBO[index]);
-    }
-
-    void BindTexture(int index) {
-
     }
 
     void BindHdrFramebuffer() {
@@ -80,10 +90,7 @@ public:
         return _hdrFBO;
     }
 
-    ~Bloom() {
-        //glDeleteFramebuffers(2, _framebuffers);
-        //glDeleteTextures(2, _textures);
-    }
+
 
     Bloom(const Bloom&) = delete;
     Bloom& operator=(const Bloom&) = delete;
@@ -91,8 +98,6 @@ public:
 
 private:
     int _width, _height;
-    //GLuint _textures[2]     = {0, 0};
-    //GLuint _framebuffers[2] = {0, 0};
     GLuint _hdrFBO = 0;
     GLuint _pingpongFBO[2] = {0, 0};
     GLuint _pingpongColorbuffers[2] = {0, 0};
