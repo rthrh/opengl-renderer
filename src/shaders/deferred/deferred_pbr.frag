@@ -40,6 +40,7 @@ void main() {
     float depth = texture(depthMap, TexCoords).r;
     if (depth == 1.0) {
         FragColor = vec4(0.05, 0.05, 0.05, 1.0);
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0); // skybox should not be lit
         return;
     }
 
@@ -82,5 +83,7 @@ void main() {
         BrightColor = vec4(FragColor.rgb, 1.0);
 	else
 		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+
 }
 

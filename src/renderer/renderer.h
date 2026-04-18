@@ -181,26 +181,28 @@ public:
         bool horizontal = true, first_iteration = true;
         int amount = 10;
         blurShader.Activate();
-        glBindTextureUnit(0, _bloom.GetTexture(0)); // seed with bright regions
+        //glBindTextureUnit(0, _bloom.GetTexture(1)); // seed with bright regions
         glBindVertexArray(_emptyVAO);
         for (int i = 0; i < 10; i++) {
-            _bloom.BindFramebuffer(i % 2);
-            blurShader.SetInt("horizontal", i % 2);
+            _bloom.BindPingPong(horizontal);
+            blurShader.SetInt("horizontal", horizontal);
+            auto textureUnit = first_iteration ? _bloom.GetColorBuffersTexture(1) : _bloom.GetPingPongColorBuffersTexture(!horizontal);
+            glBindTextureUnit(0, textureUnit);
             glDrawArrays(GL_TRIANGLES, 0, 3);
-            glBindTextureUnit(0, _bloom.GetPingPongTexture((i + 1) % 2));
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
         }
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 3. now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
         // --------------------------------------------------------------------------------------------------------------------------
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         bloomShader.Activate();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _bloom.GetTexture(0));
-        glBindTextureUnit(0, _bloom.GetTexture(0)); // seed with bright regions
+        glBindTextureUnit(0, _bloom.GetColorBuffersTexture(0));
+        glBindTextureUnit(1, _bloom.GetPingPongColorBuffersTexture(!horizontal));
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, _bloom.GetPingPongTexture(0));
         int bloom = 1; float exposure = 1.0;
         bloomShader.SetFloat("exposure", exposure);
         bloomShader.SetInt("scene", 0); // TODO remove

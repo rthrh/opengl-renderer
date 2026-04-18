@@ -195,12 +195,12 @@ int main()
     lightDebugModel2.SetTranslation(spotLight2.GetPosition());
     lightDebugModel2.SetScale({0.1f, 1.0f, 0.1f});
     scene.AddModel(std::move(lightDebugModel2), Forward);
-    //scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddDirectionalLight(std::move(dirLight));
     //scene.AddPointLight(std::move(light1));
     //scene.AddPointLight(std::move(light2));
     //scene.AddPointLight(std::move(light3));
-    scene.AddSpotLight(std::move(spotLight1));
-    scene.AddSpotLight(std::move(spotLight2));
+    //scene.AddSpotLight(std::move(spotLight1));
+    //scene.AddSpotLight(std::move(spotLight2));
 
     // init imgui
     GuiLayer guiLayer(window);

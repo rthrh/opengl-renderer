@@ -33,5 +33,5 @@ void main() {
     gAlbedo = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
     gNormal   = N;//normalize(Normal);
     gORM      = vec3(ao, roughness, metallic);
-    gEmissive = pow(texture(emissiveMap, TexCoords).rgb, vec3(2.2));
+    gEmissive = pow(texture(emissiveMap, TexCoords).rgb, vec3(2.2)) * 10.0f; // TODO emissive is multiplied so it passes brighness check for bloom pass
 }

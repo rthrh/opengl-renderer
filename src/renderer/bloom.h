@@ -71,7 +71,7 @@ public:
 
     }
 
-    void BindFramebuffer(int index) {
+    void BindPingPong(int index) {
         glBindFramebuffer(GL_FRAMEBUFFER, _pingpongFBO[index]);
     }
 
@@ -79,10 +79,10 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, _hdrFBO);
     }
 
-    GLuint GetTexture(int index) {
+    GLuint GetColorBuffersTexture(int index) {
         return _colorBuffers[index];
     }
-    GLuint GetPingPongTexture(int index) {
+    GLuint GetPingPongColorBuffersTexture(int index) {
         return _pingpongColorbuffers[index];
     }
 
