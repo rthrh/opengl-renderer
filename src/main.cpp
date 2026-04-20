@@ -175,13 +175,13 @@ int main()
 
 
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
-    auto light1 = PointLightBlockGPU({0,10,0}).SetColor({0,0,255}).SetRange(25);
-    auto light2 = PointLightBlockGPU({0,10,-10}).SetColor({0,255,0}).SetRange(25);
-    auto light3 = PointLightBlockGPU({0,2,10}).SetColor({255,0,0}).SetRange(25);
+    auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(25).SetIntensity(10);
+    auto light2 = PointLightBlockGPU({0,10,-10}).SetColor(0, 255, 125).SetRange(25).SetIntensity(10);
+    auto light3 = PointLightBlockGPU({0,2,10}).SetColor(255, 125, 0).SetRange(25).SetIntensity(10);
 
-    auto spotLight1 = SpotLightBlockGPU({0, 3, 6}, {0, -0.5, -1}).SetColor({0.0, 0.0, 125.0}).SetRange(25.0);
+    auto spotLight1 = SpotLightBlockGPU({0, 3, 6}, {0, -0.5, -1}).SetColor(0, 0, 255).SetRange(25.0).SetIntensity(10);
     // TODO {0, -1.0, 0.0} vector breaks shadows
-    auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor({125.0, 0.0, 0.0}).SetRange(25.0);
+    auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
     // debug mesh
     Mesh lightDebugMesh(floor_vertices, floor_indices);
@@ -196,11 +196,11 @@ int main()
     lightDebugModel2.SetScale({0.1f, 1.0f, 0.1f});
     scene.AddModel(std::move(lightDebugModel2), Forward);
     scene.AddDirectionalLight(std::move(dirLight));
-    //scene.AddPointLight(std::move(light1));
-    //scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
-    //scene.AddSpotLight(std::move(spotLight1));
-    //scene.AddSpotLight(std::move(spotLight2));
+    scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
+    scene.AddSpotLight(std::move(spotLight1));
+    scene.AddSpotLight(std::move(spotLight2));
 
     // init imgui
     GuiLayer guiLayer(window);

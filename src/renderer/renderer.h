@@ -108,7 +108,7 @@ public:
         int count = spotLights.size(); // TODO check for MAX SHADOW CASTERS
         for (int i = 0; i < count; i++) {
             auto& light = spotLights[i];
-            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterCone());
+            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees());
 
             lsm.spotLightProjMatrices[i] = lightSpaceMatrix;
             _shadowMapSpot.BindFramebufferLayer(i);
