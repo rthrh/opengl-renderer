@@ -64,6 +64,7 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/renderer/*.h
     ${CMAKE_SOURCE_DIR}/src/utils/*.h
 )
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/src/demo.cpp)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/gui)

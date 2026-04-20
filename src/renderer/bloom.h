@@ -2,6 +2,10 @@
 #include <glad/glad.h>
 #include <iostream>
 
+#include "utils/logger.h"
+#include "renderer/shader.h"
+
+//. TODO refactor
 class Bloom {
 public:
     Bloom(int scrWidth, int scrHeight) :
@@ -71,6 +75,27 @@ public:
 
     }
 
+    void Blur(Shader& blurShader, int amount) {
+        bool first_iteration = true;
+        _horizontal = true;
+        //glBindVertexArray(_emptyVAO);
+        for (int i = 0; i < 10; i++) {
+            this->BindPingPong(_horizontal);
+            blurShader.SetInt("horizontal", _horizontal);
+            auto textureUnit = first_iteration ? this->GetColorBuffersTexture(1) : this->GetPingPongColorBuffersTexture(!_horizontal);
+            glBindTextureUnit(0, textureUnit);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            _horizontal = !_horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+    }
+
+    void BindTextures() {
+        glBindTextureUnit(0, this->GetColorBuffersTexture(0));
+        glBindTextureUnit(1, this->GetPingPongColorBuffersTexture(!_horizontal));
+    }
+
     void BindPingPong(int index) {
         glBindFramebuffer(GL_FRAMEBUFFER, _pingpongFBO[index]);
     }
@@ -103,4 +128,5 @@ private:
     GLuint _pingpongColorbuffers[2] = {0, 0};
     GLuint _colorBuffers[2] = {0, 0};
     GLuint _rboDepth = 0;
+    bool _horizontal = true;
 };

@@ -177,37 +177,21 @@ public:
     }
 
     void PassBloom(Shader& blurShader, Shader& bloomShader) {
-        // 2. blur bright fragments with two-pass Gaussian Blur 
-        bool horizontal = true, first_iteration = true;
-        int amount = 10;
+        // Blur bright fragments with two-pass Gaussian Blur 
         blurShader.Activate();
-        //glBindTextureUnit(0, _bloom.GetTexture(1)); // seed with bright regions
-        glBindVertexArray(_emptyVAO);
-        for (int i = 0; i < 10; i++) {
-            _bloom.BindPingPong(horizontal);
-            blurShader.SetInt("horizontal", horizontal);
-            auto textureUnit = first_iteration ? _bloom.GetColorBuffersTexture(1) : _bloom.GetPingPongColorBuffersTexture(!horizontal);
-            glBindTextureUnit(0, textureUnit);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            horizontal = !horizontal;
-            if (first_iteration)
-                first_iteration = false;
-        }
-
+        _bloom.Blur(blurShader, 20);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // 3. now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
-        // --------------------------------------------------------------------------------------------------------------------------
+        // Render to quad, apply HDR tonemapping in bloom shader
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         bloomShader.Activate();
-        glBindTextureUnit(0, _bloom.GetColorBuffersTexture(0));
-        glBindTextureUnit(1, _bloom.GetPingPongColorBuffersTexture(!horizontal));
+        _bloom.BindTextures();
 
         int bloom = 1; float exposure = 1.0;
         bloomShader.SetFloat("exposure", exposure);
-        bloomShader.SetInt("scene", 0); // TODO remove
-        bloomShader.SetInt("bloomBlur", 1); // remove
-        bloomShader.SetInt("bloom", 1); // // remove //bool as int
+        bloomShader.SetInt("scene", 0);
+        bloomShader.SetInt("bloomBlur", 1);
+        bloomShader.SetInt("bloom", 1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
