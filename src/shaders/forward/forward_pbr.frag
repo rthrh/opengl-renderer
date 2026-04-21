@@ -13,9 +13,9 @@ layout(binding = 3) uniform sampler2D metallicMap;
 layout(binding = 4) uniform sampler2D roughnessMap;
 layout(binding = 5) uniform sampler2D aoMap;
 
-#include "common/ubo.glsl"
-#include "common/brdf.glsl"
-#include "common/pbr_lights.glsl"
+#include "include/ubo.glsl"
+#include "include/brdf.glsl"
+#include "include/pbr_lights.glsl"
 
 void main() {
     vec3  albedo    = pow(texture(albedoMap,    TexCoords).rgb, vec3(2.2)); // sRGB -> linear

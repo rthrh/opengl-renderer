@@ -20,10 +20,10 @@ layout(binding = 9) uniform sampler2DArray shadowSpotMap;
 
 uniform float farPlane;
 
-#include "common/ubo.glsl"
-#include "common/brdf.glsl"
-#include "common/pbr_lights.glsl"
-#include "common/shadows.glsl"
+#include "include/ubo.glsl"
+#include "include/brdf.glsl"
+#include "include/pbr_lights.glsl"
+#include "include/shadows.glsl"
 
 void main() {
     vec3 albedo = texture(albedoMap,TexCoords).rgb;
@@ -86,4 +86,3 @@ void main() {
 
 
 }
-

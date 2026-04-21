@@ -107,56 +107,9 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 }
 
 
-void setupScene() {
-    
-}
-
-int main()
-{
-    const unsigned int windowWidth = 1600u;
-    const unsigned int windowHeight = 1200u;
-    auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
-
-    // build and compile shaders
+void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
-    std::filesystem::path pathShaders = root / "src/shaders";
-    ShaderCache shaderCache;
-    shaderCache.LoadDirectory(pathShaders);
-
-    auto deferredLightShader = shaderCache.Build("deferred", "deferred.vert", "deferred_pbr.frag");
-    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
-    auto debugShader = shaderCache.Build("deferred_debug", "deferred.vert", "deferred_pbr.frag");
-    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
-    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
-
-    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
-    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
-
-    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "shadow_directional.frag");
-    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
-    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "shadow_directional.frag");
-
-    auto blurShader = shaderCache.Build("blur", "deferred.vert", "blur.frag");
-    auto bloomShader = shaderCache.Build("bloom", "deferred.vert", "bloom.frag");
-
-    // set up shader file watcher
-    FileWatcher fileWatcher;
-    auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
-    fileWatcher.WatchDirectory(pathShaders, fileCallback);
-
-    float aspectRatio = (float)windowWidth / (float)windowHeight;
-    auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
-
-    Renderer renderer(windowWidth, windowHeight, camera);
-    Scene scene;
-    auto textureCache = std::make_shared<TextureCache>();
-
-    // App context data for callbacks
-    MouseCallbackData callbackData {.cameraPtr{camera}, .lastX = windowWidth / 2.0f, .lastY = windowHeight / 2.0f };
-    glfwSetWindowUserPointer(window, &callbackData);
-
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    //stbi_set_flip_vertically_on_load(true);
     //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
     //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
     //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
@@ -170,8 +123,6 @@ int main()
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
     scene.AddModel(std::move(floorModel));
-
-
 
 
     DirectionalLightBlockGPU dirLight({-1.0, -1.0, 0.0});
@@ -202,13 +153,60 @@ int main()
     scene.AddSpotLight(std::move(spotLight1));
     scene.AddSpotLight(std::move(spotLight2));
 
-    // init imgui
-    GuiLayer guiLayer(window);
-    GuiData guiData {
-        .color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}
-    };
 
     scene.AddModel(std::move(ourModel), Deferred);
+}
+
+int main()
+{
+    const unsigned int windowWidth = 1600u;
+    const unsigned int windowHeight = 1200u;
+    auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
+
+    // build and compile shaders
+    std::filesystem::path root = PROJECT_SOURCE_DIR;
+    std::filesystem::path pathShaders = root / "src/shaders";
+    ShaderCache shaderCache;
+    shaderCache.LoadDirectory(pathShaders);
+
+    auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
+    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
+    auto debugShader = shaderCache.Build("deferred_debug", "quad.vert", "deferred_pbr.frag");
+    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
+    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
+
+    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
+    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
+
+    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
+    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
+    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
+
+    auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");
+    auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
+
+    // set up shader file watcher
+    FileWatcher fileWatcher;
+    auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
+    fileWatcher.WatchDirectory(pathShaders, fileCallback);
+
+    float aspectRatio = (float)windowWidth / (float)windowHeight;
+    auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
+
+    Renderer renderer(windowWidth, windowHeight, camera);
+    auto textureCache = std::make_shared<TextureCache>();
+
+    // App context data for callbacks
+    MouseCallbackData callbackData {.cameraPtr{camera}, .lastX = windowWidth / 2.0f, .lastY = windowHeight / 2.0f };
+    glfwSetWindowUserPointer(window, &callbackData);
+
+     // init imgui
+    GuiLayer guiLayer(window);
+    GuiData guiData {.color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}};
+
+    // Scene setup
+    Scene scene;
+    setupScene(scene, textureCache);
 
     // setup skybox rogland_clear_night_4k newport_loft.hdr
     //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";

@@ -14,7 +14,7 @@ layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D emissiveTexture;
 layout(binding = 3) uniform sampler2D specularTexture;
 
-#include "common/ubo.glsl"
+#include "include/ubo.glsl"
 
 vec3 CalcDirectionalLight(vec3 normal, vec3 diffuseSample, vec3 specularSample, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 diffuseSample, vec3 specularSample, vec3 fragPos, vec3 viewDir);

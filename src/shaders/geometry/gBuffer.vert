@@ -11,7 +11,7 @@ out mat3 TBN;
 
 uniform mat4 model;
 
-#include "common/ubo.glsl"
+#include "include/ubo.glsl"
 
 void main()
 {
