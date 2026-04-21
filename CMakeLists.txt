@@ -19,6 +19,8 @@ link_directories(${CMAKE_SOURCE_DIR}/lib)
 add_subdirectory(deps/glm)
 set(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory(deps/assimp)
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory(deps/tinyexr)
 
 # find the required packages
 #find_package(GLM REQUIRED)
@@ -37,7 +39,7 @@ find_package(X11 REQUIRED)
 
 # note that the order is important for setting the libs
 # use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm)
+set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
 set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
 # sources
@@ -73,6 +75,8 @@ include_directories(${CMAKE_SOURCE_DIR}/utils)
 include_directories(${CMAKE_SOURCE_DIR}/deps/)
 include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/deps/stb_image)
+include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr)
+include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr/deps/miniz)
 include_directories(${CMAKE_BINARY_DIR}/deps/assimp/include)
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})

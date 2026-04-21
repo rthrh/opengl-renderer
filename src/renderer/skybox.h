@@ -6,9 +6,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <stb_image.h>
+#include <tinyexr.h>
 
 #include <vector>
 #include <string>
+#include <ranges>
+#include <span>
 
 #include "renderer/shader.h"
 #include "utils/logger.h"
@@ -17,7 +20,7 @@
 
 class Skybox {
 public:
-    Skybox(std::string path, Shader& equirectShader, GLsizei cubeSize = 1024) :
+    Skybox(std::filesystem::path path, Shader& equirectShader, GLsizei cubeSize = 2048) :
         _cubeSize(cubeSize)
     {
         initBuffers();
@@ -59,26 +62,53 @@ private:
         glNamedFramebufferRenderbuffer(_captureFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _captureRBO);
     }
 
-    void initTextureHDR(const std::string& path) {
-        stbi_set_flip_vertically_on_load(true);
+    void initTextureHDR(const std::filesystem::path& path) {
         int width, height, nrComponents;
-        float *data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
-        if (data)
-        {
-            glCreateTextures(GL_TEXTURE_2D, 1, &_hdrTexture);
-            glTextureStorage2D(_hdrTexture, 1, GL_RGB16F, width, height);
-            glTextureSubImage2D(_hdrTexture, 0, 0, 0, width, height, GL_RGB, GL_FLOAT, data);
-            glTextureParameteri(_hdrTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(_hdrTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(_hdrTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTextureParameteri(_hdrTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        float *data = nullptr;
 
+        if (path.extension() == ".exr") {
+            const char* err = nullptr;
+            int ret = LoadEXR(&data, &width, &height, path.string().c_str(), &err);
+            if (ret != TINYEXR_SUCCESS) {
+                std::string errMsg = err ? err : "unknown";
+                FreeEXRErrorMessage(err);
+                throw std::runtime_error("Failed to load EXR image: " + errMsg);
+            }
+            nrComponents = 4;
+        } else {
+            //stbi_set_flip_vertically_on_load(true);
+            data = stbi_loadf(path.string().c_str(), &width, &height, &nrComponents, 0);
+            if (!data)
+                throw std::runtime_error("Failed to load HDR image: " + path.string());
+        }
+
+        GLenum storageFormat = (nrComponents == 4) ? GL_RGBA16F : GL_RGB16F;
+        GLenum subImageFormat = (nrComponents == 4) ? GL_RGBA : GL_RGB;
+
+        // Flip vertically TODO move it to function
+        const int rowSize = width * nrComponents;
+        auto rows = std::span(data, height * rowSize) | std::views::chunk(rowSize);
+
+        // Zip the top half and bottom half together, then swap their contents
+        for (auto [top, bottom] : std::views::zip(rows | std::views::take(height / 2), rows | std::views::reverse)) {
+            std::ranges::swap_ranges(top, bottom);
+        }
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &_hdrTexture);
+        glTextureStorage2D(_hdrTexture, 1, storageFormat, width, height);
+        glTextureSubImage2D(_hdrTexture, 0, 0, 0, width, height, subImageFormat, GL_FLOAT, data);
+        glTextureParameteri(_hdrTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(_hdrTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(_hdrTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(_hdrTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        if (path.extension() == ".exr") {
+            free(data);
+        } else {
             stbi_image_free(data);
         }
-        else
-        {
-            throw std::runtime_error("Failed to load HDR image");
-        }
+
+
     }
 
     // setup cubemap to render to and attach to framebuffer

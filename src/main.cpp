@@ -211,9 +211,9 @@ int main()
     scene.AddModel(std::move(ourModel), Deferred);
 
     // setup skybox rogland_clear_night_4k newport_loft.hdr
-    std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
-    //std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
-    Skybox skybox (skyboxPath.string(), *equirectShader);
+    //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
+    std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
+    Skybox skybox (skyboxPath, *equirectShader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;

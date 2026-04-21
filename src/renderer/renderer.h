@@ -187,7 +187,7 @@ public:
         bloomShader.Activate();
         _bloom.BindTextures();
 
-        int bloom = 1; float exposure = 1.0;
+        int bloom = 1; float exposure = 0.5;
         bloomShader.SetFloat("exposure", exposure);
         bloomShader.SetInt("scene", 0);
         bloomShader.SetInt("bloomBlur", 1);
