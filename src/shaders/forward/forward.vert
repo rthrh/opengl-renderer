@@ -5,7 +5,7 @@ layout (location = 2) in vec2 aTexCoords;
 layout (location = 3) in vec4 aTangent;
 
 out vec2 TexCoords;
-out vec3 Normal; // TODO to remove?
+out vec3 Normal;
 out vec3 FragPos;
 out mat3 TBN;
 
@@ -22,7 +22,7 @@ void main() {
 
     vec3 T = normalize(mat3(model) * aTangent.xyz);
     vec3 N = normalize(mat3(model) * aNormal);
-    T = normalize(T - dot(T, N) * N); // // re-orthogonalize T with respect to N
+    T = normalize(T - dot(T, N) * N); // re-orthogonalize T with respect to N
     vec3 B = cross(N, T) * aTangent.w; // multiply by handness sign
     TBN = mat3(T, B, N);
 
