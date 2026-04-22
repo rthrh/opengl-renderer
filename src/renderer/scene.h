@@ -49,7 +49,6 @@ public:
 
     Handle AddDirectionalLight(DirectionalLightUBO light) {
         Handle index = _handleNext;
-        _directionalLight = std::move(light);
         _handleNext++;
 
         _directionalLightUBO.Data() = light;
@@ -57,14 +56,12 @@ public:
         return index;
     }
 
-    std::optional<DirectionalLightUBO>& GetDirectionalLight() {
-        return _directionalLight;
+    DirectionalLightUBO& GetDirectionalLight() {
+        return _directionalLightUBO.Data();
     }
 
     Handle AddPointLight(PointLightBlockGPU light) {
-        assert(_pointLights.size() < MAX_POINT_LIGHTS);
         Handle index = _handleNext;
-        _pointLights.emplace_back(std::move(light));
         _handleNext++;
 
         _pointLightUBO.Data().Pushback(light);
@@ -72,14 +69,12 @@ public:
         return index;
     }
 
-    std::vector<PointLightBlockGPU>& GetPointLights() {
-        return _pointLights;
+    PointLightUBO GetPointLights() {
+        return _pointLightUBO.Data();
     }
 
     Handle AddSpotLight(SpotLightBlockGPU light) {
-        assert(_spotLights.size() < MAX_SPOT_LIGHTS);
         Handle index = _handleNext;
-        _spotLights.emplace_back(std::move(light));
         _handleNext++;
 
         _spotLightUBO.Data().Pushback(light);
@@ -87,8 +82,8 @@ public:
         return index;
     }
 
-    std::vector<SpotLightBlockGPU>& GetSpotLights() {
-        return _spotLights;
+    SpotLightUBO& GetSpotLights() {
+        return _spotLightUBO.Data();
     }
 
     Handle AddModel(Model model, RenderQueueType queue = Deferred) {
@@ -142,15 +137,9 @@ private:
     RenderQueue _deferredQueue;
     RenderQueue _noShadowQueue; //TODO rename?
 
-    std::optional<DirectionalLightUBO> _directionalLight;
-    std::vector<PointLightBlockGPU> _pointLights;
-    std::vector<SpotLightBlockGPU> _spotLights;
     ShadowMapUBO _lightSpaceMatrices;
 
     uint32_t _handleNext{0};
-    //GLuint _directionalLightUBO{0};
-    //GLuint _pointLightUBO{0};
-    //GLuint _spotLightUBO{0};
     GLuint _shadowMapUBO{0};
 
     UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO {};

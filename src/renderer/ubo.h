@@ -65,7 +65,14 @@ struct PointLightUBO {
     PointLightBlockGPU& At(int index) {
         assert(index < count.x);
         return lights[index];
-    }    
+    }
+
+    const PointLightBlockGPU& At(int index) const {
+        assert(index < count.x);
+        return lights[index];
+    }
+
+    int Count() const { return count.x; }
 };
 
 struct SpotLightBlockGPU {
@@ -120,7 +127,9 @@ struct SpotLightUBO {
     SpotLightBlockGPU& At(int index) {
         assert(index < count.x);
         return lights[index];
-    }    
+    }
+
+    int Count() const { return count.x; }
 };
 
 const int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move

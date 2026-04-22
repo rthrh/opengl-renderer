@@ -55,9 +55,8 @@ public:
     }
 
     void PassShadowDirectional(Scene& scene, Shader& shader) {
-
         auto directionalLight = scene.GetDirectionalLight();
-        auto lightDir = directionalLight.has_value() ? directionalLight.value().GetDirection() : glm::vec3(0,0,0); //TODO this vector here is wrong
+        auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
         auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
 
         auto lsm = scene.GetLightSpaceMatrices();
@@ -77,14 +76,14 @@ public:
     void PassPointShadow(Scene& scene, Shader& shader) {
         const float farPlane = 25.0f;
         const auto& pointLights = scene.GetPointLights();
-        int count = pointLights.size();
+        const int count = pointLights.Count();
 
         _shadowMapPoint.BindFramebuffer();
         _shadowMapPoint.BindTexture();
-        shader.Activate(); // simpleDepthShader
+        shader.Activate();
         shader.SetFloat("farPlane", farPlane);
         for (int i = 0; i < count; i++) {
-            auto lightPos = pointLights[i].GetPosition();
+            auto lightPos = pointLights.At(i).GetPosition();
             auto shadowMatrices = math::GetShadowMatrices(lightPos);
 
             shader.SetInt("lightIndex", i);
@@ -105,9 +104,9 @@ public:
         auto lsm = scene.GetLightSpaceMatrices(); //TODO remove this call
         _shadowMapSpot.BindTexture();
         shader.Activate();
-        int count = spotLights.size(); // TODO check for MAX SHADOW CASTERS
+        int count = spotLights.Count(); // TODO check for MAX SHADOW CASTERS
         for (int i = 0; i < count; i++) {
-            auto& light = spotLights[i];
+            auto& light = spotLights.At(i);
             auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees());
 
             lsm.spotLightProjMatrices[i] = lightSpaceMatrix;
@@ -191,7 +190,7 @@ public:
         bloomShader.SetFloat("exposure", exposure);
         bloomShader.SetInt("scene", 0);
         bloomShader.SetInt("bloomBlur", 1);
-        bloomShader.SetInt("bloom", 1);
+        bloomShader.SetInt("bloom", bloom);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 

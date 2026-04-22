@@ -202,10 +202,10 @@ public:
 private:
     GLuint _ID{0};
     mutable std::unordered_map<std::string, GLint> _uniformMap;
-    std::filesystem::path _rootPath{};
     std::filesystem::path _vertexPath{};
     std::filesystem::path _fragmentPath{};
     std::filesystem::path _geometryPath{};
+    std::filesystem::path _rootPath{};
 
     GLint GetLocation(const std::string& name) const
     {
