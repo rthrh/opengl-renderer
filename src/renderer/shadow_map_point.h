@@ -6,13 +6,14 @@
 
 #include "texture_slots.h"
 
+
 class ShadowMapPoint {
 public:
-    explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) : _size(size), _maxShadowCasters(maxShadowCasters) {
+    explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) : _size(size) {
         // create depth cubemap texture
         glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_depthCubemapArray);
         glTextureStorage3D(_depthCubemapArray, 1, GL_DEPTH_COMPONENT32F,
-                           size, size, 6 * _maxShadowCasters);
+                           size, size, 6 * maxShadowCasters);
         glTextureParameteri(_depthCubemapArray, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTextureParameteri(_depthCubemapArray, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTextureParameteri(_depthCubemapArray, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -51,5 +52,4 @@ private:
     GLuint _fbo = 0;
     GLuint _depthCubemapArray = 0;
     int _size;
-    int _maxShadowCasters;
 };

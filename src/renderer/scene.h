@@ -19,7 +19,8 @@
 
 enum RenderQueueType {
     Forward,
-    Deferred
+    Deferred,
+    NoShadow
 };
 
 class Scene {
@@ -84,6 +85,9 @@ public:
             case Deferred:
                 _deferredQueue.insert({_handleNext, std::move(model)});
                 break;
+            case NoShadow:
+                _noShadowQueue.insert({_handleNext, std::move(model)});
+                break;
         }
 
         _handleNext++;
@@ -96,6 +100,8 @@ public:
                 return _forwardQueue;
             case Deferred:
                 return _deferredQueue;
+            case NoShadow:
+                return _noShadowQueue;
         }
         std::unreachable();
     }
@@ -103,7 +109,7 @@ public:
 private:
     RenderQueue _forwardQueue;
     RenderQueue _deferredQueue;
-    RenderQueue _noShadowQueue; //TODO rename?
+    RenderQueue _noShadowQueue;
 
     uint32_t _handleNext{0};
 

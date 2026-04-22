@@ -31,10 +31,10 @@ public:
         _meshes.emplace_back(std::move(mesh));
     }
 
-    Model(const Model&)            = delete;
+    Model(const Model&) = delete;
     Model& operator=(const Model&) = delete;
-    Model(Model&&)                 = default;
-    Model& operator=(Model&&)      = default;
+    Model(Model&&) = default;
+    Model& operator=(Model&&) = default;
 
     void SetTranslation(glm::vec3 position) {
         _translation = position;
@@ -58,8 +58,8 @@ public:
     glm::mat4 GetModelMatrix() const {
         if (_dirty) {
             _modelMatrix = glm::translate(glm::mat4(1.0f), _translation)
-                          * glm::mat4_cast(_rotation)
-                          * glm::scale(glm::mat4(1.0f), _scale);
+                         * glm::mat4_cast(_rotation)
+                         * glm::scale(glm::mat4(1.0f), _scale);
             _dirty = false;
         }
         return _modelMatrix;
@@ -71,13 +71,11 @@ public:
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const &path)
-    {
+    void loadModel(std::string const &path) {
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
-        if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
-        {
+        if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) { // if is Not Zero
             std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
             return;
         }
@@ -87,69 +85,58 @@ private:
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-    void processNode(aiNode *node, const aiScene *scene)
-    {
-        for(unsigned int i = 0; i < node->mNumMeshes; i++)
-        {
+    void processNode(aiNode *node, const aiScene *scene) {
+        for(auto i = 0u; i < node->mNumMeshes; i++) {
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
             _meshes.emplace_back(std::move(processMesh(mesh, scene)));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-        for(unsigned int i = 0; i < node->mNumChildren; i++)
-        {
+        for(auto i = 0u; i < node->mNumChildren; i++) {
             processNode(node->mChildren[i], scene);
         }
 
     }
 
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene)
-    {
+    Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Texture> textures;
 
-        for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-        {
+        for (auto i = 0u; i < mesh->mNumVertices; i++) {
             Vertex vertex;
-            // positions
-            vertex.Position.x = mesh->mVertices[i].x;
-            vertex.Position.y = mesh->mVertices[i].y;
-            vertex.Position.z = mesh->mVertices[i].z;
+            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 
-            // normals
-            if (mesh->HasNormals())
-            {
-                vertex.Normal.x = mesh->mNormals[i].x;
-                vertex.Normal.y = mesh->mNormals[i].y;
-                vertex.Normal.z = mesh->mNormals[i].z;
+            if (mesh->HasNormals()) {
+                vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
             } else {
-                std::cout << "Warn: mesh has no normals" << std::endl;
+                Warn("Mesh has no normals");
             }
 
-            // texture coordinates
-            if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-            {
+            if (mesh->mTextureCoords[0]) { // does the mesh contain texture coordinates?
                 // take the first set (0) of texture coordinates
-                vertex.TexCoords.x = mesh->mTextureCoords[0][i].x; 
-                vertex.TexCoords.y = mesh->mTextureCoords[0][i].y;
-                // tangent
-                vertex.Tangent.x = mesh->mTangents[i].x;
-                vertex.Tangent.y = mesh->mTangents[i].y;
-                vertex.Tangent.z = mesh->mTangents[i].z;
+                vertex.TexCoords = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+
+                // tangent + calculate handness sign for mirrored geometry
+                glm::vec3 T = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
+                glm::vec3 B = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+                glm::vec3 N = vertex.Normal;
+
+                float sign = (glm::dot(glm::cross(N, T), B) < 0.0f) ? -1.0f : 1.0f;
+                vertex.Tangent = glm::vec4(T, sign);
             }
-            else
+            else {
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+            }
 
             vertices.push_back(vertex);
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-        {
+        for(auto i = 0u; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
             // retrieve all indices of the face and store them in the indices vector
-            for(unsigned int j = 0; j < face.mNumIndices; j++)
+            for(auto j = 0u; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);        
         }
         // process materials
@@ -186,7 +173,7 @@ private:
     // the required info is returned as a Texture struct.
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type) {
         std::vector<Texture> result;
-        for (unsigned int i = 0; i < mat->GetTextureCount(aiType); i++) {
+        for (auto i = 0u; i < mat->GetTextureCount(aiType); i++) {
             aiString str;
             mat->GetTexture(aiType, i, &str);
             std::string fullPath = _directory + '/' + str.C_Str();

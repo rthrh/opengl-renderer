@@ -13,13 +13,13 @@
 class ShadowMapSpot {
 public:
     ShadowMapSpot(int size = 2048, int maxShadowCasters = 4) :
-        _size(size), _maxShadowCasters(maxShadowCasters)
+        _size(size)
     {
         glCreateFramebuffers(1, &_fbo);
 
         // create depth texture
         glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &_depthTexture);
-        glTextureStorage3D(_depthTexture, 1, GL_DEPTH_COMPONENT32F, _size, _size, _maxShadowCasters);
+        glTextureStorage3D(_depthTexture, 1, GL_DEPTH_COMPONENT32F, _size, _size, maxShadowCasters);
         glTextureParameteri(_depthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTextureParameteri(_depthTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTextureParameteri(_depthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -56,5 +56,4 @@ private:
     GLuint _fbo = 0;
     GLuint _depthTexture = 0;
     int _size;
-    int _maxShadowCasters; // TODO unused yet
 };
