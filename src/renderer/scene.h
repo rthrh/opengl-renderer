@@ -29,16 +29,16 @@ public:
     using RenderQueue = std::unordered_map<Handle, Model>;
 
     Scene() {
-        this->InitUBO(_directionalLightUBO, sizeof(DirectionalLightBlockGPU) * MAX_LIGHTS, 0);
-        this->InitUBO(_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
-        this->InitUBO(_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
-        this->InitUBO(_shadowMapUBO, sizeof(ShadowMapBlockGPU), 4);
+        //this->InitUBO(_directionalLightUBO, sizeof(DirectionalLightUBO) * MAX_LIGHTS, 0);
+        //this->InitUBO(_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
+        //this->InitUBO(_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
+        this->InitUBO(_shadowMapUBO, sizeof(ShadowMapUBO), 4);
     };
 
     ~Scene() {
-        glDeleteBuffers(1, &_directionalLightUBO);
-        glDeleteBuffers(1, &_pointLightUBO);
-        glDeleteBuffers(1, &_spotLightUBO);
+        //glDeleteBuffers(1, &_directionalLightUBO);
+        //glDeleteBuffers(1, &_pointLightUBO);
+        //glDeleteBuffers(1, &_spotLightUBO);
         glDeleteBuffers(1, &_shadowMapUBO);
     }
 
@@ -47,24 +47,28 @@ public:
     Scene(Scene&&) noexcept = default;
     Scene& operator=(Scene&&) noexcept = default;
 
-    Handle AddDirectionalLight(DirectionalLightBlockGPU light) {
+    Handle AddDirectionalLight(DirectionalLightUBO light) {
         Handle index = _handleNext;
         _directionalLight = std::move(light);
         _handleNext++;
-        this->UpdateDirectionalLightUBO(_directionalLightUBO, _directionalLight.value());
+
+        _directionalLightUBO.Data() = light;
+        _directionalLightUBO.Upload();
         return index;
     }
 
-    std::optional<DirectionalLightBlockGPU>& GetDirectionalLight() {
+    std::optional<DirectionalLightUBO>& GetDirectionalLight() {
         return _directionalLight;
     }
 
     Handle AddPointLight(PointLightBlockGPU light) {
-        assert(_pointLights.size() < MAX_LIGHTS);
+        assert(_pointLights.size() < MAX_POINT_LIGHTS);
         Handle index = _handleNext;
         _pointLights.emplace_back(std::move(light));
         _handleNext++;
-        this->UpdatePointLightsUBO(_pointLightUBO, _pointLights);
+
+        _pointLightUBO.Data().Pushback(light);
+        _pointLightUBO.Upload();
         return index;
     }
 
@@ -73,11 +77,13 @@ public:
     }
 
     Handle AddSpotLight(SpotLightBlockGPU light) {
-        assert(_spotLights.size() < MAX_LIGHTS);
+        assert(_spotLights.size() < MAX_SPOT_LIGHTS);
         Handle index = _handleNext;
         _spotLights.emplace_back(std::move(light));
         _handleNext++;
-        this->UpdateSpotLightsUBO(_spotLightUBO, _spotLights);
+
+        _spotLightUBO.Data().Pushback(light);
+        _spotLightUBO.Upload();
         return index;
     }
 
@@ -112,14 +118,14 @@ public:
     }
 
     //TODO rename to Upload? remove param?
-    void UpdateShadowMapUBO(const ShadowMapBlockGPU lightSpaceMatrix) {
+    void UpdateShadowMapUBO(const ShadowMapUBO lightSpaceMatrix) {
         _lightSpaceMatrices = lightSpaceMatrix;
         glBindBuffer(GL_UNIFORM_BUFFER, _shadowMapUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ShadowMapBlockGPU), &_lightSpaceMatrices);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ShadowMapUBO), &_lightSpaceMatrices);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-    ShadowMapBlockGPU GetLightSpaceMatrices() {
+    ShadowMapUBO GetLightSpaceMatrices() {
         return _lightSpaceMatrices;
     };
 
@@ -132,42 +138,22 @@ private:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-    void UpdateDirectionalLightUBO(GLuint ubo, const DirectionalLightBlockGPU& light) {
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(DirectionalLightBlockGPU), &light);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
-    void UpdatePointLightsUBO(GLuint ubo, const std::vector<PointLightBlockGPU>& lights) {
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glm::ivec4 countBlock{ static_cast<int>(lights.size()), 0, 0, 0 };
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::ivec4), &countBlock);
-        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::ivec4), sizeof(PointLightBlockGPU) * lights.size(), lights.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
-    void UpdateSpotLightsUBO(GLuint ubo, const std::vector<SpotLightBlockGPU>& lights) {
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glm::ivec4 countBlock{ static_cast<int>(lights.size()), 0, 0, 0 };
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::ivec4), &countBlock);
-        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::ivec4), sizeof(SpotLightBlockGPU) * lights.size(), lights.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
     RenderQueue _forwardQueue;
     RenderQueue _deferredQueue;
     RenderQueue _noShadowQueue; //TODO rename?
 
-    std::optional<DirectionalLightBlockGPU> _directionalLight;
+    std::optional<DirectionalLightUBO> _directionalLight;
     std::vector<PointLightBlockGPU> _pointLights;
     std::vector<SpotLightBlockGPU> _spotLights;
-    ShadowMapBlockGPU _lightSpaceMatrices;
+    ShadowMapUBO _lightSpaceMatrices;
 
     uint32_t _handleNext{0};
-    GLuint _directionalLightUBO{0};
-    GLuint _pointLightUBO{0};
-    GLuint _spotLightUBO{0};
+    //GLuint _directionalLightUBO{0};
+    //GLuint _pointLightUBO{0};
+    //GLuint _spotLightUBO{0};
     GLuint _shadowMapUBO{0};
 
-
+    UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO {};
+    UniformBuffer<PointLightUBO, 1> _pointLightUBO {};
+    UniformBuffer<SpotLightUBO, 2> _spotLightUBO {};
 };
