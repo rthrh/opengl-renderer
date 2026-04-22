@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <cstdint>
+#include <cassert>
 
 struct DirectionalLightUBO {
     DirectionalLightUBO() = default;
@@ -132,7 +133,7 @@ struct SpotLightUBO {
     int Count() const { return count.x; }
 };
 
-const int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
+constexpr int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
 struct ShadowMapUBO {
     glm::mat4 dirLightProjMatrix;
     glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];

@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <stb_image.h>
 #include <memory>
 
 #include "renderer/model.h"
@@ -59,9 +58,8 @@ public:
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
         auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
 
-        auto lsm = scene.GetLightSpaceMatrices();
-        lsm.dirLightProjMatrix = lightSpaceMatrix;
-        scene.UpdateShadowMapUBO(lsm);
+        _shadowMapUBO.Data().dirLightProjMatrix = lightSpaceMatrix;
+        _shadowMapUBO.Upload();
         _shadowMapDirectional.BindFramebuffer();
         _shadowMapDirectional.BindTexture();
         shader.Activate();
@@ -73,7 +71,7 @@ public:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassPointShadow(Scene& scene, Shader& shader) {
+    void PassShadowPoint(Scene& scene, Shader& shader) {
         const float farPlane = 25.0f;
         const auto& pointLights = scene.GetPointLights();
         const int count = pointLights.Count();
@@ -101,7 +99,8 @@ public:
 
     void PassShadowSpot(Scene& scene, Shader& shader) {
         auto& spotLights = scene.GetSpotLights();
-        auto lsm = scene.GetLightSpaceMatrices(); //TODO remove this call
+        auto& ubo = _shadowMapUBO.Data();
+    
         _shadowMapSpot.BindTexture();
         shader.Activate();
         int count = spotLights.Count(); // TODO check for MAX SHADOW CASTERS
@@ -109,7 +108,7 @@ public:
             auto& light = spotLights.At(i);
             auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees());
 
-            lsm.spotLightProjMatrices[i] = lightSpaceMatrix;
+            ubo.spotLightProjMatrices[i] = lightSpaceMatrix;
             _shadowMapSpot.BindFramebufferLayer(i);
 
             shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
@@ -117,7 +116,7 @@ public:
             this->render(scene.GetQueue(Forward), shader);
         }
 
-        scene.UpdateShadowMapUBO(lsm);
+        _shadowMapUBO.Upload();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
@@ -224,6 +223,7 @@ private:
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;
     ShadowMapSpot _shadowMapSpot;
+    UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO {};
     Bloom _bloom;
 
 };

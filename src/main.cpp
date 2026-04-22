@@ -259,7 +259,7 @@ int main()
         camera->UploadUBO();
 
         renderer.PassShadowDirectional(scene, *shadowDirShader);
-        renderer.PassPointShadow(scene, *shadowPointShader);
+        renderer.PassShadowPoint(scene, *shadowPointShader);
         renderer.PassShadowSpot(scene, *shadowSpotShader);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);

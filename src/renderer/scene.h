@@ -22,25 +22,13 @@ enum RenderQueueType {
     Deferred
 };
 
-const int MAX_LIGHTS = 16;
 class Scene {
 public:
     using Handle = uint32_t;
     using RenderQueue = std::unordered_map<Handle, Model>;
 
-    Scene() {
-        //this->InitUBO(_directionalLightUBO, sizeof(DirectionalLightUBO) * MAX_LIGHTS, 0);
-        //this->InitUBO(_pointLightUBO, sizeof(glm::ivec4) + sizeof(PointLightBlockGPU) * MAX_LIGHTS, 1);
-        //this->InitUBO(_spotLightUBO, sizeof(glm::ivec4) + sizeof(SpotLightBlockGPU) * MAX_LIGHTS, 2);
-        this->InitUBO(_shadowMapUBO, sizeof(ShadowMapUBO), 4);
-    };
-
-    ~Scene() {
-        //glDeleteBuffers(1, &_directionalLightUBO);
-        //glDeleteBuffers(1, &_pointLightUBO);
-        //glDeleteBuffers(1, &_spotLightUBO);
-        glDeleteBuffers(1, &_shadowMapUBO);
-    }
+    Scene() = default;
+    ~Scene() = default;
 
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
@@ -69,7 +57,7 @@ public:
         return index;
     }
 
-    PointLightUBO GetPointLights() {
+    PointLightUBO& GetPointLights() {
         return _pointLightUBO.Data();
     }
 
@@ -112,35 +100,12 @@ public:
         std::unreachable();
     }
 
-    //TODO rename to Upload? remove param?
-    void UpdateShadowMapUBO(const ShadowMapUBO lightSpaceMatrix) {
-        _lightSpaceMatrices = lightSpaceMatrix;
-        glBindBuffer(GL_UNIFORM_BUFFER, _shadowMapUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ShadowMapUBO), &_lightSpaceMatrices);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
-    ShadowMapUBO GetLightSpaceMatrices() {
-        return _lightSpaceMatrices;
-    };
-
 private:
-    void InitUBO(GLuint& ubo, size_t size, int binding) {
-        glGenBuffers(1, &ubo);
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-        glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
     RenderQueue _forwardQueue;
     RenderQueue _deferredQueue;
     RenderQueue _noShadowQueue; //TODO rename?
 
-    ShadowMapUBO _lightSpaceMatrices;
-
     uint32_t _handleNext{0};
-    GLuint _shadowMapUBO{0};
 
     UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO {};
     UniformBuffer<PointLightUBO, 1> _pointLightUBO {};
