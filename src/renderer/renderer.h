@@ -54,6 +54,9 @@ public:
     }
 
     void PassShadowDirectional(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassShadowDirectional");
+        stopwatch.Start();
+
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
         auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
@@ -69,24 +72,28 @@ public:
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
+        stopwatch.Stop();
     }
 
     void PassShadowPoint(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassShadowPoint");
+        stopwatch.Start();
         const float farPlane = 25.0f;
         const auto& pointLights = scene.GetPointLights();
-        const int count = pointLights.Count();
 
         _shadowMapPoint.BindFramebuffer();
         _shadowMapPoint.BindTexture();
         shader.Activate();
         shader.SetFloat("farPlane", farPlane);
+
+        const int count = std::min(pointLights.Count(), MAX_POINT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
             auto shadowMatrices = math::GetPointShadowMatrices(lightPos);
 
             shader.SetInt("lightIndex", i);
             shader.SetVec3("lightPos", lightPos);
-            for (unsigned int face = 0; face < 6; ++face) {
+            for (auto face = 0u; face < 6; ++face) {
                 shader.SetMat4("shadowMatrices[" + std::to_string(face) + "]", shadowMatrices[face]);
             }
             this->render(scene.GetQueue(Deferred), shader);
@@ -95,15 +102,18 @@ public:
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
+        stopwatch.Stop();
     }
 
     void PassShadowSpot(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassShadowSpot");
+        stopwatch.Start();
         auto& spotLights = scene.GetSpotLights();
         auto& ubo = _shadowMapUBO.Data();
     
         _shadowMapSpot.BindTexture();
         shader.Activate();
-        int count = spotLights.Count(); // TODO check for MAX SHADOW CASTERS
+        int count = std::min(spotLights.Count(), MAX_SPOT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto& light = spotLights.At(i);
             auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees());
@@ -119,11 +129,12 @@ public:
         _shadowMapUBO.Upload();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
+        stopwatch.Stop();
     }
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassGeometryBuffer");
-        //stopwatch.Start();
+        stopwatch.Start();
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
@@ -132,12 +143,12 @@ public:
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
 
-        stopwatch.Stop("PassGeometryBuffer");
+        stopwatch.Stop();
     }
 
      void PassDeferred(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassDeferred");
-        //stopwatch.Start();
+        stopwatch.Start();
         _gBuffer.BindTextures();
         _bloom.BindHdrFramebuffer();
         glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
@@ -150,25 +161,30 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 3);
         //glDepthMask(GL_TRUE);
 
-        stopwatch.Stop("PassDeferred");
+        stopwatch.Stop();
     }
 
     void PassForward(Scene& scene, Shader& shader) {
         Stopwatch stopwatch("PassForward");
-        //stopwatch.Start();
+        stopwatch.Start();
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         this->render(scene.GetQueue(Forward), shader);
-        stopwatch.Stop("PassForward");
+        stopwatch.Stop();
     }
 
     void PassNoShadow(Scene& scene, Shader& unlitShader) {
+        Stopwatch stopwatch("PassNoShadow");
+        stopwatch.Start();
         _bloom.BindHdrFramebuffer();
         unlitShader.Activate();
         this->render(scene.GetQueue(NoShadow), unlitShader);
+        stopwatch.Stop();
     }
 
     void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
+        Stopwatch stopwatch("PassSkybox");
+        stopwatch.Start();
         _bloom.BindHdrFramebuffer();
 
         glDepthFunc(GL_LEQUAL);  // pass when depth equals 1.0
@@ -178,9 +194,12 @@ public:
         skybox.Draw(skyboxShader, view, projection);
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS); // restore default
+        stopwatch.Stop();
     }
 
     void PassBloom(Shader& blurShader, Shader& bloomShader) {
+        Stopwatch stopwatch("PassBloom");
+        stopwatch.Start();
         // Blur bright fragments with two-pass Gaussian Blur 
         blurShader.Activate();
         _bloom.Blur(blurShader, 20);
@@ -197,6 +216,7 @@ public:
         bloomShader.SetInt("bloomBlur", 1);
         bloomShader.SetInt("bloom", bloom);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        stopwatch.Stop();
     }
 
 private:

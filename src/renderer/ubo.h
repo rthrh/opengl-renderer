@@ -45,7 +45,7 @@ private:
 };
 
 
-constexpr int MAX_POINT_LIGHTS = 16;
+constexpr int MAX_POINT_LIGHTS = 1024;
 struct PointLightUBO {
     glm::ivec4 count{0}; // x = count, yzw = padding
     PointLightBlockGPU lights[MAX_POINT_LIGHTS];
@@ -107,7 +107,7 @@ private:
     float _padding{0.0f};
 };
 
-constexpr int MAX_SPOT_LIGHTS = 16;
+constexpr int MAX_SPOT_LIGHTS = 1024;
 struct SpotLightUBO {
     glm::ivec4 count{0}; // x = count, yzw = padding
     SpotLightBlockGPU lights[MAX_SPOT_LIGHTS];
@@ -133,6 +133,7 @@ struct SpotLightUBO {
     int Count() const { return count.x; }
 };
 
+constexpr int MAX_POINT_SHADOW_CASTERS = 4;
 constexpr int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
 struct ShadowMapUBO {
     glm::mat4 dirLightProjMatrix;

@@ -27,7 +27,6 @@ public:
     void Stop(std::string_view stepLabel = "") {
         auto now = Clock::now();
         if (can_log(now)) {
-            Stamp(stepLabel);
             Info("[{}] total: {:.3f} ms", _label, MS(now - _start).count());
         }
         _running = false;
