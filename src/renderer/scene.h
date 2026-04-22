@@ -23,7 +23,6 @@ enum RenderQueueType {
 };
 
 const int MAX_LIGHTS = 16;
-// TODO add spotlights, pointlights, skybox, etc.
 class Scene {
 public:
     using Handle = uint32_t;

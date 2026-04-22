@@ -10,8 +10,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <cassert>
-
-
+#include <utility>
 
 class Shader
 {
@@ -35,32 +34,23 @@ public:
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
-    //TODO std::exchange
-    Shader(Shader&& other) noexcept
-        : _ID(other._ID),
+    Shader(Shader&& other) noexcept:
+        _ID(std::exchange(other._ID, 0)),
         _uniformMap(std::move(other._uniformMap)),
         _vertexPath(std::move(other._vertexPath)),
         _fragmentPath(std::move(other._fragmentPath)),
         _geometryPath(std::move(other._geometryPath)),
-        _rootPath(std::move(other._rootPath))
-    {
-        other._ID = 0;
-    }
+        _rootPath(std::move(other._rootPath)) {}
 
-    Shader& operator=(Shader&& other) noexcept
-    {
-        if (this != &other)
-        {
+    Shader& operator=(Shader&& other) noexcept {
+        if (this != &other) {
             glDeleteProgram(_ID);
-
-            _ID = other._ID;
-            _uniformMap = std::move(other._uniformMap);
-            _vertexPath = std::move(other._vertexPath);
+            _ID           = std::exchange(other._ID, 0);
+            _uniformMap   = std::move(other._uniformMap);
+            _vertexPath   = std::move(other._vertexPath);
             _fragmentPath = std::move(other._fragmentPath);
             _geometryPath = std::move(other._geometryPath);
-            _rootPath = std::move(other._rootPath);
-
-            other._ID = 0;
+            _rootPath     = std::move(other._rootPath);
         }
         return *this;
     }
