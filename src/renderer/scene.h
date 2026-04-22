@@ -15,6 +15,7 @@
 
 #include "model.h"
 #include "ubo.h"
+#include "gl/uniform_buffer.h"
 
 enum RenderQueueType {
     Forward,
@@ -156,6 +157,7 @@ private:
 
     RenderQueue _forwardQueue;
     RenderQueue _deferredQueue;
+    RenderQueue _noShadowQueue; //TODO rename?
 
     std::optional<DirectionalLightBlockGPU> _directionalLight;
     std::vector<PointLightBlockGPU> _pointLights;
@@ -167,4 +169,6 @@ private:
     GLuint _pointLightUBO{0};
     GLuint _spotLightUBO{0};
     GLuint _shadowMapUBO{0};
+
+
 };

@@ -35,6 +35,7 @@ public:
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
+    //TODO std::exchange
     Shader(Shader&& other) noexcept
         : _ID(other._ID),
         _uniformMap(std::move(other._uniformMap)),

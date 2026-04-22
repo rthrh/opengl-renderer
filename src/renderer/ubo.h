@@ -22,7 +22,8 @@ private:
 
 
 struct PointLightBlockGPU {
-    explicit PointLightBlockGPU(glm::vec3 position, float intensity = 1.0f, float range = 10.0f)
+    PointLightBlockGPU() = default;
+    PointLightBlockGPU(glm::vec3 position, float intensity = 1.0f, float range = 10.0f)
         : _positionAndRange{glm::vec4(position, range)}, _colorAndIntensity{1.0f, 1.0f, 1.0f, intensity} {}
 
     PointLightBlockGPU& SetPosition(glm::vec3 position) { _positionAndRange = {position, _positionAndRange.w}; return *this; }
@@ -41,6 +42,11 @@ private:
     glm::vec4 _colorAndIntensity;
 };
 
+
+struct PointLightUBO {
+    glm::ivec4 count{0}; // x = count, yzw = padding
+    PointLightBlockGPU lights[16];
+};
 
 struct SpotLightBlockGPU {
     explicit SpotLightBlockGPU(glm::vec3 position, glm::vec3 direction, float intensity = 1.0f, float range = 10.0f, float inner = 12.5f, float outer = 15.0f)

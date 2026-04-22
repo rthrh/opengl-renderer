@@ -6,9 +6,11 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "texture_cache.h"
 #include "utils/stopwatch.h"
+
 struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal{};
@@ -27,19 +29,22 @@ public:
 
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
-    Mesh(Mesh&& o) noexcept : _VAO(o._VAO), _VBO(o._VBO), _EBO(o._EBO),
-                              _vertices(std::move(o._vertices)), _indices(std::move(o._indices)), _textures(std::move(o._textures)) {
-        o._VAO = o._VBO = o._EBO = 0;
-    }
+    Mesh(Mesh&& o) noexcept:
+        _VAO(std::exchange(o._VAO, 0)),
+        _VBO(std::exchange(o._VBO, 0)),
+        _EBO(std::exchange(o._EBO, 0)),
+        _vertices(std::move(o._vertices)),
+        _indices(std::move(o._indices)),
+        _textures(std::move(o._textures)) {}
 
     Mesh& operator=(Mesh&& o) noexcept {
         if (this == &o) return *this;
         glDeleteVertexArrays(1, &_VAO);
         glDeleteBuffers(1, &_VBO);
         glDeleteBuffers(1, &_EBO);
-
-        _VAO = o._VAO; _VBO = o._VBO; _EBO = o._EBO;
-        o._VAO = o._VBO = o._EBO = 0;
+        _VAO = std::exchange(o._VAO, 0);
+        _VBO = std::exchange(o._VBO, 0);
+        _EBO = std::exchange(o._EBO, 0);
         _vertices = std::move(o._vertices);
         _indices  = std::move(o._indices);
         _textures = std::move(o._textures);
