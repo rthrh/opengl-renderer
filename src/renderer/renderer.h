@@ -56,7 +56,7 @@ public:
     void PassShadowDirectional(Scene& scene, Shader& shader) {
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
-        auto lightSpaceMatrix = math::GetLightSpaceMatrix(lightDir);
+        auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
 
         _shadowMapUBO.Data().dirLightProjMatrix = lightSpaceMatrix;
         _shadowMapUBO.Upload();
@@ -82,7 +82,7 @@ public:
         shader.SetFloat("farPlane", farPlane);
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
-            auto shadowMatrices = math::GetShadowMatrices(lightPos);
+            auto shadowMatrices = math::GetPointShadowMatrices(lightPos);
 
             shader.SetInt("lightIndex", i);
             shader.SetVec3("lightPos", lightPos);
