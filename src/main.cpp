@@ -134,23 +134,11 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
     //auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
-    // debug mesh
-    Mesh lightDebugMesh(floor_vertices, floor_indices);
-    Model lightDebugModel(std::move(lightDebugMesh), textureCache);
-    lightDebugModel.SetTranslation(spotLight1.GetPosition());
-    lightDebugModel.SetScale({0.1f, 1.0f, 0.1f});
-    scene.AddModel(std::move(lightDebugModel), Forward);
-
-    Mesh lightDebugMesh2(floor_vertices, floor_indices);
-    Model lightDebugModel2(std::move(lightDebugMesh2), textureCache);
-    lightDebugModel2.SetTranslation(spotLight2.GetPosition());
-    lightDebugModel2.SetScale({0.1f, 1.0f, 0.1f});
-    scene.AddModel(std::move(lightDebugModel2), Forward);
     scene.AddDirectionalLight(std::move(dirLight));
-    //scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light1));
     scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
-    //scene.AddSpotLight(std::move(spotLight1));
+    scene.AddPointLight(std::move(light3));
+    scene.AddSpotLight(std::move(spotLight1));
     scene.AddSpotLight(std::move(spotLight2));
 
 
@@ -185,6 +173,8 @@ int main()
     auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");
     auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
 
+    auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
+
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
@@ -205,7 +195,7 @@ int main()
     GuiData guiData {.color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}};
 
     // Scene setup
-    Scene scene;
+    Scene scene(textureCache);
     setupScene(scene, textureCache);
 
     // setup skybox rogland_clear_night_4k newport_loft.hdr
@@ -265,8 +255,8 @@ int main()
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
         renderer.PassSkybox(skybox, *skyboxShader);
+        renderer.PassNoShadow(scene, *unlitShader);
         renderer.PassBloom(*blurShader, *bloomShader);
-
         // Renders the ImGUI elements
 		guiLayer.endFrame();
 

@@ -12,9 +12,13 @@
 #include <unordered_map>
 #include <cassert>
 #include <utility>
+#include <memory>
 
 #include "model.h"
 #include "ubo.h"
+#include "texture_cache.h"
+#include "shapes.h"
+
 #include "gl/uniform_buffer.h"
 
 enum RenderQueueType {
@@ -28,7 +32,11 @@ public:
     using Handle = uint32_t;
     using RenderQueue = std::unordered_map<Handle, Model>;
 
-    Scene() = default;
+    Scene(const std::shared_ptr<TextureCache>& textureCache) :
+        _textureCache(textureCache)
+    {
+
+    }
     ~Scene() = default;
 
     Scene(const Scene&) = delete;
@@ -55,6 +63,14 @@ public:
 
         _pointLightUBO.Data().Pushback(light);
         _pointLightUBO.Upload();
+    
+        // Add debug light marker
+        Mesh markerMesh(cube_vertices, cube_indices);
+        Model markerModel(std::move(markerMesh), _textureCache);
+        markerModel.SetTranslation(light.GetPosition());
+        markerModel.SetScale({0.1f, 0.1f, 0.1f});
+        AddModel(std::move(markerModel), NoShadow);
+
         return index;
     }
 
@@ -68,6 +84,14 @@ public:
 
         _spotLightUBO.Data().Pushback(light);
         _spotLightUBO.Upload();
+
+        // Add debug light marker
+        Mesh markerMesh(cube_vertices, cube_indices);
+        Model markerModel(std::move(markerMesh), _textureCache);
+        markerModel.SetTranslation(light.GetPosition());
+        markerModel.SetScale({0.1f, 0.1f, 0.1f});
+        AddModel(std::move(markerModel), NoShadow);
+
         return index;
     }
 
@@ -116,4 +140,5 @@ private:
     UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO {};
     UniformBuffer<PointLightUBO, 1> _pointLightUBO {};
     UniformBuffer<SpotLightUBO, 2> _spotLightUBO {};
+    std::shared_ptr<TextureCache> _textureCache;
 };

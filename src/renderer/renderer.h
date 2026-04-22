@@ -162,6 +162,12 @@ public:
         stopwatch.Stop("PassForward");
     }
 
+    void PassNoShadow(Scene& scene, Shader& unlitShader) {
+        _bloom.BindHdrFramebuffer();
+        unlitShader.Activate();
+        this->render(scene.GetQueue(NoShadow), unlitShader);
+    }
+
     void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
         _bloom.BindHdrFramebuffer();
 
