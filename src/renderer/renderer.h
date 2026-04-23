@@ -22,7 +22,7 @@
 
 class Renderer {
 public:
-    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera) :
+    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
         _scrWidth(scrWidth),
@@ -30,7 +30,8 @@ public:
         _shadowMapDirectional(),
         _shadowMapPoint(),
         _shadowMapSpot(),
-        _bloom(scrWidth, scrHeight)
+        _bloom(scrWidth, scrHeight),
+        _skybox(skybox)
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -134,6 +135,7 @@ public:
 
      void PassDeferred(Scene& scene, Shader& shader) {
         _gBuffer.BindTextures();
+        _skybox->BindIrradianceMap();
         _bloom.BindHdrFramebuffer();
         glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
 
@@ -221,5 +223,5 @@ private:
     ShadowMapSpot _shadowMapSpot;
     UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO {};
     Bloom _bloom;
-
+    std::shared_ptr<Skybox> _skybox;
 };

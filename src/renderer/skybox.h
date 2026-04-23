@@ -20,15 +20,17 @@
 
 class Skybox {
 public:
-    Skybox(std::filesystem::path path, Shader& equirectShader, GLsizei cubeSize = 2048) :
+    Skybox(std::filesystem::path path, Shader& equirectShader, Shader& irradianceShader, GLsizei cubeSize = 2048) :
         _cubeSize(cubeSize)
     {
         initBuffers();
         initTextureHDR(std::move(path));
         initCubemap();
+        initIrradianceMap();
         initCube();
 
         equirectToEnvMap(equirectShader);
+        bakeIrradianceMap(irradianceShader);
     }
 
     ~Skybox() {
@@ -51,6 +53,10 @@ public:
 
         glBindTextureUnit(slot(SlotOther::Skybox), _envCubemap);
         renderCube();
+    }
+
+    void BindIrradianceMap() const {
+        glBindTextureUnit(slot(SlotOther::Irradiance), _irradianceCubemap);
     }
 
 private:
@@ -107,8 +113,6 @@ private:
         } else {
             stbi_image_free(data);
         }
-
-
     }
 
     // setup cubemap to render to and attach to framebuffer
@@ -120,6 +124,8 @@ private:
         glTextureParameteri(_envCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         glTextureParameteri(_envCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(_envCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
     }
 
     // Init cube geometry
@@ -145,8 +151,8 @@ private:
 
     // Converts equirectangular map to cube map
     void equirectToEnvMap(Shader& equirectShader) {
-        glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-        glm::mat4 captureViews[] =
+        _captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        _captureViews =
         {
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
@@ -158,17 +164,18 @@ private:
 
         equirectShader.Activate();
         equirectShader.SetInt("equirectangularMap", 0);
-        equirectShader.SetMat4("projection", captureProjection);
+        equirectShader.SetMat4("projection", _captureProjection);
         glBindTextureUnit(0, _hdrTexture);
 
         glViewport(0, 0, _cubeSize, _cubeSize);
         glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
         for (unsigned int i = 0; i < 6; ++i)
         {
-            equirectShader.SetMat4("view", captureViews[i]);
-            glNamedFramebufferTextureLayer(_captureFBO, GL_COLOR_ATTACHMENT0, _envCubemap, 0, i);
+            equirectShader.SetMat4("view", _captureViews[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,  // ← fix
+                                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                _envCubemap, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             this->renderCube();
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -179,6 +186,37 @@ private:
         glDrawArrays(GL_TRIANGLES, 0, 36); // 36 cubemap triangles
     }
 
+    void initIrradianceMap() {
+        constexpr int size = 32; // scaled down
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_irradianceCubemap);
+        glTextureStorage2D(_irradianceCubemap, 1, GL_RGB16F, size, size);
+        glTextureParameteri(_irradianceCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(_irradianceCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(_irradianceCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(_irradianceCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(_irradianceCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
+    void bakeIrradianceMap(Shader& irradianceShader) {
+        // resize capture RBO to 32x32
+        glNamedRenderbufferStorage(_captureRBO, GL_DEPTH_COMPONENT24, 32, 32);
+
+        irradianceShader.Activate();
+        irradianceShader.SetMat4("projection", _captureProjection);
+        irradianceShader.SetInt("environmentMap", 0); //TODO not needed
+        glBindTextureUnit(0, _envCubemap);
+
+        glViewport(0, 0, 32, 32);
+        glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
+        for (unsigned int i = 0; i < 6; i++) {
+            irradianceShader.SetMat4("view", _captureViews[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, _irradianceCubemap, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            renderCube();
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
     GLuint _captureFBO = 0;
     GLuint _captureRBO = 0;
     GLuint _envCubemap = 0;
@@ -186,4 +224,8 @@ private:
     GLuint _cubeVAO = 0;
     GLuint _cubeVBO = 0;
     GLsizei _cubeSize = 0;
+
+    GLuint _irradianceCubemap = 0;
+    std::array<glm::mat4, 6> _captureViews;
+    glm::mat4 _captureProjection;
 };

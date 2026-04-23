@@ -25,6 +25,7 @@ enum class SlotOther : GLuint {
     ShadowDirectional = 7,
     ShadowPoint = 8,
     ShadowSpot = 9,
+    Irradiance = 10,
 };
 
 // Helper to get GLuint from slot enum

@@ -147,12 +147,12 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
     //auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
-    scene.AddDirectionalLight(std::move(dirLight));
-    scene.AddPointLight(std::move(light1));
-    scene.AddPointLight(std::move(light2));
-    scene.AddPointLight(std::move(light3));
-    scene.AddSpotLight(std::move(spotLight1));
-    scene.AddSpotLight(std::move(spotLight2));
+    //scene.AddDirectionalLight(std::move(dirLight));
+    //scene.AddPointLight(std::move(light1));
+    //scene.AddPointLight(std::move(light2));
+    //scene.AddPointLight(std::move(light3));
+    //scene.AddSpotLight(std::move(spotLight1));
+    //scene.AddSpotLight(std::move(spotLight2));
 
 
 }
@@ -222,6 +222,9 @@ int main()
     auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");
     auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
 
+    auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
+
+
     auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
 
     // set up shader file watcher
@@ -232,7 +235,13 @@ int main()
     float aspectRatio = (float)windowWidth / (float)windowHeight;
     auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
 
-    Renderer renderer(windowWidth, windowHeight, camera);
+    // setup skybox rogland_clear_night_4k newport_loft.hdr
+    //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
+    std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
+    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader);
+
+
+    Renderer renderer(windowWidth, windowHeight, camera, skybox);
     auto textureCache = std::make_shared<TextureCache>();
 
     // App context data for callbacks
@@ -245,12 +254,7 @@ int main()
 
     // Scene setup
     Scene scene(textureCache);
-    setupScene1k(scene, textureCache);
-
-    // setup skybox rogland_clear_night_4k newport_loft.hdr
-    //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
-    std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
-    Skybox skybox (skyboxPath, *equirectShader);
+    setupScene(scene, textureCache);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;
@@ -303,7 +307,7 @@ int main()
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
-        renderer.PassSkybox(skybox, *skyboxShader);
+        renderer.PassSkybox(*skybox, *skyboxShader);
         renderer.PassNoShadow(scene, *unlitShader);
         renderer.PassBloom(*blurShader, *bloomShader);
         // Renders the ImGUI elements

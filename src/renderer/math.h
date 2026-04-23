@@ -8,7 +8,6 @@
 
 namespace math {
 
-    // Light space matrix for directional light shadows
     glm::mat4 GetDirLightSpaceMatrix(const glm::vec3& lightDir, float nearPlane = 1.0f, float farPlane  = 50.0f, float frustumSize = 20.0f) {
         glm::mat4 lightProj = glm::ortho(-frustumSize, frustumSize, -frustumSize, frustumSize, nearPlane, farPlane);
 
@@ -37,7 +36,6 @@ namespace math {
         };
     }
 
-    // TODO check validity
     glm::mat4 GetSpotLightSpaceMatrix(glm::vec3 position, glm::vec3 direction, float outerConeAngleDeg, float nearPlane = 0.1f, float farPlane = 25.0f) {
         constexpr float aspect = 1.0f;
         glm::mat4 proj = glm::perspective(glm::radians(outerConeAngleDeg * 2.0f), aspect, nearPlane, farPlane);

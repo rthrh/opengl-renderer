@@ -17,6 +17,7 @@ layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 layout(binding = 7) uniform sampler2D shadowDirMap;
 layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
 layout(binding = 9) uniform sampler2DArray shadowSpotMap;
+layout(binding = 10) uniform samplerCube irradianceMap;
 
 uniform float farPlane;
 
@@ -71,8 +72,15 @@ void main() {
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
-    // ambient + AO
-    vec3 ambient = vec3(0.03) * albedo * ao;
+
+    // IBL diffuse ambient + AO
+    vec3 kS = F_Schlick(max(dot(N, V), 0.0), F0);
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);
+
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 diffuse    = irradiance * albedo;
+    vec3 ambient    = (kD * diffuse) * ao;
+    //vec3 ambient = vec3(0.03) * albedo * ao;
 
     vec3 color = ambient + Lo + emissive;
     FragColor = vec4(color, 1.0);
@@ -83,6 +91,5 @@ void main() {
         BrightColor = vec4(FragColor.rgb, 1.0);
 	else
 		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
-
 
 }
