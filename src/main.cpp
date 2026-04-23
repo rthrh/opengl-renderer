@@ -124,8 +124,10 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
     //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
+    std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
-    std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), textureCache);
     scene.AddModel(std::move(ourModel), Deferred);
@@ -147,7 +149,7 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
     //auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
-    //scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddDirectionalLight(std::move(dirLight));
     //scene.AddPointLight(std::move(light1));
     //scene.AddPointLight(std::move(light2));
     //scene.AddPointLight(std::move(light3));
@@ -196,6 +198,7 @@ void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache) {
 
 int main()
 {
+    //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);  //TODO
     const unsigned int windowWidth = 1600u;
     const unsigned int windowHeight = 1200u;
     auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
@@ -223,6 +226,8 @@ int main()
     auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
 
     auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
+    auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
+    auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
 
 
     auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
@@ -238,7 +243,7 @@ int main()
     // setup skybox rogland_clear_night_4k newport_loft.hdr
     //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
     std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
-    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader);
+    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
 
 
     Renderer renderer(windowWidth, windowHeight, camera, skybox);

@@ -135,7 +135,7 @@ public:
 
      void PassDeferred(Scene& scene, Shader& shader) {
         _gBuffer.BindTextures();
-        _skybox->BindIrradianceMap();
+        _skybox->BindTexturesIBL();
         _bloom.BindHdrFramebuffer();
         glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
 
