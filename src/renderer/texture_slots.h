@@ -6,9 +6,7 @@ enum class SlotGeometry : GLuint {
     Albedo = 0,
     Normal = 1,
     Emissive = 2,
-    Metallic = 3,
-    Roughness = 4,
-    AO = 5
+    ORM = 3,
 };
 
 enum class SlotDeferred : GLuint {

@@ -16,14 +16,13 @@ in mat3 TBN;
 layout(binding = 0) uniform sampler2D albedoMap;
 layout(binding = 1) uniform sampler2D normalMap;
 layout(binding = 2) uniform sampler2D emissiveMap;
-layout(binding = 3) uniform sampler2D metallicMap;
-layout(binding = 4) uniform sampler2D roughnessMap;
-layout(binding = 5) uniform sampler2D aoMap;
+layout(binding = 3) uniform sampler2D ormMap;
 
 void main() {
-    float ao = texture(aoMap, TexCoords).r;
-    float roughness = texture(roughnessMap, TexCoords).r;
-    float metallic = texture(metallicMap, TexCoords).r;
+    vec3 orm = texture(ormMap, TexCoords).rgb;
+    float ao = orm.r;
+    float roughness = orm.g;
+    float metallic = orm.b;
 
     // normal map → world space via TBN
     vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;

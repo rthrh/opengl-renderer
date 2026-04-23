@@ -122,10 +122,8 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
-    //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
-    std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
-    //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
+    //std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
+    std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     
     auto absPath = std::filesystem::absolute(modelPath);

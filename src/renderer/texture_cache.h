@@ -10,10 +10,8 @@ enum class TextureType {
     Albedo = 0,
     Normal = 1,
     Emissive = 2,
-    Metallic = 3,
-    Roughness = 4,
-    AO = 5,
-    Shadow = 6
+    ORM = 3,
+    Shadow = 4
 };
 
 struct Texture {
@@ -55,7 +53,7 @@ public:
 
     // todo move it somewhere
     std::vector<Texture> GetDummyTextureSet() {
-        return std::vector<Texture>(&_dummyTextures[0], &_dummyTextures[6]); // TODO check if textures up to AO are returned and make it more robust
+        return std::vector<Texture>(&_dummyTextures[0], &_dummyTextures[4]); // TODO check if textures up to AO are returned and make it more robust
     }
 
 private:
@@ -70,9 +68,8 @@ private:
         _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::Albedo});
         _dummyTextures.emplace_back(Texture{.id = _normalDummy, .type = TextureType::Normal});
         _dummyTextures.emplace_back(Texture{.id = _blackDummy, .type = TextureType::Emissive});
-        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::Metallic});
-        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::Roughness});
-        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::AO});
+        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::ORM}); //TODO better dummy
+
         _dummyTextures.emplace_back(Texture{.id = _blackDummy, .type = TextureType::Shadow});
     }
 

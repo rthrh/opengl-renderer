@@ -153,20 +153,62 @@ private:
         // 3. emissive maps
         std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
         textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
-        // 4. metallic maps
-        std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, TextureType::Metallic);
-        textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
-        // 5. roughness maps
-        std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, TextureType::Roughness);
-        textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
-        // 6. ambient occlusion maps
-        std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, TextureType::AO);
-        textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
-        Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}, metallicMaps: {}, roughnessMaps: {}, aoMaps: {}",
-            diffuseMaps.size(), normalMaps.size(), emissiveMaps.size(), metallicMaps.size(), roughnessMaps.size(), aoMaps.size());
+        // 4. Ambient Occlusion - Roughness - Metalness
+        Texture orm = buildORM(material);
+        textures.push_back(orm);
+        Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}",
+            diffuseMaps.size(), normalMaps.size(), emissiveMaps.size());
 
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
+    }
+
+    Texture buildORM(aiMaterial* mat) {
+        aiString mrPath, aoPath;
+        bool hasMR = mat->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS) > 0;
+        bool hasAO = mat->GetTextureCount(aiTextureType_LIGHTMAP) > 0;
+
+        if (!hasMR && !hasAO)
+            return Texture{0, TextureType::ORM, ""};
+
+        int width = 0, height = 0, channels = 0;
+
+        unsigned char* mr = nullptr; // metalness-roughness
+        unsigned char* ao = nullptr; // ambient occlusion
+
+        if (hasMR) {
+            mat->GetTexture(aiTextureType_GLTF_METALLIC_ROUGHNESS, 0, &mrPath);
+            std::string p = _directory + '/' + mrPath.C_Str();
+            mr = stbi_load(p.c_str(), &width, &height, &channels, 0);
+        }
+
+        if (hasAO) {
+            mat->GetTexture(aiTextureType_LIGHTMAP, 0, &aoPath);
+            std::string p = _directory + '/' + aoPath.C_Str();
+            ao = stbi_load(p.c_str(), &width, &height, &channels, 0);
+        }
+
+        // Combine ao and metal-roughness textures
+        std::vector<unsigned char> orm(width * height * 3);
+        for (int i = 0; i < width * height; i++) {
+            orm[i * 3 + 0] = ao ? ao[i * channels] : 255;
+            orm[i * 3 + 1] = mr ? mr[i * channels + 1] : 255;
+            orm[i * 3 + 2] = mr ? mr[i * channels + 2] : 0;
+        }
+
+        uint32_t id;
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0,
+                    GL_RGB, GL_UNSIGNED_BYTE, orm.data());
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        if (mr) stbi_image_free(mr);
+        if (ao) stbi_image_free(ao);
+
+        return Texture{ id, TextureType::ORM, "ORM" };
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
