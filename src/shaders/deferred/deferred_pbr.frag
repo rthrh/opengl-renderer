@@ -73,14 +73,13 @@ void main() {
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
 
-    // IBL diffuse ambient + AO
-    vec3 kS = F_Schlick(max(dot(N, V), 0.0), F0);
-    vec3 kD = (1.0 - kS) * (1.0 - metallic);
-
+    // IBL ambient + AO
+    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kD = 1.0 - kS;
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuse    = irradiance * albedo;
     vec3 ambient    = (kD * diffuse) * ao;
-    //vec3 ambient = vec3(0.03) * albedo * ao;
+    //ambient = vec3(0.03) * albedo * ao; // no IBL implementation
 
     vec3 color = ambient + Lo + emissive;
     FragColor = vec4(color, 1.0);
