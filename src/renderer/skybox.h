@@ -128,7 +128,7 @@ private:
 
     // setup cubemap to render to and attach to framebuffer
     void initCubemap() {
-        int mipLevels = 5;
+        int mipLevels = static_cast<int>(std::floor(std::log2(_cubeSize))) + 1;
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_envCubemap);
         glTextureStorage2D(_envCubemap, mipLevels, GL_RGB16F, _cubeSize, _cubeSize);
         glTextureParameteri(_envCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

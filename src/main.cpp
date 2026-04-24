@@ -114,6 +114,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 
     // configure global opengl state
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // fixes seams artifacts from skybox shape
 
     return window;
 }
@@ -196,7 +197,6 @@ void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache) {
 
 int main()
 {
-    //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);  //TODO
     const unsigned int windowWidth = 1600u;
     const unsigned int windowHeight = 1200u;
     auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
