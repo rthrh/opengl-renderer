@@ -26,6 +26,7 @@ enum class SlotOther : GLuint {
     Irradiance = 10,
     PrefilterEnv = 11,
     BrdfLUT = 12,
+    SSAO = 13,
 };
 
 // Helper to get GLuint from slot enum

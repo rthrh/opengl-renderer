@@ -169,8 +169,8 @@ void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
     //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
-    //std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
-    std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+    std::filesystem::path modelPath = root / "resources" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
+    //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), textureCache);
     scene.AddModel(std::move(ourModel), Deferred);
@@ -227,6 +227,8 @@ int main()
     auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
     auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
 
+    auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
+    auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
 
     auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
 
@@ -308,6 +310,7 @@ int main()
         renderer.PassShadowPoint(scene, *shadowPointShader);
         renderer.PassShadowSpot(scene, *shadowSpotShader);
         renderer.PassGeometryBuffer(scene, *gBufferShader);
+        renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
         renderer.PassSkybox(*skybox, *skyboxShader);

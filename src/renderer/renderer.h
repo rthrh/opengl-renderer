@@ -16,6 +16,7 @@
 #include "renderer/texture_slots.h"
 #include "renderer/math.h"
 #include "renderer/bloom.h"
+#include "renderer/ssao.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
@@ -31,6 +32,7 @@ public:
         _shadowMapPoint(),
         _shadowMapSpot(),
         _bloom(scrWidth, scrHeight),
+        _ssao(scrWidth, scrHeight),
         _skybox(skybox)
     {
         glCreateVertexArrays(1, &_emptyVAO);
@@ -133,8 +135,16 @@ public:
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
     }
 
-     void PassDeferred(Scene& scene, Shader& shader) {
+    void PassSSAO(Scene& scene, Shader& shaderSSAO, Shader& shaderBlur) {
         _gBuffer.BindTextures();
+        _ssao.Run(shaderSSAO);
+        _ssao.Blur(shaderBlur);
+        glViewport(0, 0, _scrWidth, _scrHeight);
+    }
+
+    void PassDeferred(Scene& scene, Shader& shader) {
+        _gBuffer.BindTextures();
+        _ssao.BindSSAOTexture();
         _skybox->BindTexturesIBL();
         _bloom.BindHdrFramebuffer();
         glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
@@ -223,5 +233,6 @@ private:
     ShadowMapSpot _shadowMapSpot;
     UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO {};
     Bloom _bloom;
+    SSAO _ssao;
     std::shared_ptr<Skybox> _skybox;
 };
