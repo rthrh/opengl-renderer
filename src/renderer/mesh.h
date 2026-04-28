@@ -11,6 +11,7 @@
 #include "texture_cache.h"
 #include "utils/stopwatch.h"
 
+// TODO GL_INT_2_10_10_10_REV packing
 struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal{};

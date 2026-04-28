@@ -259,7 +259,7 @@ int main()
 
     // Scene setup
     Scene scene(textureCache);
-    setupScene(scene, textureCache);
+    setupScene1k(scene, textureCache);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;
