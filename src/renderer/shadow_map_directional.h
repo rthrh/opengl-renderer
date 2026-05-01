@@ -9,26 +9,23 @@
 
 #include "camera.h"
 #include "texture_slots.h"
+#include "gl/texture2d.h"
 
 class ShadowMapDirectional {
 public:
     ShadowMapDirectional(int size = 2048) :
-        _size(size)
+        _size(size),
+        _depthTexture(size, size, TextureFormat::Depth32F)
     {
         glCreateFramebuffers(1, &_fbo);
 
         // create depth texture
-        glCreateTextures(GL_TEXTURE_2D, 1, &_depthTexture);
-        glTextureStorage2D(_depthTexture, 1, GL_DEPTH_COMPONENT32F, _size, _size);
-        glTextureParameteri(_depthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(_depthTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        //_depthTexture = Texture2D(_size, _size, TextureFormat::Depth32F);
+        _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        _depthTexture.SetWrap(TextureWrap::ClampToBorder, TextureWrap::ClampToBorder);
+        _depthTexture.SetBorderColor(1, 1, 1, 1);
 
-        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glTextureParameterfv(_depthTexture, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture, 0);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0);
         // don't render any color data
         glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
         glNamedFramebufferReadBuffer(_fbo, GL_NONE);
@@ -36,7 +33,6 @@ public:
 
     ~ShadowMapDirectional() {
         glDeleteFramebuffers(1, &_fbo);
-        glDeleteTextures(1, &_depthTexture);
     }
 
     ShadowMapDirectional(const ShadowMapDirectional&) = delete;
@@ -49,11 +45,12 @@ public:
     }
 
     void BindTexture() const {
-        glBindTextureUnit(slot(SlotOther::ShadowDirectional), _depthTexture);
+        _depthTexture.Bind(slot(SlotOther::ShadowDirectional));
     }
 
 private:
     GLuint _fbo = 0;
-    GLuint _depthTexture = 0;
+    //GLuint _depthTexture = 0;
+    Texture2D _depthTexture;
     int _size;
 };

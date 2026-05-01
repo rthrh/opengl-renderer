@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "texture_slots.h"
+#include "gl/texture.h"
 
 
 class ShadowMapPoint {
