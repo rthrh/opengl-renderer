@@ -112,7 +112,7 @@ void main() {
     vec3 ambient = (kD * diffuse + specular) * ao;
     
     vec3 color = ambient + Lo + emissive;
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(color, 1.0); // any(isnan(color)) TODO NaN sometimes on FragColor
 
     // For Bloom pass and tone mapping + gamma
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));

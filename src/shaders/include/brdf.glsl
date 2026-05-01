@@ -1,10 +1,12 @@
 
 const float PI = 3.14159265359;
 
+//TODO review
 float D_GGX(float NdotH, float roughness) {
     float a  = roughness * roughness;
     float a2 = a * a;
     float d  = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
+    d = max(d, 0.00001); // can be 0, producing NaN in return statement
     return a2 / (PI * d * d);
 }
 
@@ -20,7 +22,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 float G_SchlickGGX(float NdotV, float roughness) {
     float r = roughness + 1.0;
     float k = (r * r) / 8.0;
-    return NdotV / (NdotV * (1.0 - k) + k);
+    return NdotV / max((NdotV * (1.0 - k) + k), 0.00001);
 }
 
 float G_Smith(float NdotV, float NdotL, float roughness) {

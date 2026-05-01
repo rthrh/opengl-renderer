@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stb_image.h>
 
-
+// TODO get rid of
 enum class TextureType {
     Albedo = 0,
     Normal = 1,
