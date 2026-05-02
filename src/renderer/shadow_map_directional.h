@@ -9,7 +9,7 @@
 
 #include "camera.h"
 #include "texture_slots.h"
-#include "gl/texture2d.h"
+#include "gl/texture.h"
 
 class ShadowMapDirectional {
 public:
