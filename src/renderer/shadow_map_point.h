@@ -5,23 +5,18 @@
 #include <stdexcept>
 
 #include "texture_slots.h"
-
+#include "gl/texture.h"
 
 class ShadowMapPoint {
 public:
-    explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) : _size(size) {
-        // create depth cubemap texture
-        glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_depthCubemapArray);
-        glTextureStorage3D(_depthCubemapArray, 1, GL_DEPTH_COMPONENT32F,
-                           size, size, 6 * maxShadowCasters);
-        glTextureParameteri(_depthCubemapArray, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthCubemapArray, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureParameteri(_depthCubemapArray, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(_depthCubemapArray, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(_depthCubemapArray, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) :
+        _size(size), _depthTexture(size, maxShadowCasters, TextureFormat::Depth32F)
+    {
+        _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         // attach depth texture as FBO's depth buffer
         glCreateFramebuffers(1, &_fbo);
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthCubemapArray, 0);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0);
         glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
         glNamedFramebufferReadBuffer(_fbo, GL_NONE);
 
@@ -33,7 +28,6 @@ public:
 
     ~ShadowMapPoint() {
         glDeleteFramebuffers(1, &_fbo);
-        glDeleteTextures(1, &_depthCubemapArray);
     }
 
     ShadowMapPoint(const ShadowMapPoint&) = delete;
@@ -46,10 +40,10 @@ public:
     }
 
     void BindTexture() const {
-        glBindTextureUnit(slot(SlotOther::ShadowPoint), _depthCubemapArray);
+        glBindTextureUnit(slot(SlotOther::ShadowPoint), _depthTexture.GetID());
     }
 private:
     GLuint _fbo = 0;
-    GLuint _depthCubemapArray = 0;
+    TextureCubeArray _depthTexture;
     int _size;
 };

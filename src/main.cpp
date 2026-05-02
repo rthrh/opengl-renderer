@@ -149,11 +149,11 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     //auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
     scene.AddDirectionalLight(std::move(dirLight));
-    //scene.AddPointLight(std::move(light1));
-    //scene.AddPointLight(std::move(light2));
-    //scene.AddPointLight(std::move(light3));
-    //scene.AddSpotLight(std::move(spotLight1));
-    //scene.AddSpotLight(std::move(spotLight2));
+    scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
+    scene.AddSpotLight(std::move(spotLight1));
+    scene.AddSpotLight(std::move(spotLight2));
 
 
 }
