@@ -109,8 +109,8 @@ public:
         glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &_id);
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, width, height, layers);
-        SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
-        SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
+        this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         if (genMipMaps) {
             glGenerateTextureMipmap(_id);
         }
@@ -122,7 +122,7 @@ public:
     {
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_id);
 
-        const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned int>(std::max(_width, _height))) : 1;
+        const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         glTextureStorage2D(_id, mipLevels, (GLuint)internalFormat, size, size);
 
         this->SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
@@ -138,7 +138,7 @@ public:
     {
         glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_id);
 
-        const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned int>(std::max(_width, _height))) : 1;
+        const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, size, size, layers * 6);
 
         SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);

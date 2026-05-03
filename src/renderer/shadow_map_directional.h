@@ -49,8 +49,8 @@ public:
     }
 
 private:
+    int _size;
     GLuint _fbo = 0;
     //GLuint _depthTexture = 0;
     Texture2D _depthTexture;
-    int _size;
 };

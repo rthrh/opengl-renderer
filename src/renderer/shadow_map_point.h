@@ -44,7 +44,7 @@ public:
         glBindTextureUnit(slot(SlotOther::ShadowPoint), _depthTexture.GetID());
     }
 private:
+    int _size;
     GLuint _fbo = 0;
     TextureCubeArray _depthTexture;
-    int _size;
 };
