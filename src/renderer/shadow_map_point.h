@@ -10,7 +10,8 @@
 class ShadowMapPoint {
 public:
     explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) :
-        _size(size), _depthTexture(size, maxShadowCasters, TextureFormat::Depth32F)
+        _size(size),
+        _depthTexture(size, maxShadowCasters, TextureFormat::Depth32F)
     {
         _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);

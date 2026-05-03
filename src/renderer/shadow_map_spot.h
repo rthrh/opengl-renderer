@@ -14,7 +14,8 @@
 class ShadowMapSpot {
 public:
     ShadowMapSpot(int size = 2048, int maxShadowCasters = 4) :
-        _size(size), _depthTexture(size, size, maxShadowCasters, TextureFormat::Depth32F)
+        _size(size),
+        _depthTexture(size, size, maxShadowCasters, TextureFormat::Depth32F)
     {
         _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _depthTexture.SetWrap(TextureWrap::ClampToBorder, TextureWrap::ClampToBorder);

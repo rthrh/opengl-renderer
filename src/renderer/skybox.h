@@ -17,22 +17,27 @@
 #include "utils/logger.h"
 #include "renderer/shapes.h"
 #include "renderer/texture_slots.h"
+#include "gl/texture.h"
 
 class Skybox {
 public:
     Skybox(std::filesystem::path path, Shader& equirectShader, Shader& irradianceShader, Shader& prefilterShader, Shader& brdfShader, GLsizei cubeSize = 2048) :
-        _cubeSize(cubeSize)
+        _cubeSize(cubeSize),
+        _envCubemap(cubeSize, TextureFormat::RGB16F, true)
     {
         initBuffers();
         initTextureHDR(std::move(path));
-        initCubemap();
+        _envCubemap.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
+        _envCubemap.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+
         initIrradianceMap();
         initPrefilteredMap();
         initBrdfLUT();
         initCube();
 
         equirectToEnvMap(equirectShader);
-        glGenerateTextureMipmap(_envCubemap);
+        _envCubemap.GenerateMipmap();
+
         bakeIrradianceMap(irradianceShader);
         bakePrefilteredMap(prefilterShader);
         bakeBrdfLUT(brdfShader);
@@ -40,7 +45,6 @@ public:
 
     ~Skybox() {
         //TODO FBO, RBO, HDR texture can be removed after init
-        glDeleteTextures(1, &_envCubemap);
         glDeleteTextures(1, &_hdrTexture);
         glDeleteFramebuffers(1, &_captureFBO);
         glDeleteRenderbuffers(1, &_captureRBO);
@@ -60,7 +64,7 @@ public:
         skyboxShader.SetMat4("view", view);
         skyboxShader.SetMat4("projection", projection);
 
-        glBindTextureUnit(slot(SlotOther::Skybox), _envCubemap);
+        _envCubemap.Bind(slot(SlotOther::Skybox));
         renderCube();
     }
 
@@ -126,18 +130,6 @@ private:
         }
     }
 
-    // setup cubemap to render to and attach to framebuffer
-    void initCubemap() {
-        int mipLevels = static_cast<int>(std::floor(std::log2(_cubeSize))) + 1;
-        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_envCubemap);
-        glTextureStorage2D(_envCubemap, mipLevels, GL_RGB16F, _cubeSize, _cubeSize);
-        glTextureParameteri(_envCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(_envCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(_envCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(_envCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTextureParameteri(_envCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-
     // Init cube geometry
     void initCube() {
         glCreateVertexArrays(1, &_emptyVAO);
@@ -183,7 +175,7 @@ private:
         for (unsigned int i = 0; i < 6; ++i)
         {
             equirectShader.SetMat4("view", _captureViews[i]);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _envCubemap, 0, i);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _envCubemap.GetID(), 0, i);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             this->renderCube();
         }
@@ -212,7 +204,7 @@ private:
 
         irradianceShader.Activate();
         irradianceShader.SetMat4("projection", _captureProjection);
-        glBindTextureUnit(slot(SlotOther::Skybox), _envCubemap);
+        _envCubemap.Bind(slot(SlotOther::Skybox));
 
         glViewport(0, 0, 32, 32);
         glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
@@ -241,7 +233,7 @@ private:
         prefilterShader.Activate();
         prefilterShader.SetMat4("projection", _captureProjection);
 
-        glBindTextureUnit(slot(SlotOther::Skybox), _envCubemap);
+        _envCubemap.Bind(slot(SlotOther::Skybox));
         glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
 
         unsigned int maxMipLevels = 5;
@@ -302,7 +294,7 @@ private:
 
     GLuint _captureFBO = 0;
     GLuint _captureRBO = 0;
-    GLuint _envCubemap = 0;
+    TextureCube _envCubemap;
     GLuint _hdrTexture = 0;
     GLuint _cubeVAO = 0;
     GLuint _cubeVBO = 0;

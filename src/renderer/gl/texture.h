@@ -5,8 +5,20 @@
 #include <utility>
 #include <span>
 
-enum class TextureFilter { Nearest = GL_NEAREST, Linear = GL_LINEAR };
-enum class TextureWrap { Repeat = GL_REPEAT, MirroredRepeated = GL_MIRRORED_REPEAT, ClampToEdge = GL_CLAMP_TO_EDGE, ClampToBorder = GL_CLAMP_TO_BORDER };
+enum class TextureFilter {
+    Nearest = GL_NEAREST,
+    Linear = GL_LINEAR,
+    LinearMipMapLinear = GL_LINEAR_MIPMAP_LINEAR,
+    LinearMipMapNearest = GL_LINEAR_MIPMAP_NEAREST
+};
+
+enum class TextureWrap {
+    Repeat = GL_REPEAT,
+    MirroredRepeated = GL_MIRRORED_REPEAT,
+    ClampToEdge = GL_CLAMP_TO_EDGE,
+    ClampToBorder = GL_CLAMP_TO_BORDER
+};
+
 enum class TextureFormat {
     R8 = GL_R8,
     RG8 = GL_RG8,
@@ -182,6 +194,10 @@ public:
         glTextureParameterfv(_id, GL_TEXTURE_BORDER_COLOR, color);
     }
 
+    void GenerateMipmap() {
+        glGenerateTextureMipmap(_id);
+    }
+
     void Upload(const void* data) const requires (!Array<T> && !Cube<T>) {
         if (data) {
             auto channels = FormatToChannels(_format);
@@ -191,9 +207,10 @@ public:
     }
 
     void UploadLayer(const void* data, int layer) const requires (Array<T>) {
-        if (data)
+        if (data) {
             glTextureSubImage3D(_id, 0, 0, 0, layer, _width, _height, 1,
                 FormatToChannels(_format), FormatToDataType(_format), data);
+        }
     }
 
     void Bind(GLuint slot) const {
