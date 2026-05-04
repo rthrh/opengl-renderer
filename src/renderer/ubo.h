@@ -139,3 +139,29 @@ struct ShadowMapUBO {
     glm::mat4 dirLightProjMatrix;
     glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];
 };
+
+struct ConfigUBO {
+    // Bloom + tonemapping
+    int bloomEnabled = true;
+    float exposure = 1.0f;
+    float gamma = 2.2f;
+    float brightnessThreshold = 1.0f;
+
+    // SSAO
+    bool ssaoEnabled = true;
+    float ssaoRadius = 0.5f;
+    float ssaoBias = 0.025f;
+    int ssaoKernel = 64;
+
+    // Shadows
+    float shadowFarPlane = 25.0f; // TODO merge or separate
+    float pointShadowBias = 0.05;
+    float dirShadowBiasMin = 0.005;
+    float dirShadowBiasMax = 0.05;
+    float spotShadowBiasMin = 0.0005;
+    float spotShadowBiasMax = 0.005;
+
+    // IBL
+    float maxReflectionLOD = 4.0f;
+    float _pad0;
+};
