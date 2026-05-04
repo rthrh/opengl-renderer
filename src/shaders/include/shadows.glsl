@@ -1,5 +1,6 @@
 
-float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix)
+
+float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, float biasMin, float biasMax)
 {
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // perform perspective divide
@@ -15,7 +16,7 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix)
 
     // calculate bias
     vec3 lightDir = normalize(-dirLight.direction.xyz);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF 3x3 kernel
@@ -35,14 +36,13 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix)
 }
 
 
-float ShadowPointLight(vec3 fragPos, vec3 lightPos, int lightIndex)
+float ShadowPointLight(vec3 fragPos, vec3 lightPos, float farPlane, float bias, int lightIndex)
 {
     vec3 fragToLight = fragPos - lightPos;
     float closestDepth = texture(shadowPointMaps, vec4(fragToLight, float(lightIndex))).r;
     closestDepth *= farPlane;
     float currentDepth = length(fragToLight);
 
-    float bias = 0.05; // we use a much larger bias since depth is now in [near_plane, far_plane] range
     float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
     // TODO PCF kernel
     // display closestDepth as debug (to visualize depth cubemap)
@@ -52,7 +52,7 @@ float ShadowPointLight(vec3 fragPos, vec3 lightPos, int lightIndex)
 }
 
 
-float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, int lightIndex)
+float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, float biasMin, float biasMax, int lightIndex)
 {
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // perform perspective divide
@@ -67,7 +67,7 @@ float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, int ligh
 
     // calculate bias (based on depth map resolution and slope)
     vec3 lightDir = normalize(-spotLights.lights[lightIndex].direction.xyz);
-    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+    float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF 3x3 kernel

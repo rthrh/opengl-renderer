@@ -9,11 +9,6 @@ layout(binding = 13) uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
 
-// parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
-int kernelSize = 64;
-float radius = 0.5;
-float bias = 0.025;
-
 // tile noise texture over screen based on screen dimensions divided by noise size
 uniform vec2 noiseScale;
 
@@ -21,6 +16,16 @@ uniform vec2 noiseScale;
 
 void main()
 {
+    if(Config.ssaoEnabled == 0) {
+        FragColor = 1.0;
+        return;
+    }
+
+    // Config
+    float radius = Config.ssaoRadius;
+    float bias = Config.ssaoBias;
+    int kernelSize = Config.ssaoKernel;
+
     // get input for SSAO algorithm
     vec3 fragPosWorld = texture(gPosition, TexCoords).xyz;
     vec3 fragPos = vec3(camera.view * vec4(fragPosWorld, 1.0)); // from world to view space

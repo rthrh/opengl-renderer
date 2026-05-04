@@ -57,7 +57,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         auto cursor_mode = uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
         glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
 
-        GuiLayer::setMouseEnabled(uiMode);
+        GuiLayer::SetMouseEnabled(uiMode);
     }
 }
 
@@ -249,13 +249,15 @@ int main()
     Renderer renderer(windowWidth, windowHeight, camera, skybox);
     auto textureCache = std::make_shared<TextureCache>();
 
+    UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
+    configUBO.Upload();
+
     // App context data for callbacks
     MouseCallbackData callbackData {.cameraPtr{camera}, .lastX = windowWidth / 2.0f, .lastY = windowHeight / 2.0f };
     glfwSetWindowUserPointer(window, &callbackData);
 
      // init imgui
     GuiLayer guiLayer(window);
-    GuiData guiData {.color = glm::vec4{0.6f, 0.5f, 0.4f, 0.3f}};
 
     // Scene setup
     Scene scene(textureCache);
@@ -289,19 +291,19 @@ int main()
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		guiLayer.beginFrame();
+		guiLayer.BeginFrame();
 
         // handle input
-        if (!guiLayer.wantCaptureMouse()) {
+        if (!guiLayer.WantCaptureMouse()) {
 
         }
-        if (!guiLayer.wantCaptureKeyboard()) {
+        if (!guiLayer.WantCaptureKeyboard()) {
             // input
             processInput(window, camera);
         }
 
         // create gui items
-        guiLayer.build(guiData);
+        guiLayer.Build(configUBO);
 
         // Render scene
         camera->UploadUBO();
@@ -317,7 +319,7 @@ int main()
         renderer.PassNoShadow(scene, *unlitShader);
         renderer.PassBloom(*blurShader, *bloomShader);
         // Renders the ImGUI elements
-		guiLayer.endFrame();
+		guiLayer.EndFrame();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);

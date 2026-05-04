@@ -65,12 +65,13 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/renderer/*.cpp
     ${CMAKE_SOURCE_DIR}/src/renderer/*.h
     ${CMAKE_SOURCE_DIR}/src/utils/*.h
+    ${CMAKE_SOURCE_DIR}/src/gui/*.h
 )
-list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/src/demo.cpp)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/gl)
 include_directories(${CMAKE_SOURCE_DIR}/src/gui)
-include_directories(${CMAKE_SOURCE_DIR}/renderer)
+include_directories(${CMAKE_SOURCE_DIR}/src/renderer)
 include_directories(${CMAKE_SOURCE_DIR}/utils)
 include_directories(${CMAKE_SOURCE_DIR}/deps/)
 include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)

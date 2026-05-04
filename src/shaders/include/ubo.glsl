@@ -39,3 +39,25 @@ layout(std140, binding = 4) uniform ShadowBlock {
     mat4 dirLightSpaceMatrix;
     mat4 spotLightSpaceMatrices[4]; // TODO 4 MAX move it
 } Shadow;
+
+layout(std140, binding = 5) uniform ConfigBlock {
+    int   bloomEnabled;
+    float exposure;
+    float gamma;
+    float brightnessThreshold;
+
+    int   ssaoEnabled;
+    float ssaoRadius;
+    float ssaoBias;
+    int   ssaoKernel;
+
+    float pointShadowFarPlane;
+    float pointShadowBias;
+    float dirShadowBiasMin;
+    float dirShadowBiasMax;
+
+    float spotShadowBiasMin;
+    float spotShadowBiasMax;
+    float maxReflectionLOD;
+    float _pad0;
+} Config;

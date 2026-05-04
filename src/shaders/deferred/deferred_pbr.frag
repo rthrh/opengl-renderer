@@ -56,7 +56,7 @@ void main() {
 
     // accumulate lights
     vec3 Lo = vec3(0.0);
-    float shadow = ShadowDirectionalLight(FragPos, N, Shadow.dirLightSpaceMatrix);
+    float shadow = ShadowDirectionalLight(FragPos, N, Shadow.dirLightSpaceMatrix, Config.dirShadowBiasMin, Config.dirShadowBiasMax);
     Lo += CalcDirectionalLight(N, V, albedo, metallic, roughness, F0) * (1.0 - shadow);
 
     int pointCount = pointLights.count.x;
@@ -64,7 +64,7 @@ void main() {
         float shadow = 0.0;
         if (i < 4) { // TODO max 4 shadow casters
             vec3 lightPos = pointLights.lights[i].positionAndRange.xyz;
-            shadow = ShadowPointLight(FragPos, lightPos, i);  
+            shadow = ShadowPointLight(FragPos, lightPos, Config.pointShadowFarPlane, Config.pointShadowBias, i);
         }
 
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,
@@ -73,7 +73,7 @@ void main() {
 
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++) {
-        float shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrices[i], i);
+        float shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrices[i], Config.spotShadowBiasMin, Config.spotShadowBiasMax, i);
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
@@ -104,8 +104,7 @@ void main() {
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     vec3 R = reflect(-V, N);
-    const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * MAX_REFLECTION_LOD).rgb;    
+    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * Config.maxReflectionLOD).rgb;    
     vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
@@ -116,7 +115,7 @@ void main() {
 
     // For Bloom pass and tone mapping + gamma
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
+    if(brightness > Config.brightnessThreshold)
         BrightColor = vec4(FragColor.rgb, 1.0);
 	else
 		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);

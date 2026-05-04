@@ -148,16 +148,17 @@ struct ConfigUBO {
     float brightnessThreshold = 1.0f;
 
     // SSAO
-    bool ssaoEnabled = true;
+    int ssaoEnabled = true;
     float ssaoRadius = 0.5f;
     float ssaoBias = 0.025f;
     int ssaoKernel = 64;
 
     // Shadows
-    float shadowFarPlane = 25.0f; // TODO merge or separate
+    float pointShadowFarPlane = 25.0f;
     float pointShadowBias = 0.05;
     float dirShadowBiasMin = 0.005;
     float dirShadowBiasMax = 0.05;
+
     float spotShadowBiasMin = 0.0005;
     float spotShadowBiasMax = 0.005;
 
