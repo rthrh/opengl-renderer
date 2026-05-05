@@ -22,8 +22,6 @@ layout(binding = 11) uniform samplerCube prefilteredMap;
 layout(binding = 12) uniform sampler2D brdfLUT;
 layout(binding = 13) uniform sampler2D ssaoMap;
 
-uniform float farPlane;
-
 #include "include/ubo.glsl"
 #include "include/brdf.glsl"
 #include "include/pbr_lights.glsl"
@@ -77,19 +75,6 @@ void main() {
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
                             albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
-
-/*
-    // IBL ambient + AO  OLD
-    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    vec3 kD = 1.0 - kS;
-    vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 diffuse    = irradiance * albedo;
-    vec3 ambient    = (kD * diffuse) * ao;
-    //ambient = vec3(0.03) * albedo * ao; // no IBL implementation
-
-
-    vec3 color = ambient + Lo + emissive;
-    FragColor = vec4(color, 1.0);*/
 
     // IBL ambient + AO
     // ambient lighting (we now use IBL as the ambient term)

@@ -3,8 +3,8 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D scene;
-uniform sampler2D bloomBlur;
+layout(binding = 0) uniform sampler2D scene;
+layout(binding = 1) uniform sampler2D bloomBlur;
 
 #include "include/ubo.glsl"
 
@@ -19,6 +19,7 @@ void main()
 
     if(bloom == 1)
         hdrColor += bloomColor; // additive blending
+
     // tone mapping
     vec3 result = vec3(1.0) - exp(-hdrColor * exposure);
     // also gamma correct while we're at it       

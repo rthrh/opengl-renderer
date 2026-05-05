@@ -192,12 +192,6 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         bloomShader.Activate();
         _bloom.BindTextures();
-
-        int bloom = 1; float exposure = 0.5;
-        bloomShader.SetFloat("exposure", exposure);
-        bloomShader.SetInt("scene", 0);
-        bloomShader.SetInt("bloomBlur", 1);
-        bloomShader.SetInt("bloom", bloom);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
