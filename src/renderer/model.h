@@ -41,9 +41,17 @@ public:
         _dirty = true;
     }
 
-    void SetRotation(float radians, glm::vec3 axis) {
-        _rotation = glm::angleAxis(radians, glm::normalize(axis));
+    glm::vec3 GetTranslation() const { return _translation; }
+
+    // x - pitch, y - yaw, z - roll, CCW
+    void SetEulerAngles(glm::vec3 degrees) {
+        _eulerAngles = degrees;
+        _rotation = glm::quat(glm::radians(degrees)); // convert for internal use
         _dirty = true;
+    }
+
+    glm::vec3 GetEulerAngles() const {
+        return _eulerAngles;
     }
 
     void SetScale(glm::vec3 scale) {
@@ -51,9 +59,9 @@ public:
         _dirty = true;
     }
 
-    glm::vec3 GetWorldPos() const {
-        return _translation;
-    }
+    glm::vec3 GetScale() const { return _scale; }
+
+    glm::vec3 GetWorldPos() const { return _translation; }
 
     glm::mat4 GetModelMatrix() const {
         if (_dirty) {
@@ -137,12 +145,12 @@ private:
             aiFace face = mesh->mFaces[i];
             // retrieve all indices of the face and store them in the indices vector
             for(auto j = 0u; j < face.mNumIndices; j++)
-                indices.push_back(face.mIndices[j]);        
+                indices.push_back(face.mIndices[j]);
         }
         // process materials
         // TODO
         //auto textureTypes = {TextureType::Albedo, TextureType::Normal, TextureType::Emissive, TextureType::Metallic, TextureType::Roughness, TextureType::AO};
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
         // 1. diffuse map
         std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
@@ -197,13 +205,10 @@ private:
         }
 
         uint32_t id;
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0,
-                    GL_RGB, GL_UNSIGNED_BYTE, orm.data());
-
-        glGenerateMipmap(GL_TEXTURE_2D);
+        glCreateTextures(GL_TEXTURE_2D, 1, &id);
+        glTextureStorage2D(id, 1, GL_RGB8, width, height);
+        glTextureSubImage2D(id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, orm.data());
+        glGenerateTextureMipmap(id);
 
         if (mr) stbi_image_free(mr);
         if (ao) stbi_image_free(ao);
@@ -230,10 +235,11 @@ private:
     std::string _directory;
     std::vector<Mesh> _meshes;
 
-    mutable glm::mat4 _modelMatrix{1.0f};
-    glm::vec3 _translation{0.0f, 0.0f, 0.0f};
-    glm::quat _rotation{1.0f, 0.0f, 0.0f, 0.0f};
-    glm::vec3 _scale{1.0f, 1.0f, 1.0f};
+    mutable glm::mat4 _modelMatrix {1.0f};
+    glm::vec3 _translation {0.0f, 0.0f, 0.0f};
+    glm::quat _rotation {1.0f, 0.0f, 0.0f, 0.0f};
+    glm::vec3 _scale {1.0f, 1.0f, 1.0f};
+    glm::vec3 _eulerAngles {0.0f, 0.0f, 0.0f};
     mutable bool _dirty{true};
 
     std::shared_ptr<TextureCache> _textureCache;

@@ -20,7 +20,8 @@
 #include "renderer/texture_cache.h"
 #include "renderer/shader_cache.h"
 
-#include "gui.h"
+#include "gui/gui.h"
+#include "gui/model_list.h"
 #include "utils/file_watcher.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -126,7 +127,7 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     //std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
-    
+
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), textureCache);
     scene.AddModel(std::move(ourModel), Deferred);
@@ -136,6 +137,7 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     Model floorModel(std::move(floorMesh), textureCache);
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
+
     scene.AddModel(std::move(floorModel));
 
 
@@ -258,6 +260,7 @@ int main()
 
      // init imgui
     GuiLayer guiLayer(window);
+    ModelList modelList;
 
     // Scene setup
     Scene scene(textureCache);
@@ -275,6 +278,7 @@ int main()
     skyboxShader->Activate();
     skyboxShader->SetMat4("projection", projection);
 
+    auto rot = glm::vec3(0.0);
     // render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -304,7 +308,8 @@ int main()
 
         // create gui items
         guiLayer.Build(configUBO);
-
+        modelList.Build(scene);
+    
         // Render scene
         camera->UploadUBO();
 
@@ -358,11 +363,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // glfw: whenever the mouse moves, this callback is called
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureMouse || uiMode)
-        return;  // ImGui is using the mouse
-
     auto* data = static_cast<MouseCallbackData*>(glfwGetWindowUserPointer(window));
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
@@ -379,6 +379,10 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     data->lastX = xpos;
     data->lastY = ypos;
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse || uiMode)
+        return;  // ImGui is using the mouse
 
     data->cameraPtr->ProcessMouseMovement(xoffset, yoffset);
 }

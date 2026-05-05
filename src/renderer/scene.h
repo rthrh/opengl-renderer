@@ -118,7 +118,7 @@ public:
         return index;
     }
 
-    const RenderQueue& GetQueue(RenderQueueType queue) const {
+    RenderQueue& GetQueue(RenderQueueType queue) {
         switch (queue) {
             case Forward:
                 return _forwardQueue;
