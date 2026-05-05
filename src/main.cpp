@@ -278,7 +278,6 @@ int main()
     skyboxShader->Activate();
     skyboxShader->SetMat4("projection", projection);
 
-    auto rot = glm::vec3(0.0);
     // render loop
     while (!glfwWindowShouldClose(window))
     {

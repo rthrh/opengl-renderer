@@ -14,7 +14,7 @@ enum class TextureType {
     Shadow = 4
 };
 
-struct Texture {
+struct TextureHandle {
     GLuint id;
     TextureType type;
     std::string path;
@@ -38,22 +38,22 @@ public:
             return it->second.id;
 
         uint32_t id = upload(path, gammaCorrect);
-        _cache[path] = Texture{ id, type, path };
+        _cache[path] = TextureHandle{ id, type, path };
         return id;
     }
 
     bool     has(const std::string& path) const { return _cache.contains(path); }
-    Texture  get(const std::string& path) const { return _cache.at(path); }
+    TextureHandle  get(const std::string& path) const { return _cache.at(path); }
     size_t   count()                      const { return _cache.size(); }
 
-    Texture GetDummyTexture(TextureType type) {
+    TextureHandle GetDummyTexture(TextureType type) {
         return _dummyTextures[static_cast<int>(type)];
     }
 
 
     // todo move it somewhere
-    std::vector<Texture> GetDummyTextureSet() {
-        return std::vector<Texture>(&_dummyTextures[0], &_dummyTextures[4]); // TODO check if textures up to AO are returned and make it more robust
+    std::vector<TextureHandle> GetDummyTextureSet() {
+        return std::vector<TextureHandle>(&_dummyTextures[0], &_dummyTextures[4]); // TODO check if textures up to AO are returned and make it more robust
     }
 
 private:
@@ -65,12 +65,12 @@ private:
         _blackDummy = createDummy(black);
         _normalDummy = createDummy(flatNormal);
 
-        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::Albedo});
-        _dummyTextures.emplace_back(Texture{.id = _normalDummy, .type = TextureType::Normal});
-        _dummyTextures.emplace_back(Texture{.id = _blackDummy, .type = TextureType::Emissive});
-        _dummyTextures.emplace_back(Texture{.id = _whiteDummy, .type = TextureType::ORM}); //TODO better dummy
+        _dummyTextures.emplace_back(TextureHandle{.id = _whiteDummy, .type = TextureType::Albedo});
+        _dummyTextures.emplace_back(TextureHandle{.id = _normalDummy, .type = TextureType::Normal});
+        _dummyTextures.emplace_back(TextureHandle{.id = _blackDummy, .type = TextureType::Emissive});
+        _dummyTextures.emplace_back(TextureHandle{.id = _whiteDummy, .type = TextureType::ORM}); //TODO better dummy
 
-        _dummyTextures.emplace_back(Texture{.id = _blackDummy, .type = TextureType::Shadow});
+        _dummyTextures.emplace_back(TextureHandle{.id = _blackDummy, .type = TextureType::Shadow});
     }
 
     static uint32_t upload(const std::string& path, bool gammaCorrect) {
@@ -119,7 +119,7 @@ private:
         return tex;
     }
 
-    std::unordered_map<std::string, Texture> _cache;
-    std::vector<Texture> _dummyTextures;
+    std::unordered_map<std::string, TextureHandle> _cache;
+    std::vector<TextureHandle> _dummyTextures;
     GLuint _whiteDummy = 0, _blackDummy = 0, _normalDummy = 0;
 };

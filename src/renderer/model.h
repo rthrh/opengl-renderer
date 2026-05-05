@@ -110,7 +110,7 @@ private:
     Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
-        std::vector<Texture> textures;
+        std::vector<TextureHandle> textures;
 
         for (auto i = 0u; i < mesh->mNumVertices; i++) {
             Vertex vertex;
@@ -153,16 +153,16 @@ private:
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
         // 1. diffuse map
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
+        std::vector<TextureHandle> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         // 2. normal maps
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
+        std::vector<TextureHandle> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 3. emissive maps
-        std::vector<Texture> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
+        std::vector<TextureHandle> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
         textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
         // 4. Ambient Occlusion - Roughness - Metalness
-        Texture orm = buildORM(material);
+        TextureHandle orm = buildORM(material);
         textures.push_back(orm);
         Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}",
             diffuseMaps.size(), normalMaps.size(), emissiveMaps.size());
@@ -171,13 +171,13 @@ private:
         return Mesh(vertices, indices, textures);
     }
 
-    Texture buildORM(aiMaterial* mat) {
+    TextureHandle buildORM(aiMaterial* mat) {
         aiString mrPath, aoPath;
         bool hasMR = mat->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS) > 0;
         bool hasAO = mat->GetTextureCount(aiTextureType_LIGHTMAP) > 0;
 
         if (!hasMR && !hasAO)
-            return Texture{0, TextureType::ORM, ""};
+            return TextureHandle{0, TextureType::ORM, ""};
 
         int width = 0, height = 0, channels = 0;
 
@@ -213,13 +213,13 @@ private:
         if (mr) stbi_image_free(mr);
         if (ao) stbi_image_free(ao);
 
-        return Texture{ id, TextureType::ORM, "ORM" };
+        return TextureHandle{ id, TextureType::ORM, "ORM" };
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
-    // the required info is returned as a Texture struct.
-    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type) {
-        std::vector<Texture> result;
+    // the required info is returned as a TextureHandle struct.
+    std::vector<TextureHandle> loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type) {
+        std::vector<TextureHandle> result;
         for (auto i = 0u; i < mat->GetTextureCount(aiType); i++) {
             aiString str;
             mat->GetTexture(aiType, i, &str);
@@ -227,7 +227,7 @@ private:
 
             bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
             uint32_t id = _textureCache->load(fullPath, type, gamma);
-            result.push_back(Texture{ id, type, fullPath });
+            result.push_back(TextureHandle{ id, type, fullPath });
         }
         return result;
     }

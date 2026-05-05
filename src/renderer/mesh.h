@@ -22,7 +22,7 @@ struct Vertex {
 
 class Mesh {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures = {})
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TextureHandle> textures = {})
         : _vertices(std::move(vertices)), _indices(std::move(indices)), _textures(std::move(textures))
     {
         setupMesh();
@@ -63,11 +63,11 @@ public:
         return _VAO;
     }
 
-    const std::vector<Texture>& GetTextures() const {
+    const std::vector<TextureHandle>& GetTextures() const {
         return _textures;
     }
 
-    void SetTextures(const std::vector<Texture>& textures) {
+    void SetTextures(const std::vector<TextureHandle>& textures) {
         _textures = textures;
     }
 
@@ -83,7 +83,7 @@ private:
     // mesh Data
     std::vector<Vertex>       _vertices;
     std::vector<unsigned int> _indices;
-    std::vector<Texture>      _textures;
+    std::vector<TextureHandle>      _textures;
 
     // initializes all the buffer objects/arrays
     void setupMesh()
