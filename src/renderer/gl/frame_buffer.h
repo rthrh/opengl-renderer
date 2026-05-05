@@ -19,7 +19,9 @@ enum class TextureAttachment : GLenum {
 
 class FrameBuffer {
 public:
-    FrameBuffer(std::initializer_list<TextureAttachment> attachments = {}) {
+    FrameBuffer() = default;
+
+    FrameBuffer(std::span<TextureAttachment> attachments) {
         glCreateFramebuffers(1, &_id);
 
         bool hasColor = std::ranges::any_of(attachments, [](auto a) {
@@ -28,16 +30,11 @@ public:
         });
 
         if (hasColor)
-            glNamedFramebufferDrawBuffers(_id, attachments.size(), (GLenum*)attachments.begin());
+            glNamedFramebufferDrawBuffers(_id, attachments.size(), (GLenum*)attachments.data());
         else {
             glNamedFramebufferDrawBuffer(_id, GL_NONE);
             glNamedFramebufferReadBuffer(_id, GL_NONE);
         }
-
-        /*GLenum status = glCheckNamedFramebufferStatus(_id, GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            Error("Framebuffer error: {}", status);
-        }*/
     }
 
     ~FrameBuffer() {
@@ -73,6 +70,16 @@ public:
 
     void Unbind() const {
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
+    }
+
+    static void Blit(GLuint srcFBO, GLuint dstFBO, int srcWidth, int srcHeight, int dstWidth, int dstHeight, GLenum mask) {
+        glBlitNamedFramebuffer(srcFBO, dstFBO, 0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
+
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            Error("BlitFramebuffer: {}", err);
+            throw std::runtime_error("glBlitNamedFramebuffer : " + err);
+        }
     }
 
     void Status() const {

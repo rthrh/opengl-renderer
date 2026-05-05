@@ -7,40 +7,33 @@
 #include "utils/logger.h"
 #include "renderer/texture_slots.h"
 #include "gl/texture.h"
-
+#include "gl/frame_buffer.h"
 
 class GBuffer {
 public:
     explicit GBuffer(int width, int height) : _width(width), _height(height) {
-        glCreateFramebuffers(1, &_fbo);
+        using enum TextureAttachment;
+        TextureAttachment attachments[] = { Color0, Color1, Color2, Color3, Color4 };
+        _framebuffer = FrameBuffer(attachments);
 
         _texturePosition = this->createTexture(width, height);
         _textureAlbedo = this->createTexture(width, height);
         _textureNormal = this->createTexture(width, height);
         _textureORM = this->createTexture(width, height);
         _textureEmissive = this->createTexture(width, height);
-
         _textureDepth = Texture2D(width, height, TextureFormat::Depth24Stencil8);
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_STENCIL_ATTACHMENT, _textureDepth.GetID(), 0);
 
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 0, _texturePosition.GetID(), 0);
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 1, _textureAlbedo.GetID(), 0);
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 2, _textureNormal.GetID(), 0);
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 3, _textureORM.GetID(), 0);
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 4, _textureEmissive.GetID(), 0);
+        _framebuffer.AttachTexture(Color0, _texturePosition.GetID());
+        _framebuffer.AttachTexture(Color1, _textureAlbedo.GetID());
+        _framebuffer.AttachTexture(Color2, _textureNormal.GetID());
+        _framebuffer.AttachTexture(Color3, _textureORM.GetID());
+        _framebuffer.AttachTexture(Color4, _textureEmissive.GetID());
+        _framebuffer.AttachTexture(DepthStencil, _textureDepth.GetID());
 
-        std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
-        glNamedFramebufferDrawBuffers(_fbo, drawBuffers.size(), drawBuffers.data());
-        GLenum status = glCheckNamedFramebufferStatus(_fbo, GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            Error("Framebuffer error: {}", status);
-        }
+        _framebuffer.Status();
     }
-    ~GBuffer() {
-        if (_fbo) {
-            glDeleteFramebuffers(1, &_fbo);
-        }
-    }
+
+    ~GBuffer() = default;
 
     GBuffer(const GBuffer&) = delete;
     GBuffer& operator=(const GBuffer&) = delete;
@@ -48,8 +41,7 @@ public:
     GBuffer& operator=(GBuffer&& o) noexcept = default;
 
     void BindFramebuffer() {
-        //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+        _framebuffer.Bind();
         glViewport(0, 0, _width, _height); // will render white stripe on top without this call
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
@@ -65,13 +57,7 @@ public:
     }
 
     void BlitFramebuffer(GLuint targetFBO, int targetWidth, int targetHeight) const {
-        //glBlitNamedFramebuffer(fbo_src, fbo_dst, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-        glBlitNamedFramebuffer(_fbo, targetFBO, 0, 0, _width, _height, 0, 0, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST); // TODO NEAREST for depth blits?
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) {
-            Error("BlitFramebuffer: {}", err);
-            throw std::runtime_error("glBlitNamedFramebuffer : " + err);
-        }
+        FrameBuffer::Blit(_framebuffer.GetId(), targetFBO, _width, _height, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT);
     }
 
 private:
@@ -81,8 +67,8 @@ private:
         return texture;
     }
 
-    GLuint _fbo = 0;
     int _width = 0, _height = 0;
+    FrameBuffer _framebuffer;
     Texture2D _texturePosition;
     Texture2D _textureAlbedo;
     Texture2D _textureNormal;

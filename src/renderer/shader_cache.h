@@ -52,7 +52,7 @@ public:
 
         auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath, *geomPath, _rootPath);
         _shaders[name] = shaderPtr;
-        Info("Shader built: {}, {} + {}", name, vert, frag);
+        //Info("Shader built: {}, {} + {}", name, vert, frag);
         return shaderPtr;
     }
 

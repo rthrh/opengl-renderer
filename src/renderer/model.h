@@ -164,8 +164,8 @@ private:
         // 4. Ambient Occlusion - Roughness - Metalness
         TextureHandle orm = buildORM(material);
         textures.push_back(orm);
-        Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}",
-            diffuseMaps.size(), normalMaps.size(), emissiveMaps.size());
+        Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}, orm id: {}",
+            diffuseMaps.size(), normalMaps.size(), emissiveMaps.size(), orm.id);
 
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
