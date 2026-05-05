@@ -6,22 +6,28 @@
 
 #include "utils/logger.h"
 #include "renderer/texture_slots.h"
+#include "gl/texture.h"
+
 
 class GBuffer {
 public:
     explicit GBuffer(int width, int height) : _width(width), _height(height) {
         glCreateFramebuffers(1, &_fbo);
 
-        // TODO source of seg fault
-        constexpr int numTextures = 6;
-        _textures.resize(numTextures);
+        _texturePosition = this->createTexture(width, height);
+        _textureAlbedo = this->createTexture(width, height);
+        _textureNormal = this->createTexture(width, height);
+        _textureORM = this->createTexture(width, height);
+        _textureEmissive = this->createTexture(width, height);
 
-        this->createTexture(width, height, slot(SlotDeferred::Position));
-        this->createTexture(width, height, slot(SlotDeferred::Albedo));
-        this->createTexture(width, height, slot(SlotDeferred::Normal));
-        this->createTexture(width, height, slot(SlotDeferred::ORM));
-        this->createTexture(width, height, slot(SlotDeferred::Emissive));
-        this->createDepthTexture(width, height, slot(SlotDeferred::Depth));
+        _textureDepth = Texture2D(width, height, TextureFormat::Depth24Stencil8);
+        glNamedFramebufferTexture(_fbo, GL_DEPTH_STENCIL_ATTACHMENT, _textureDepth.GetID(), 0);
+
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 0, _texturePosition.GetID(), 0);
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 1, _textureAlbedo.GetID(), 0);
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 2, _textureNormal.GetID(), 0);
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 3, _textureORM.GetID(), 0);
+        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + 4, _textureEmissive.GetID(), 0);
 
         std::vector<GLenum> drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
         glNamedFramebufferDrawBuffers(_fbo, drawBuffers.size(), drawBuffers.data());
@@ -34,29 +40,12 @@ public:
         if (_fbo) {
             glDeleteFramebuffers(1, &_fbo);
         }
-
-        if (!_textures.empty()) {
-            glDeleteTextures(_textures.size(), _textures.data());
-        }
     }
 
     GBuffer(const GBuffer&) = delete;
     GBuffer& operator=(const GBuffer&) = delete;
-    GBuffer(GBuffer&& o) noexcept {
-        _fbo = std::exchange(o._fbo, 0);
-        _width = std::exchange(o._width, 0);
-        _height = std::exchange(o._height, 0);
-        _textures = std::move(o._textures);
-    }
-
-    GBuffer& operator=(GBuffer&& o) noexcept {
-        if (this == &o) return *this;
-        _fbo = std::exchange(o._fbo, 0);
-        _width = std::exchange(o._width, 0);
-        _height = std::exchange(o._height, 0);
-        _textures = std::move(o._textures);
-        return *this;
-    }
+    GBuffer(GBuffer&& o) noexcept = default;
+    GBuffer& operator=(GBuffer&& o) noexcept = default;
 
     void BindFramebuffer() {
         //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
@@ -66,8 +55,13 @@ public:
     }
 
     void BindTextures() const {
-        for (auto i = 0u; i < _textures.size(); i++)
-            glBindTextureUnit(i, _textures[i]);
+        using enum SlotDeferred;
+        _texturePosition.Bind(slot(Position));
+        _textureAlbedo.Bind(slot(Albedo));
+        _textureNormal.Bind(slot(Normal));
+        _textureORM.Bind(slot(ORM));
+        _textureEmissive.Bind(slot(Emissive));
+        _textureDepth.Bind(slot(Depth));
     }
 
     void BlitFramebuffer(GLuint targetFBO, int targetWidth, int targetHeight) const {
@@ -81,24 +75,18 @@ public:
     }
 
 private:
-    void createTexture(int width, int height, GLuint slot, GLuint type = GL_RGB32F) {
-        auto& tex = _textures[slot];
-        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-        glTextureStorage2D(tex, 1, type, width, height);
-        //glTextureSubImage2D(tex, 0, 0, 0, 1, 1, GL_RGB, GL_FLOAT, nullptr);        
-        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glNamedFramebufferTexture(_fbo, GL_COLOR_ATTACHMENT0 + slot, tex, 0);
+    Texture2D createTexture(int width, int height, TextureFormat format = TextureFormat::RGB32F) {
+        auto texture = Texture2D(width, height, format);
+        texture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        return texture;
     }
 
-    void createDepthTexture(int width, int height, GLuint slot) {
-        auto& tex = _textures[slot];
-        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-        glTextureStorage2D(tex, 1, GL_DEPTH24_STENCIL8, width, height);
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_STENCIL_ATTACHMENT, tex, 0);
-    }
-
-    GLuint _fbo {0};
-    std::vector<GLuint> _textures;
-    int _width, _height;
+    GLuint _fbo = 0;
+    int _width = 0, _height = 0;
+    Texture2D _texturePosition;
+    Texture2D _textureAlbedo;
+    Texture2D _textureNormal;
+    Texture2D _textureORM;
+    Texture2D _textureEmissive;
+    Texture2D _textureDepth;
 };

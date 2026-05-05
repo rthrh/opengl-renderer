@@ -86,6 +86,9 @@ template<GLenum T> concept Cube = (T == GL_TEXTURE_CUBE_MAP || T == GL_TEXTURE_C
 template<GLenum T> requires Supported<T>
 class TextureGL {
 public:
+    // Default texture in invalid state
+    TextureGL() = default;
+
     //TextureGL 2D
     TextureGL(int width, int height, TextureFormat internalFormat, const void* data = nullptr, bool genMipMaps = false)
         requires (!Array<T> && !Cube<T>) : _width(width), _height(height), _format(internalFormat)
