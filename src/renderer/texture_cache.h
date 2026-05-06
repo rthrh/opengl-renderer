@@ -34,11 +34,12 @@ public:
 
     // Returns existing texture id if path was already loaded.
     uint32_t load(const std::string& path, TextureType type, bool gammaCorrect = false) {
-        if (auto it = _cache.find(path); it != _cache.end())
+        auto absPath = std::filesystem::absolute(path).string();
+        if (auto it = _cache.find(absPath); it != _cache.end())
             return it->second.id;
 
-        uint32_t id = upload(path, gammaCorrect);
-        _cache[path] = TextureHandle{ id, type, path };
+        uint32_t id = upload(absPath, gammaCorrect);
+        _cache[absPath] = TextureHandle{ id, type, absPath };
         return id;
     }
 
@@ -54,6 +55,16 @@ public:
     // todo move it somewhere
     std::vector<TextureHandle> GetDummyTextureSet() {
         return std::vector<TextureHandle>(&_dummyTextures[0], &_dummyTextures[4]); // TODO check if textures up to AO are returned and make it more robust
+    }
+
+    uint32_t CreateColor(float r, float g, float b, float a = 1.0f) {
+        uint8_t rgba[4] = {
+            (uint8_t)(r * 255),
+            (uint8_t)(g * 255),
+            (uint8_t)(b * 255),
+            (uint8_t)(a * 255)
+        };
+        return createDummy(rgba);
     }
 
 private:

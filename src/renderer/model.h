@@ -36,6 +36,8 @@ public:
     Model(Model&&) = default;
     Model& operator=(Model&&) = default;
 
+    const std::string& GetName() const { return _name; }
+
     void SetTranslation(glm::vec3 position) {
         _translation = position;
         _dirty = true;
@@ -88,7 +90,8 @@ private:
             return;
         }
 
-        _directory = path.substr(0, path.find_last_of('/'));
+        _directory = std::filesystem::path(path).parent_path().string();
+        _name = std::filesystem::path(path).stem().string();
         processNode(scene->mRootNode, scene);
     }
 
@@ -151,9 +154,18 @@ private:
         // TODO
         //auto textureTypes = {TextureType::Albedo, TextureType::Normal, TextureType::Emissive, TextureType::Metallic, TextureType::Roughness, TextureType::AO};
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        // DEBUG print all materials available
+        /*
+        for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+            aiMaterial* mat = scene->mMaterials[i];
+            aiColor4D diffuse;
+            if (AI_SUCCESS == mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse))
+                Info("Material {} diffuse color: {:.2f} {:.2f} {:.2f}", 
+                    mat->GetName().C_Str(), diffuse.r, diffuse.g, diffuse.b);
+        }*/
 
         // 1. diffuse map
-        std::vector<TextureHandle> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Albedo);
+        std::vector<TextureHandle> diffuseMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, TextureType::Albedo);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         // 2. normal maps
         std::vector<TextureHandle> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
@@ -164,12 +176,22 @@ private:
         // 4. Ambient Occlusion - Roughness - Metalness
         TextureHandle orm = buildORM(material);
         textures.push_back(orm);
+
+        /*Info("=== Mesh: {} ===", mesh->mName.C_Str());
+        for (unsigned int t = 0; t < aiTextureType_UNKNOWN; t++) {
+            if (material->GetTextureCount((aiTextureType)t) > 0) {
+                aiString p;
+                material->GetTexture((aiTextureType)t, 0, &p);
+                Info("  [{}] {} = {}", t, aiTextureTypeToString((aiTextureType)t), p.C_Str());
+            }
+        }*/
         Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}, orm id: {}",
             diffuseMaps.size(), normalMaps.size(), emissiveMaps.size(), orm.id);
 
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
     }
+
 
     TextureHandle buildORM(aiMaterial* mat) {
         aiString mrPath, aoPath;
@@ -233,6 +255,7 @@ private:
     }
 
     std::string _directory;
+    std::string _name;
     std::vector<Mesh> _meshes;
 
     mutable glm::mat4 _modelMatrix {1.0f};

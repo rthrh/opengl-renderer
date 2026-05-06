@@ -22,6 +22,7 @@
 
 #include "gui/gui.h"
 #include "gui/model_list.h"
+#include "gui/model_loader.h"
 #include "utils/file_watcher.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -124,8 +125,8 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    //std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
-    std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
+    std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
+    //std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
 
     auto absPath = std::filesystem::absolute(modelPath);
@@ -261,7 +262,8 @@ int main()
      // init imgui
     GuiLayer guiLayer(window);
     ModelList modelList;
-
+    std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
+    ModelLoader modelLoader(modelsDirectory, textureCache);
     // Scene setup
     Scene scene(textureCache);
     setupScene(scene, textureCache);
@@ -308,13 +310,14 @@ int main()
         // create gui items
         guiLayer.Build(configUBO);
         modelList.Build(scene);
-    
+        modelLoader.Build(scene);
+
         // Render scene
         camera->UploadUBO();
 
         renderer.PassShadowDirectional(scene, *shadowDirShader);
-        renderer.PassShadowPoint(scene, *shadowPointShader);
-        renderer.PassShadowSpot(scene, *shadowSpotShader);
+        renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
+        renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
         renderer.PassDeferred(scene, *deferredLightShader);

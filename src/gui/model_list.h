@@ -25,7 +25,11 @@ public:
 private:
     void buildQueue(Scene::RenderQueue& queue) {
         for (auto& [handle, model] : queue) {
-            if (!ImGui::TreeNode(("Model #" + std::to_string(handle)).c_str()))
+            auto label = model.GetName().empty()
+                ? "Model #" + std::to_string(handle)
+                : model.GetName() + " (#" + std::to_string(handle) + ")";
+
+            if (!ImGui::TreeNode(label.c_str()))
                 continue;
 
             glm::vec3 translation = model.GetTranslation();

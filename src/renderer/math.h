@@ -22,7 +22,7 @@ namespace math {
     }
 
     // Shadow matrices for point lights shadows
-    inline std::array<glm::mat4, 6> GetPointShadowMatrices(glm::vec3 lightPos, float nearPlane = 0.1f, float farPlane = 25.0f) {
+    inline std::array<glm::mat4, 6> GetPointShadowMatrices(glm::vec3 lightPos, float nearPlane, float farPlane) {
 
         constexpr float aspectRatio = 1.0f;
         glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspectRatio, nearPlane, farPlane);
@@ -36,7 +36,7 @@ namespace math {
         };
     }
 
-    inline glm::mat4 GetSpotLightSpaceMatrix(glm::vec3 position, glm::vec3 direction, float outerConeAngleDeg, float nearPlane = 0.1f, float farPlane = 25.0f) {
+    inline glm::mat4 GetSpotLightSpaceMatrix(glm::vec3 position, glm::vec3 direction, float outerConeAngleDeg, float nearPlane, float farPlane) {
         constexpr float aspect = 1.0f;
         glm::mat4 proj = glm::perspective(glm::radians(outerConeAngleDeg * 2.0f), aspect, nearPlane, farPlane);
 

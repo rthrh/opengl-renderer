@@ -74,19 +74,17 @@ public:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassShadowPoint(Scene& scene, Shader& shader) {
-        const float farPlane = 25.0f;
+    void PassShadowPoint(Scene& scene, Shader& shader, const ConfigUBO& config) {
         const auto& pointLights = scene.GetPointLights();
 
         _shadowMapPoint.BindFramebuffer();
         _shadowMapPoint.BindTexture();
         shader.Activate();
-        shader.SetFloat("farPlane", farPlane);
 
         const int count = std::min(pointLights.Count(), MAX_POINT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
-            auto shadowMatrices = math::GetPointShadowMatrices(lightPos);
+            auto shadowMatrices = math::GetPointShadowMatrices(lightPos, 0.1, config.pointShadowFarPlane);
 
             shader.SetInt("lightIndex", i);
             shader.SetVec3("lightPos", lightPos);
@@ -101,7 +99,7 @@ public:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassShadowSpot(Scene& scene, Shader& shader) {
+    void PassShadowSpot(Scene& scene, Shader& shader, const ConfigUBO& config) {
         auto& spotLights = scene.GetSpotLights();
         auto& ubo = _shadowMapUBO.Data();
     
@@ -110,7 +108,7 @@ public:
         int count = std::min(spotLights.Count(), MAX_SPOT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto& light = spotLights.At(i);
-            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees());
+            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees(), 0.1f, config.pointShadowFarPlane);
 
             ubo.spotLightProjMatrices[i] = lightSpaceMatrix;
             _shadowMapSpot.BindFramebufferLayer(i);

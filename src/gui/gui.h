@@ -45,7 +45,7 @@ public:
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
         ImGui::Begin("Renderer Config");
 
-        if (ImGui::Button("Reset to Defaults")) {
+        if (ImGui::Button("Reset sliders")) {
             config = ConfigUBO{};
             dirty = true;
         }
