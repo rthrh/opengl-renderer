@@ -21,8 +21,6 @@
 #include "renderer/shader_cache.h"
 
 #include "gui/gui.h"
-#include "gui/model_list.h"
-#include "gui/model_loader.h"
 #include "utils/file_watcher.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -260,10 +258,9 @@ int main()
     glfwSetWindowUserPointer(window, &callbackData);
 
      // init imgui
-    GuiLayer guiLayer(window);
-    ModelList modelList;
     std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
-    ModelLoader modelLoader(modelsDirectory, textureCache);
+    GuiLayer guiLayer(window, modelsDirectory, textureCache);
+
     // Scene setup
     Scene scene(textureCache);
     setupScene(scene, textureCache);
@@ -308,9 +305,7 @@ int main()
         }
 
         // create gui items
-        guiLayer.Build(configUBO);
-        modelList.Build(scene);
-        modelLoader.Build(scene);
+        guiLayer.Build(configUBO, scene, deltaTime);
 
         // Render scene
         camera->UploadUBO();

@@ -15,7 +15,8 @@
 #include "mesh.h"
 #include "texture_cache.h"
 
-class Model 
+// TODO refactor
+class Model
 {
 public:
     // constructor, expects a filepath to a 3D model.
@@ -165,17 +166,33 @@ private:
         }*/
 
         // 1. diffuse map
-        std::vector<TextureHandle> diffuseMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, TextureType::Albedo);
-        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. normal maps
-        std::vector<TextureHandle> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, TextureType::Normal);
-        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        // 3. emissive maps
-        std::vector<TextureHandle> emissiveMaps = loadMaterialTextures(material, aiTextureType_EMISSIVE, TextureType::Emissive);
-        textures.insert(textures.end(), emissiveMaps.begin(), emissiveMaps.end());
+
+        if (auto t = loadMaterialTexture(material, aiTextureType_BASE_COLOR, TextureType::Albedo))
+            textures.push_back(*t);
+        else {
+            aiColor4D c(1.0f, 1.0f, 1.0f, 1.0f);
+            material->Get(AI_MATKEY_COLOR_DIFFUSE, c);
+            textures.push_back({_textureCache->CreateColor(c.r, c.g, c.b, c.a), TextureType::Albedo, "color"});
+        }
+
+        if (auto t = loadMaterialTexture(material, aiTextureType_NORMALS, TextureType::Normal)) {
+            textures.push_back(*t);
+        }
+        else {
+            textures.push_back(_textureCache->GetDummyTexture(TextureType::Normal));
+        }
+
+        if (auto t = loadMaterialTexture(material, aiTextureType_EMISSIVE, TextureType::Emissive)) {
+            textures.push_back(*t);
+        }
+        else {
+            textures.push_back(_textureCache->GetDummyTexture(TextureType::Emissive));
+        }
+
         // 4. Ambient Occlusion - Roughness - Metalness
         TextureHandle orm = buildORM(material);
         textures.push_back(orm);
+        Info("Textures num: {}", textures.size());
 
         /*Info("=== Mesh: {} ===", mesh->mName.C_Str());
         for (unsigned int t = 0; t < aiTextureType_UNKNOWN; t++) {
@@ -185,8 +202,6 @@ private:
                 Info("  [{}] {} = {}", t, aiTextureTypeToString((aiTextureType)t), p.C_Str());
             }
         }*/
-        Info("diffuseMaps: {}, normalMaps: {}, emissiveMaps: {}, orm id: {}",
-            diffuseMaps.size(), normalMaps.size(), emissiveMaps.size(), orm.id);
 
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
@@ -238,20 +253,15 @@ private:
         return TextureHandle{ id, TextureType::ORM, "ORM" };
     }
 
-    // checks all material textures of a given type and loads the textures if they're not loaded yet.
-    // the required info is returned as a TextureHandle struct.
-    std::vector<TextureHandle> loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type) {
-        std::vector<TextureHandle> result;
-        for (auto i = 0u; i < mat->GetTextureCount(aiType); i++) {
-            aiString str;
-            mat->GetTexture(aiType, i, &str);
-            std::string fullPath = _directory + '/' + str.C_Str();
 
-            bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
-            uint32_t id = _textureCache->load(fullPath, type, gamma);
-            result.push_back(TextureHandle{ id, type, fullPath });
-        }
-        return result;
+    std::optional<TextureHandle> loadMaterialTexture(aiMaterial* mat, aiTextureType aiType, TextureType type) {
+        if (mat->GetTextureCount(aiType) == 0) return std::nullopt;
+        aiString str;
+        mat->GetTexture(aiType, 0, &str);
+        std::string fullPath = (std::filesystem::path(_directory) / str.C_Str()).string();
+        bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
+        uint32_t id = _textureCache->load(fullPath, type, gamma);
+        return TextureHandle{id, type, fullPath};
     }
 
     std::string _directory;
