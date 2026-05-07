@@ -34,6 +34,8 @@ void main() {
     float ssao = texture(ssaoMap, TexCoords).r;
     ao = ao * ssao;
     float roughness = orm.g;
+    roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
+
     float metallic = orm.b;
     vec3 emissive = texture(emissiveMap, TexCoords).rgb;
     vec3 FragPos = texture(positionMap, TexCoords).rgb;
