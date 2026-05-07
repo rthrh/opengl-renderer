@@ -19,6 +19,7 @@
 
 #include "renderer/texture_cache.h"
 #include "renderer/shader_cache.h"
+#include "renderer/model_loader.h"
 
 #include "gui/gui.h"
 #include "utils/file_watcher.h"
@@ -126,6 +127,8 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     std::filesystem::path modelPath2 = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
+
+    ModelLoader modelLoader(textureCache);
 
     auto absPath = std::filesystem::absolute(modelPath);
     Model ourModel(absPath.string(), textureCache);

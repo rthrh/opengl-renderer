@@ -11,83 +11,33 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <filesystem>
 
 #include "mesh.h"
 #include "texture_cache.h"
+#include "model.h"
 
 // TODO refactor
-class Model
+class ModelLoader
 {
 public:
-    // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path,const std::shared_ptr<TextureCache>& textureCache) : _modelMatrix(1.0f), _textureCache{textureCache} {
-        loadModel(path);
+    ModelLoader(const std::shared_ptr<TextureCache>& textureCache) : _textureCache{textureCache} {
     }
 
-    Model(Mesh mesh, const std::shared_ptr<TextureCache>& textureCache) : _modelMatrix(1.0f), _textureCache{textureCache} {
-        if (mesh.GetTextures().empty()) {
-            auto dummySet = textureCache->GetDummyTextureSet();
-            mesh.SetTextures(dummySet);
-        }
-        _meshes.emplace_back(std::move(mesh));
-    }
+    ModelLoader(const ModelLoader&) = delete;
+    ModelLoader& operator=(const ModelLoader&) = delete;
+    ModelLoader(ModelLoader&&) = default;
+    ModelLoader& operator=(ModelLoader&&) = default;
 
-    Model(std::vector<Mesh> meshes) :
-        _meshes(std::move(meshes))
-    {
-    }
-
-    Model(const Model&) = delete;
-    Model& operator=(const Model&) = delete;
-    Model(Model&&) = default;
-    Model& operator=(Model&&) = default;
-
-    const std::string& GetName() const { return _name; }
-
-    void SetTranslation(glm::vec3 position) {
-        _translation = position;
-        _dirty = true;
-    }
-
-    glm::vec3 GetTranslation() const { return _translation; }
-
-    // x - pitch, y - yaw, z - roll, CCW
-    void SetEulerAngles(glm::vec3 degrees) {
-        _eulerAngles = degrees;
-        _rotation = glm::quat(glm::radians(degrees)); // convert for internal use
-        _dirty = true;
-    }
-
-    glm::vec3 GetEulerAngles() const {
-        return _eulerAngles;
-    }
-
-    void SetScale(glm::vec3 scale) {
-        _scale = scale;
-        _dirty = true;
-    }
-
-    glm::vec3 GetScale() const { return _scale; }
-
-    glm::vec3 GetWorldPos() const { return _translation; }
-
-    glm::mat4 GetModelMatrix() const {
-        if (_dirty) {
-            _modelMatrix = glm::translate(glm::mat4(1.0f), _translation)
-                         * glm::mat4_cast(_rotation)
-                         * glm::scale(glm::mat4(1.0f), _scale);
-            _dirty = false;
-        }
-        return _modelMatrix;
-    }
-
-    const std::vector<Mesh>& GetMeshes() const {
-        return _meshes;
+    std::optional<Model> Load(std::filesystem::path& path) {
+        std::vector<Mesh> meshes;
+        this->loadModel(path.string(), meshes);
+        return Model(std::move(meshes));
     }
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const &path) {
+    void loadModel(std::string const &path, std::vector<Mesh>& meshes) {
         Assimp::Importer importer;
 
         // aiProcess_PreTransformVertices will disable animations
@@ -101,20 +51,20 @@ private:
 
         _directory = std::filesystem::path(path).parent_path().string();
         _name = std::filesystem::path(path).stem().string();
-        processNode(scene->mRootNode, scene);
+        processNode(scene->mRootNode, scene, meshes);
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-    void processNode(aiNode *node, const aiScene *scene) {
+    void processNode(aiNode *node, const aiScene *scene, std::vector<Mesh>& meshes) {
         for(auto i = 0u; i < node->mNumMeshes; i++) {
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            _meshes.emplace_back(std::move(processMesh(mesh, scene)));
+            meshes.emplace_back(std::move(processMesh(mesh, scene)));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for(auto i = 0u; i < node->mNumChildren; i++) {
-            processNode(node->mChildren[i], scene);
+            processNode(node->mChildren[i], scene, meshes);
         }
     }
 
@@ -171,8 +121,6 @@ private:
                 Info("Material {} diffuse color: {:.2f} {:.2f} {:.2f}", 
                     mat->GetName().C_Str(), diffuse.r, diffuse.g, diffuse.b);
         }*/
-
-        // 1. diffuse map
 
         if (auto t = loadMaterialTexture(material, aiTextureType_BASE_COLOR, TextureType::Albedo))
             textures.push_back(*t);
@@ -273,14 +221,5 @@ private:
 
     std::string _directory;
     std::string _name;
-    std::vector<Mesh> _meshes;
-
-    mutable glm::mat4 _modelMatrix {1.0f};
-    glm::vec3 _translation {0.0f, 0.0f, 0.0f};
-    glm::quat _rotation {1.0f, 0.0f, 0.0f, 0.0f};
-    glm::vec3 _scale {1.0f, 1.0f, 1.0f};
-    glm::vec3 _eulerAngles {0.0f, 0.0f, 0.0f};
-    mutable bool _dirty{true};
-
     std::shared_ptr<TextureCache> _textureCache;
 };

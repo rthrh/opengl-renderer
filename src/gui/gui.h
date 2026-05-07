@@ -10,7 +10,7 @@
 #include "gui/settings.h"
 #include "gui/stats.h"
 #include "gui/model_list.h"
-#include "gui/model_loader.h"
+#include "gui/model_loader_gui.h"
 
 class GuiLayer {
 public:
@@ -65,5 +65,5 @@ private:
     Stats       _stats;
     Settings    _settings;
     ModelList   _modelList;
-    ModelLoader _modelLoader;
+    ModelLoaderGUI _modelLoader;
 };

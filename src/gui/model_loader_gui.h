@@ -10,9 +10,9 @@
 
 namespace fs = std::filesystem;
 
-class ModelLoader {
+class ModelLoaderGUI {
 public:
-    ModelLoader(const fs::path& rootDir, const std::shared_ptr<TextureCache>& textureCache)
+    ModelLoaderGUI(const fs::path& rootDir, const std::shared_ptr<TextureCache>& textureCache)
         : _textureCache(textureCache) {
         scan(rootDir);
     }
