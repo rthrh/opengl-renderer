@@ -17,7 +17,6 @@
 #include "texture_cache.h"
 #include "model.h"
 
-// TODO refactor
 class ModelLoader
 {
 public:
@@ -29,10 +28,18 @@ public:
     ModelLoader(ModelLoader&&) = default;
     ModelLoader& operator=(ModelLoader&&) = default;
 
-    std::optional<Model> Load(std::filesystem::path& path) {
+    std::optional<Model> Load(const std::filesystem::path& path) {
         std::vector<Mesh> meshes;
         this->loadModel(path.string(), meshes);
         return Model(std::move(meshes));
+    }
+
+    Model Load(Mesh mesh) {
+        if (mesh.GetTextures().empty()) {
+            auto dummySet = _textureCache->GetDummyTextureSet();
+            mesh.SetTextures(dummySet);
+        }
+        return Model(std::move(mesh));
     }
 
 private:

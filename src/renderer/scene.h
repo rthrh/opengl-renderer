@@ -66,7 +66,7 @@ public:
     
         // Add debug light marker
         Mesh markerMesh(cube_vertices, cube_indices);
-        Model markerModel(std::move(markerMesh), _textureCache);
+        Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
         AddModel(std::move(markerModel), NoShadow);
@@ -87,7 +87,7 @@ public:
 
         // Add debug light marker
         Mesh markerMesh(cube_vertices, cube_indices);
-        Model markerModel(std::move(markerMesh), _textureCache);
+        Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
         AddModel(std::move(markerModel), NoShadow);

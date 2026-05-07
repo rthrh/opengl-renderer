@@ -121,26 +121,26 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 }
 
 
-void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache) {
+void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache, ModelLoader& modelLoader) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     std::filesystem::path modelPath2 = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
 
-    ModelLoader modelLoader(textureCache);
-
     auto absPath = std::filesystem::absolute(modelPath);
-    Model ourModel(absPath.string(), textureCache);
-    scene.AddModel(std::move(ourModel), Deferred);
+    auto ourModel = modelLoader.Load(absPath);
+
+    scene.AddModel(std::move(*ourModel), Deferred);
 
     auto absPath2 = std::filesystem::absolute(modelPath2);
-    Model ourModel2(absPath2.string(), textureCache);
-    scene.AddModel(std::move(ourModel2), Deferred);
+    auto ourModel2 = modelLoader.Load(absPath2);
+
+    scene.AddModel(std::move(*ourModel2), Deferred);
 
     // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
-    Model floorModel(std::move(floorMesh), textureCache);
+    auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
 
@@ -163,10 +163,9 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache)
     scene.AddSpotLight(std::move(spotLight1));
     scene.AddSpotLight(std::move(spotLight2));
 
-
 }
 
-void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache) {
+void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache, ModelLoader& modelLoader) {
     std::mt19937 rng(42); // fixed seed for reproducibility
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
     std::uniform_real_distribution<float> heightDist(0.5f, 15.0f);
@@ -180,12 +179,12 @@ void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache) {
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
-    Model ourModel(absPath.string(), textureCache);
-    scene.AddModel(std::move(ourModel), Deferred);
+    auto ourModel = modelLoader.Load(absPath);
+    scene.AddModel(std::move(*ourModel), Deferred);
 
     // floor model
     Mesh floorMesh(floor_vertices, floor_indices);
-    Model floorModel(std::move(floorMesh), textureCache);
+    auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
     scene.AddModel(std::move(floorModel));
@@ -269,8 +268,9 @@ int main()
     GuiLayer guiLayer(window, modelsDirectory, textureCache);
 
     // Scene setup
+    ModelLoader modelLoader(textureCache);
     Scene scene(textureCache);
-    setupScene(scene, textureCache);
+    setupScene1k(scene, textureCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;
@@ -312,7 +312,7 @@ int main()
         }
 
         // create gui items
-        guiLayer.Build(configUBO, scene, deltaTime);
+        guiLayer.Build(configUBO, scene, deltaTime, modelLoader);
 
         // Render scene
         camera->UploadUBO();

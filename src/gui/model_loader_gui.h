@@ -7,6 +7,8 @@
 #include "renderer/scene.h"
 #include "renderer/model.h"
 #include "texture_cache.h"
+#include "renderer/model_loader.h"
+#include "utils/logger.h"
 
 namespace fs = std::filesystem;
 
@@ -17,15 +19,21 @@ public:
         scan(rootDir);
     }
 
-    void Build(Scene& scene) {
+    void Build(Scene& scene, ModelLoader& loader) {
         ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_Once);
         ImGui::SetNextWindowPos(ImVec2(680, 10), ImGuiCond_Once);
         ImGui::Begin("Model Loader");
         ImGui::BeginChild("##modelfiles", ImVec2(0, 0), false);
 
         for (auto& [displayName, fullPath] : _models) {
-            if (ImGui::Selectable(displayName.c_str()))
-                scene.AddModel(Model(fullPath.string(), _textureCache), Deferred);
+            if (ImGui::Selectable(displayName.c_str())) {
+                auto model = loader.Load(fullPath);
+                if (model) {
+                    scene.AddModel(std::move(*model), Deferred);
+                } else {
+                    Warn("Error loading model: {}", fullPath.string());
+                }
+            }
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("%s", fullPath.string().c_str());
         }
