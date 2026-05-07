@@ -10,36 +10,34 @@
 #include "camera.h"
 #include "texture_slots.h"
 #include "gl/texture.h"
+#include "gl/frame_buffer.h"
 
 class ShadowMapDirectional {
 public:
     ShadowMapDirectional(int size = 2048) :
-        _size(size),
-        _depthTexture(size, size, TextureFormat::Depth32F)
+        _size(size)
     {
-        glCreateFramebuffers(1, &_fbo);
-
-        // create depth texture
-        //_depthTexture = Texture2D(_size, _size, TextureFormat::Depth32F);
+        // Create depth texture
+        _depthTexture = Texture2D(_size, _size, TextureFormat::Depth32F);
         _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _depthTexture.SetWrap(TextureWrap::ClampToBorder, TextureWrap::ClampToBorder);
         _depthTexture.SetBorderColor(1, 1, 1, 1);
 
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0);
-        // don't render any color data
-        glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
-        glNamedFramebufferReadBuffer(_fbo, GL_NONE);
+        // Attach to framebuffer
+        constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
+        _framebuffer = FrameBuffer(attachments);
+        _framebuffer.AttachTexture(TextureAttachment::Depth, _depthTexture.GetID());
     }
 
-    ~ShadowMapDirectional() {
-        glDeleteFramebuffers(1, &_fbo);
-    }
+    ~ShadowMapDirectional() = default;
 
     ShadowMapDirectional(const ShadowMapDirectional&) = delete;
     ShadowMapDirectional& operator=(const ShadowMapDirectional&) = delete;
+    ShadowMapDirectional(ShadowMapDirectional&&) noexcept = default;
+    ShadowMapDirectional& operator=(ShadowMapDirectional&&) noexcept = default;
 
     void BindFramebuffer() const {
-        glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+        _framebuffer.Bind();
         glViewport(0, 0, _size, _size);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
@@ -50,7 +48,6 @@ public:
 
 private:
     int _size;
-    GLuint _fbo = 0;
-    //GLuint _depthTexture = 0;
+    FrameBuffer _framebuffer;
     Texture2D _depthTexture;
 };

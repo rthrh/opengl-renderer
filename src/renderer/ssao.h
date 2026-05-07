@@ -17,6 +17,7 @@ public:
         _ssaoColorBufferBlur(scrWidth, scrHeight, TextureFormat::R8),
         _noiseTexture(generateNoiseTexture())
     {
+        //TODO check wrap
         _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
 

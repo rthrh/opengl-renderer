@@ -21,7 +21,7 @@ class FrameBuffer {
 public:
     FrameBuffer() = default;
 
-    FrameBuffer(std::span<TextureAttachment> attachments) {
+    FrameBuffer(std::span<const TextureAttachment> attachments) {
         glCreateFramebuffers(1, &_id);
 
         bool hasColor = std::ranges::any_of(attachments, [](auto a) {
@@ -62,6 +62,10 @@ public:
 
     void AttachTexture(TextureAttachment attachment, GLuint tex) const {
         glNamedFramebufferTexture(_id, (GLenum)attachment, tex, 0);
+    }
+
+    void AttachTextureLayer(TextureAttachment attachment, GLuint tex, int layer, int mip = 0) const {
+        glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
     }
 
     void Bind() const {

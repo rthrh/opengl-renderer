@@ -6,45 +6,43 @@
 
 #include "texture_slots.h"
 #include "gl/texture.h"
+#include "gl/frame_buffer.h"
 
 class ShadowMapPoint {
 public:
     explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) :
-        _size(size),
-        _depthTexture(size, maxShadowCasters, TextureFormat::Depth32F)
+        _size(size)
     {
+        // Create depth texture
+        _depthTexture = TextureCubeArray(size, maxShadowCasters, TextureFormat::Depth32F);
         _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
-        // attach depth texture as FBO's depth buffer
-        glCreateFramebuffers(1, &_fbo);
-        glNamedFramebufferTexture(_fbo, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0);
-        glNamedFramebufferDrawBuffer(_fbo, GL_NONE);
-        glNamedFramebufferReadBuffer(_fbo, GL_NONE);
-
-        GLenum status = glCheckNamedFramebufferStatus(_fbo, GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error("ShadowMapPoint FBO incomplete: " + std::to_string(status));
-        }
+    
+        // Attach to framebuffer
+        constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
+        _framebuffer = FrameBuffer(attachments);
+        _framebuffer.AttachTexture(TextureAttachment::Depth, _depthTexture.GetID());
     }
 
-    ~ShadowMapPoint() {
-        glDeleteFramebuffers(1, &_fbo);
-    }
+    ~ShadowMapPoint() = default;
 
     ShadowMapPoint(const ShadowMapPoint&) = delete;
     ShadowMapPoint& operator=(const ShadowMapPoint&) = delete;
+    ShadowMapPoint(ShadowMapPoint&&) noexcept = default;
+    ShadowMapPoint& operator=(ShadowMapPoint&&) noexcept = default;
 
     void BindFramebuffer() const {
+        _framebuffer.Bind();
         glViewport(0, 0, _size, _size);
-        glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
 
     void BindTexture() const {
-        glBindTextureUnit(slot(SlotOther::ShadowPoint), _depthTexture.GetID());
+        _depthTexture.Bind(slot(SlotOther::ShadowPoint));
     }
+
 private:
     int _size;
-    GLuint _fbo = 0;
     TextureCubeArray _depthTexture;
+    FrameBuffer _framebuffer;
 };
