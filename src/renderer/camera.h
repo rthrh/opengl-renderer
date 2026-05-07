@@ -31,7 +31,7 @@ public:
         _aspectRatio(aspectRatio),
         _yaw(yaw),
         _pitch(pitch),
-        _movementSpeed(2.5f),
+        _movementSpeed(5.0f),
         _mouseSensitivity(0.1f),
         _zoom(45.0f)
     {

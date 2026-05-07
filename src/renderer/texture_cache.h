@@ -5,13 +5,14 @@
 #include <iostream>
 #include <stb_image.h>
 
+#include "gl/texture.h"
+
 // TODO get rid of
 enum class TextureType {
     Albedo = 0,
     Normal = 1,
     Emissive = 2,
     ORM = 3,
-    Shadow = 4
 };
 
 struct TextureHandle {
@@ -72,16 +73,18 @@ private:
         uint8_t white[]      = {255, 255, 255, 255};
         uint8_t black[]      = {0, 0, 0, 0};
         uint8_t flatNormal[] = {128, 128, 255, 255};
+        uint8_t ormDefault[] = {255, 255, 0, 255}; // TODO find good default values
+
         _whiteDummy = createDummy(white);
         _blackDummy = createDummy(black);
         _normalDummy = createDummy(flatNormal);
+        _ormDummy = createDummy(ormDefault);
 
         _dummyTextures.emplace_back(TextureHandle{.id = _whiteDummy, .type = TextureType::Albedo});
         _dummyTextures.emplace_back(TextureHandle{.id = _normalDummy, .type = TextureType::Normal});
         _dummyTextures.emplace_back(TextureHandle{.id = _blackDummy, .type = TextureType::Emissive});
-        _dummyTextures.emplace_back(TextureHandle{.id = _whiteDummy, .type = TextureType::ORM}); //TODO better dummy
+        _dummyTextures.emplace_back(TextureHandle{.id = _ormDummy, .type = TextureType::ORM});
 
-        _dummyTextures.emplace_back(TextureHandle{.id = _blackDummy, .type = TextureType::Shadow});
     }
 
     static uint32_t upload(const std::string& path, bool gammaCorrect) {
@@ -132,5 +135,9 @@ private:
 
     std::unordered_map<std::string, TextureHandle> _cache;
     std::vector<TextureHandle> _dummyTextures;
-    GLuint _whiteDummy = 0, _blackDummy = 0, _normalDummy = 0;
+    GLuint _whiteDummy = 0, _blackDummy = 0, _normalDummy = 0, _ormDummy = 0;
+    //Texture2D _whiteDummy;
+    //Texture2D _blackDummy;
+    //Texture2D _normalDummy;
+    //Texture2D _ormDummy;
 };

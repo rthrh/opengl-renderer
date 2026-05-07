@@ -84,7 +84,10 @@ private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(std::string const &path) {
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+        // aiProcess_PreTransformVertices will disable animations
+        auto flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals| aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices; 
+        const aiScene* scene = importer.ReadFile(path, flags);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) { // if is Not Zero
             std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
@@ -108,7 +111,6 @@ private:
         for(auto i = 0u; i < node->mNumChildren; i++) {
             processNode(node->mChildren[i], scene);
         }
-
     }
 
     Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
