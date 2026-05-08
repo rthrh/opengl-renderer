@@ -4,6 +4,9 @@
 
 #include "utils/logger.h"
 #include "renderer/shader.h"
+#include "gl/render_buffer.h"
+#include "gl/frame_buffer.h"
+#include "gl/texture.h"
 
 //. TODO refactor
 class Bloom {
@@ -12,67 +15,50 @@ public:
         _width(scrWidth), _height(scrHeight)
     {
         // configure (floating point) framebuffers
-        glGenFramebuffers(1, &_hdrFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, _hdrFBO);
-        // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
-        glGenTextures(2, _colorBuffers);
-        for (unsigned int i = 0; i < 2; i++)
-        {
-            glBindTexture(GL_TEXTURE_2D, _colorBuffers[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _width, _height, 0, GL_RGBA, GL_FLOAT, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            // attach texture to framebuffer
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, _colorBuffers[i], 0);
-        }
-        // create and attach depth buffer (renderbuffer)
-        glGenRenderbuffers(1, &_rboDepth);
-        glBindRenderbuffer(GL_RENDERBUFFER, _rboDepth);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _rboDepth);
-        // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-        unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-        glDrawBuffers(2, attachments);
+        _hdrFBO = FrameBuffer({TextureAttachment::Color0, TextureAttachment::Color1});
 
-        if (auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            std::cout << "Framebuffer not complete!" << std::endl;
-            Error("[Bloom]: Framebuffer incomplete: {} ", status);
-            throw std::runtime_error("[Bloom]: Framebuffer incomplete");
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
+        _colorBuffers = {
+            Texture2D(_width, _height, TextureFormat::RGBA16F),
+            Texture2D(_width, _height, TextureFormat::RGBA16F)
+        };
+
+        _colorBuffers[0].SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+        _colorBuffers[1].SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+        _colorBuffers[0].SetFilter(TextureFilter::Linear, TextureFilter::Linear);
+        _colorBuffers[1].SetFilter(TextureFilter::Linear, TextureFilter::Linear);
+
+        _hdrFBO.AttachTexture(TextureAttachment::Color0, _colorBuffers[0].GetID());
+        _hdrFBO.AttachTexture(TextureAttachment::Color1, _colorBuffers[1].GetID());
+
+        // create and attach depth buffer (renderbuffer)
+        _depthRBO = RenderBuffer(_width, _height, TextureFormat::Depth24);
+        _hdrFBO.AttachRenderBuffer(TextureAttachment::Depth, _depthRBO);
+        _hdrFBO.Status();
 
         // ping-pong-framebuffer for blurring
-        glGenFramebuffers(2, _pingpongFBO);
-        glGenTextures(2, _pingpongColorbuffers);
-        for (unsigned int i = 0; i < 2; i++)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, _pingpongFBO[i]);
-            glBindTexture(GL_TEXTURE_2D, _pingpongColorbuffers[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _width, _height, 0, GL_RGBA, GL_FLOAT, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _pingpongColorbuffers[i], 0);
+        _pingpongFBO = {
+            FrameBuffer({TextureAttachment::Color0}),
+            FrameBuffer({TextureAttachment::Color0})
+        };
+ 
+        _pingpongColorbuffers = {
+            Texture2D(_width, _height, TextureFormat::RGBA16F),
+            Texture2D(_width, _height, TextureFormat::RGBA16F)
+        };
 
-            if (auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                std::cout << "Framebuffer not complete!" << std::endl;
-                Error("[Bloom]: Framebuffer incomplete: {} ", status);
-                throw std::runtime_error("[Bloom]: Framebuffer incomplete");
-            }
-        }
-
+        _pingpongColorbuffers[0].SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+        _pingpongColorbuffers[1].SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+        _pingpongColorbuffers[0].SetFilter(TextureFilter::Linear, TextureFilter::Linear);
+        _pingpongColorbuffers[1].SetFilter(TextureFilter::Linear, TextureFilter::Linear);
+    
+        _pingpongFBO[0].AttachTexture(TextureAttachment::Color0, _pingpongColorbuffers[0].GetID());
+        _pingpongFBO[1].AttachTexture(TextureAttachment::Color0, _pingpongColorbuffers[1].GetID());
+        _pingpongFBO[0].Status();
+        _pingpongFBO[1].Status();
     }
 
     ~Bloom() {
-        glDeleteFramebuffers(2, _pingpongFBO);
-        glDeleteFramebuffers(1, &_hdrFBO);
-        glDeleteFramebuffers(1, &_rboDepth);
-        glDeleteTextures(2, _pingpongColorbuffers);
-        glDeleteTextures(2, _colorBuffers);
-
     }
 
     void Blur(Shader& blurShader, int amount) {
@@ -82,9 +68,10 @@ public:
         for (int i = 0; i < 10; i++) {
             this->BindPingPong(_horizontal);
             blurShader.SetInt("horizontal", _horizontal);
-            auto textureUnit = first_iteration ? this->GetColorBuffersTexture(1) : this->GetPingPongColorBuffersTexture(!_horizontal);
-            glBindTextureUnit(0, textureUnit);
+            auto& textureUnit = first_iteration ? _colorBuffers[1] : _pingpongColorbuffers[!_horizontal];
+            textureUnit.Bind(0);
             glDrawArrays(GL_TRIANGLES, 0, 3);
+
             _horizontal = !_horizontal;
             if (first_iteration)
                 first_iteration = false;
@@ -92,41 +79,31 @@ public:
     }
 
     void BindTextures() {
-        glBindTextureUnit(0, this->GetColorBuffersTexture(0));
-        glBindTextureUnit(1, this->GetPingPongColorBuffersTexture(!_horizontal));
+        _colorBuffers[0].Bind(0);
+        _pingpongColorbuffers[!_horizontal].Bind(1);
     }
 
     void BindPingPong(int index) {
-        glBindFramebuffer(GL_FRAMEBUFFER, _pingpongFBO[index]);
+        _pingpongFBO[index].Bind();
     }
 
     void BindHdrFramebuffer() {
-        glBindFramebuffer(GL_FRAMEBUFFER, _hdrFBO);
-    }
-
-    GLuint GetColorBuffersTexture(int index) {
-        return _colorBuffers[index];
-    }
-    GLuint GetPingPongColorBuffersTexture(int index) {
-        return _pingpongColorbuffers[index];
+        _hdrFBO.Bind();
     }
 
     GLuint GetHdrFBO() {
-        return _hdrFBO;
+        return _hdrFBO.GetId();
     }
-
-
 
     Bloom(const Bloom&) = delete;
     Bloom& operator=(const Bloom&) = delete;
 
-
 private:
     int _width, _height;
-    GLuint _hdrFBO = 0;
-    GLuint _pingpongFBO[2] = {0, 0};
-    GLuint _pingpongColorbuffers[2] = {0, 0};
-    GLuint _colorBuffers[2] = {0, 0};
-    GLuint _rboDepth = 0;
     bool _horizontal = true;
+    FrameBuffer _hdrFBO;
+    std::array<Texture2D, 2> _colorBuffers;
+    RenderBuffer _depthRBO;
+    std::array<FrameBuffer, 2> _pingpongFBO;
+    std::array<Texture2D, 2> _pingpongColorbuffers;
 };

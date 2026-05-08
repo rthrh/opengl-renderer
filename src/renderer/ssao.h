@@ -8,6 +8,7 @@
 #include <iostream>
 #include "shader.h"
 #include "texture_slots.h"
+#include "gl/texture.h"
 
 class SSAO {
 public:
@@ -21,13 +22,11 @@ public:
         _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
 
-        glCreateFramebuffers(1, &_ssaoFBO);
-        glNamedFramebufferTexture(_ssaoFBO, GL_COLOR_ATTACHMENT0, _ssaoColorBuffer.GetID(), 0);
-        if (glCheckNamedFramebufferStatus(_ssaoFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) Error("SSAO FBO incomplete");
-
-        glCreateFramebuffers(1, &_ssaoBlurFBO);
-        glNamedFramebufferTexture(_ssaoBlurFBO, GL_COLOR_ATTACHMENT0, _ssaoColorBufferBlur.GetID(), 0);
-        if (glCheckNamedFramebufferStatus(_ssaoBlurFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) Error("SSAO Blur FBO incomplete");
+        constexpr TextureAttachment attachments[] = {TextureAttachment::Color0};
+        _ssaoFBO = FrameBuffer(attachments);
+        _ssaoBlurFBO = FrameBuffer(attachments);
+        _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
+        _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
 
         _ssaoKernel = generateSampleKernel();
 
@@ -36,18 +35,14 @@ public:
     }
 
     ~SSAO() {
-        glDeleteFramebuffers(1, &_ssaoFBO);
-        glDeleteFramebuffers(1, &_ssaoBlurFBO);
         glDeleteVertexArrays(1, &_emptyVAO);
-
     }
 
     SSAO(const SSAO&) = delete;
     SSAO& operator=(const SSAO&) = delete;
 
-    // 2. generate SSAO texture
     void Run(Shader& shaderSSAO) {
-        glBindFramebuffer(GL_FRAMEBUFFER, _ssaoFBO);
+        _ssaoFBO.Bind();
         glClear(GL_COLOR_BUFFER_BIT);
         shaderSSAO.Activate();
         // Send kernel + rotation 
@@ -60,12 +55,11 @@ public:
         // render quad
         glBindVertexArray(_emptyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        _ssaoFBO.Unbind();
     }
 
-    // 3. blur SSAO texture to remove noise
     void Blur(Shader& shaderBlurSSAO) {
-        glBindFramebuffer(GL_FRAMEBUFFER, _ssaoBlurFBO);
+        _ssaoBlurFBO.Bind();
         glClear(GL_COLOR_BUFFER_BIT);
         shaderBlurSSAO.Activate();
         _ssaoColorBuffer.Bind(slot(SlotOther::SSAO));
@@ -73,7 +67,7 @@ public:
         // render quad
         glBindVertexArray(_emptyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        _ssaoBlurFBO.Unbind();
     }
 
     void BindSSAOTexture() const {
@@ -83,7 +77,7 @@ public:
 private:
     std::vector<glm::vec3> generateSampleKernel(int size = 64) { //TODO size unused
         // generate sample kernel
-        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
         std::default_random_engine generator;
         std::vector<glm::vec3> ssaoKernel;
         for (unsigned int i = 0; i < 64; ++i) {
@@ -106,7 +100,7 @@ private:
     }
 
     Texture2D generateNoiseTexture() {
-        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+        std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
         std::default_random_engine generator;
         std::vector<glm::vec3> ssaoNoise;
         for (unsigned int i = 0; i < 16; i++) {
@@ -121,11 +115,11 @@ private:
     }
 
     int _scrWidth = 0, _scrHeight = 0;
-    GLuint _ssaoFBO = 0;
-    GLuint _ssaoBlurFBO = 0;
     GLuint _emptyVAO = 0;
     Texture2D _ssaoColorBuffer;
     Texture2D _ssaoColorBufferBlur;
     Texture2D _noiseTexture;
     std::vector<glm::vec3> _ssaoKernel;
+    FrameBuffer _ssaoFBO;
+    FrameBuffer _ssaoBlurFBO;
 };

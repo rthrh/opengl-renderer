@@ -176,6 +176,15 @@ public:
         return *this;
     }
 
+    // Convenience to set all wraps to the same value at once
+    void SetWrap(TextureWrap wraps) const {
+        glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)wraps);
+        glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)wraps);
+        if constexpr (Cube<T>) {
+            glTextureParameteri(_id, GL_TEXTURE_WRAP_R, (GLint)wraps);
+        }
+    }
+
     void SetWrap(TextureWrap s, TextureWrap t) const requires (!Cube<T>) {
         glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)s);
         glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)t);
@@ -185,6 +194,11 @@ public:
         glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)s);
         glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)t);
         glTextureParameteri(_id, GL_TEXTURE_WRAP_R, (GLint)r);
+    }
+
+    // Convenience to set all filters to the same value at once
+    void SetFilter(TextureFilter minMag) const {
+        SetFilter(minMag, minMag);
     }
 
     void SetFilter(TextureFilter min, TextureFilter mag) const {

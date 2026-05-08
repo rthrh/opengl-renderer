@@ -270,7 +270,7 @@ int main()
     // Scene setup
     ModelLoader modelLoader(textureCache);
     Scene scene(textureCache);
-    setupScene1k(scene, textureCache, modelLoader);
+    setupScene(scene, textureCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;

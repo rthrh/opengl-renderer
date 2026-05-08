@@ -5,6 +5,7 @@
 #include "utils/logger.h"
 #include <algorithm>
 #include <ranges>
+#include "gl/render_buffer.h"
 
 enum class TextureAttachment : GLenum {
     Color0 = GL_COLOR_ATTACHMENT0,
@@ -20,6 +21,9 @@ enum class TextureAttachment : GLenum {
 class FrameBuffer {
 public:
     FrameBuffer() = default;
+
+    FrameBuffer(std::initializer_list<TextureAttachment> attachments)
+        : FrameBuffer(std::span<const TextureAttachment>(attachments.begin(), attachments.size())) {}
 
     FrameBuffer(std::span<const TextureAttachment> attachments) {
         glCreateFramebuffers(1, &_id);
@@ -68,6 +72,10 @@ public:
         glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
     }
 
+    void AttachRenderBuffer(TextureAttachment attachment, const RenderBuffer& renderBuffer) const {
+        glNamedFramebufferRenderbuffer(_id, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
+    }
+
     void Bind() const {
         glBindFramebuffer(GL_FRAMEBUFFER, _id);
     }
@@ -82,7 +90,7 @@ public:
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
             Error("BlitFramebuffer: {}", err);
-            throw std::runtime_error("glBlitNamedFramebuffer : " + err);
+            throw std::runtime_error("glBlitNamedFramebuffer : " + std::to_string(err));
         }
     }
 

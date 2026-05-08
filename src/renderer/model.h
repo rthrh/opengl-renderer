@@ -15,20 +15,19 @@
 #include "mesh.h"
 #include "texture_cache.h"
 
-// TODO refactor
 class Model
 {
 public:
     Model(Mesh mesh, std::string name = "") :
-        _meshes(),
-        _name(std::move(name))
+        _name(std::move(name)),
+        _meshes()
     {
         _meshes.emplace_back(std::move(mesh));
     }
 
     Model(std::vector<Mesh> meshes, std::string name = "") :
-        _meshes(std::move(meshes)),
-        _name(std::move(name))
+        _name(std::move(name)),
+        _meshes(std::move(meshes))
     {
     }
 
@@ -81,7 +80,6 @@ public:
     }
 
 private:
-    std::string _directory;
     std::string _name;
     std::vector<Mesh> _meshes;
 
