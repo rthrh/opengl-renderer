@@ -58,8 +58,7 @@ public:
         _pingpongFBO[1].Status();
     }
 
-    ~Bloom() {
-    }
+    ~Bloom() = default;
 
     void Blur(Shader& blurShader, int amount) {
         bool first_iteration = true;
