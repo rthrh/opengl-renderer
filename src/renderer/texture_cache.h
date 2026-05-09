@@ -68,7 +68,7 @@ public:
         return id;
     }
 
-    TextureHandle GetDummyTexture(TextureType type) {
+    TextureHandle GetDummyTexture(TextureType type) const {
         return _dummyTextures[static_cast<int>(type)];
     }
 

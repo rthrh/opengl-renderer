@@ -9,6 +9,8 @@
 #include <utility>
 
 #include "texture_cache.h"
+#include "material.h"
+
 #include "utils/stopwatch.h"
 
 // TODO GL_INT_2_10_10_10_REV packing

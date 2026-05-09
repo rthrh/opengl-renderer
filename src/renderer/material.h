@@ -12,6 +12,17 @@ enum class AlphaMode { Opaque, Mask, Blend };
 
 // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#schema-reference-material
 struct Material {
+
+    // Helper to init texture handles to valid dummy textures
+    static Material Default(const TextureCache& textureCache) {
+        Material m;
+        m.baseColorTexture = textureCache.GetDummyTexture(TextureType::Albedo);
+        m.normalTexture    = textureCache.GetDummyTexture(TextureType::Normal);
+        m.emissiveTexture  = textureCache.GetDummyTexture(TextureType::Emissive);
+        m.ormTexture       = textureCache.GetDummyTexture(TextureType::ORM);
+        return m;
+    }
+
     TextureHandle baseColorTexture;
     glm::vec4 baseColorFactor {1.0f};
 
