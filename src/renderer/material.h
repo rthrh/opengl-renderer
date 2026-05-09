@@ -4,6 +4,8 @@
 #include "gl/texture.h"
 
 #include <string>
+#include <memory>
+
 #include "gl/texture.h"
 #include "texture_cache.h"
 
@@ -14,24 +16,24 @@ enum class AlphaMode { Opaque, Mask, Blend };
 struct Material {
 
     // Helper to init texture handles to valid dummy textures
-    static Material Default(const TextureCache& textureCache) {
+    static Material Default(const std::shared_ptr<TextureCache>& textureCache) {
         Material m;
-        m.baseColorTexture = textureCache.GetDummyTexture(TextureType::Albedo);
-        m.normalTexture    = textureCache.GetDummyTexture(TextureType::Normal);
-        m.emissiveTexture  = textureCache.GetDummyTexture(TextureType::Emissive);
-        m.ormTexture       = textureCache.GetDummyTexture(TextureType::ORM);
+        m.baseColorTexture = textureCache->GetDummyTexture(TextureType::Albedo).id;
+        m.normalTexture    = textureCache->GetDummyTexture(TextureType::Normal).id;
+        m.emissiveTexture  = textureCache->GetDummyTexture(TextureType::Emissive).id;
+        m.ormTexture       = textureCache->GetDummyTexture(TextureType::ORM).id;
         return m;
     }
 
-    TextureHandle baseColorTexture;
+    GLuint baseColorTexture = 0;
     glm::vec4 baseColorFactor {1.0f};
 
-    TextureHandle normalTexture;
+    GLuint normalTexture = 0;
     float normalScale = 1.0f;
 
-    TextureHandle emissiveTexture;
+    GLuint emissiveTexture = 0;
     glm::vec3 emissiveFactor {1.0f};
-    TextureHandle ormTexture; // r = ambient occlusion, g = roughness, b = metallic
+    GLuint ormTexture = 0; // r = ambient occlusion, g = roughness, b = metallic
     float occlusionStrength = 1.0f;
     float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;

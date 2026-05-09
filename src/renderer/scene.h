@@ -65,7 +65,7 @@ public:
         _pointLightUBO.Upload();
     
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices);
+        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_textureCache));
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
@@ -86,7 +86,7 @@ public:
         _spotLightUBO.Upload();
 
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices);
+        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_textureCache));
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});

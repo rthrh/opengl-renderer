@@ -35,10 +35,6 @@ public:
     }
 
     Model Load(Mesh mesh) {
-        if (mesh.GetTextures().empty()) {
-            auto dummySet = _textureCache->GetDummyTextureSet();
-            mesh.SetTextures(dummySet);
-        }
         return Model(std::move(mesh));
     }
 
@@ -78,7 +74,6 @@ private:
     Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
-        std::vector<TextureHandle> textures;
 
         for (auto i = 0u; i < mesh->mNumVertices; i++) {
             Vertex vertex;
@@ -118,7 +113,9 @@ private:
         // process materials
         // TODO
         //auto textureTypes = {TextureType::Albedo, TextureType::Normal, TextureType::Emissive, TextureType::Metallic, TextureType::Roughness, TextureType::AO};
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
+        Material meshMaterial = Material::Default(_textureCache);
+
         // DEBUG print all materials available
         /*
         for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
@@ -129,44 +126,44 @@ private:
                     mat->GetName().C_Str(), diffuse.r, diffuse.g, diffuse.b);
         }*/
 
-        if (auto t = loadMaterialTexture(material, aiTextureType_BASE_COLOR, TextureType::Albedo))
-            textures.push_back(*t);
+        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_BASE_COLOR, TextureType::Albedo))
+            meshMaterial.baseColorTexture = (*t).id;
+
         else {
             aiColor4D c(1.0f, 1.0f, 1.0f, 1.0f);
-            material->Get(AI_MATKEY_COLOR_DIFFUSE, c);
-            textures.push_back({_textureCache->CreateColor(c.r, c.g, c.b, c.a), TextureType::Albedo, "color"});
+            aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, c);
+            meshMaterial.baseColorFactor = {c.r, c.g, c.b, c.a};
         }
 
-        if (auto t = loadMaterialTexture(material, aiTextureType_NORMALS, TextureType::Normal)) {
-            textures.push_back(*t);
+        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_NORMALS, TextureType::Normal)) {
+            meshMaterial.normalTexture = (*t).id;
         }
         else {
-            textures.push_back(_textureCache->GetDummyTexture(TextureType::Normal));
+            //meshMaterial.normalScale //TODO handle
         }
 
-        if (auto t = loadMaterialTexture(material, aiTextureType_EMISSIVE, TextureType::Emissive)) {
-            textures.push_back(*t);
+        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, TextureType::Emissive)) {
+            meshMaterial.emissiveTexture = (*t).id;
         }
         else {
-            textures.push_back(_textureCache->GetDummyTexture(TextureType::Emissive));
+            //meshMaterial.emissiveFactor //TODO handle
         }
 
         // 4. Ambient Occlusion - Roughness - Metalness
-        TextureHandle orm = buildORM(material);
-        textures.push_back(orm);
-        Info("Textures num: {}", textures.size());
+        TextureHandle orm = buildORM(aiMaterial);
+        meshMaterial.ormTexture = orm.id;
 
         /*Info("=== Mesh: {} ===", mesh->mName.C_Str());
         for (unsigned int t = 0; t < aiTextureType_UNKNOWN; t++) {
-            if (material->GetTextureCount((aiTextureType)t) > 0) {
+            if (aiMaterial->GetTextureCount((aiTextureType)t) > 0) {
                 aiString p;
-                material->GetTexture((aiTextureType)t, 0, &p);
+                aiMaterial->GetTexture((aiTextureType)t, 0, &p);
                 Info("  [{}] {} = {}", t, aiTextureTypeToString((aiTextureType)t), p.C_Str());
             }
         }*/
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        return Mesh(vertices, indices, meshMaterial);
     }
 
 

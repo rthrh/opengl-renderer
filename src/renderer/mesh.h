@@ -10,6 +10,7 @@
 
 #include "texture_cache.h"
 #include "material.h"
+#include "texture_slots.h"
 
 #include "utils/stopwatch.h"
 
@@ -24,8 +25,8 @@ struct Vertex {
 
 class Mesh {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TextureHandle> textures = {})
-        : _vertices(std::move(vertices)), _indices(std::move(indices)), _textures(std::move(textures))
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material material)
+        : _vertices(std::move(vertices)), _indices(std::move(indices)), _material(std::move(material))
     {
         setupMesh();
     }
@@ -38,7 +39,8 @@ public:
         _EBO(std::exchange(o._EBO, 0)),
         _vertices(std::move(o._vertices)),
         _indices(std::move(o._indices)),
-        _textures(std::move(o._textures)) {}
+        _material(std::move(o._material))
+    {}
 
     Mesh& operator=(Mesh&& o) noexcept {
         if (this == &o) return *this;
@@ -50,7 +52,7 @@ public:
         _EBO = std::exchange(o._EBO, 0);
         _vertices = std::move(o._vertices);
         _indices  = std::move(o._indices);
-        _textures = std::move(o._textures);
+        _material  = std::move(o._material);
         return *this;
     }
 
@@ -65,16 +67,23 @@ public:
         return _VAO;
     }
 
-    const std::vector<TextureHandle>& GetTextures() const {
-        return _textures;
+    const Material& GetMaterial() const {
+        return _material;
     }
 
-    void SetTextures(const std::vector<TextureHandle>& textures) {
-        _textures = textures;
+    void SetMaterial(const Material& material) {
+        _material = material;
     }
 
     const std::vector<unsigned int>& GetIndices() const {
         return _indices;
+    }
+
+    void BindTextures() const {
+        glBindTextureUnit(slot(SlotGeometry::Albedo), _material.baseColorTexture);
+        glBindTextureUnit(slot(SlotGeometry::Normal), _material.normalTexture);
+        glBindTextureUnit(slot(SlotGeometry::Emissive), _material.emissiveTexture);
+        glBindTextureUnit(slot(SlotGeometry::ORM), _material.ormTexture);
     }
 
 
@@ -85,7 +94,7 @@ private:
     // mesh Data
     std::vector<Vertex>       _vertices;
     std::vector<unsigned int> _indices;
-    std::vector<TextureHandle>      _textures;
+    Material _material;
 
     // initializes all the buffer objects/arrays
     void setupMesh()
@@ -118,11 +127,11 @@ private:
         glVertexArrayAttribBinding(_VAO, 1, 0);
         // vertex texture coords
         glEnableVertexArrayAttrib(_VAO, 2);
-        glVertexArrayAttribFormat(_VAO, 2, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, TexCoords));
+        glVertexArrayAttribFormat(_VAO, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, TexCoords));
         glVertexArrayAttribBinding(_VAO, 2, 0);
         // vertex tangent
         glEnableVertexArrayAttrib(_VAO, 3);
-        glVertexArrayAttribFormat(_VAO, 3, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Tangent));
+        glVertexArrayAttribFormat(_VAO, 3, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, Tangent));
         glVertexArrayAttribBinding(_VAO, 3, 0);
 
         stopwatch.Stop();

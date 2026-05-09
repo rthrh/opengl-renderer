@@ -47,7 +47,7 @@ public:
     Renderer& operator=(Renderer&&) noexcept = default;
 
     void Draw(const Model& model, Shader& shader) const {
-        shader.Activate();
+        shader.Activate(); // TODO redundant
         shader.SetMat4("model", model.GetModelMatrix());
 
         auto& meshes = model.GetMeshes();
@@ -201,13 +201,7 @@ private:
 
     void drawMesh(const Mesh& mesh, Shader& shader) const
     {
-        for (const auto& texture : mesh.GetTextures())
-        {
-            const auto slot = static_cast<uint32_t>(texture.type);
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, texture.id);
-        }
-
+        mesh.BindTextures();
         glBindVertexArray(mesh.GetVAO());
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndices().size()),
             GL_UNSIGNED_INT, nullptr);
