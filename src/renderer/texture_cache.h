@@ -72,27 +72,6 @@ public:
         return _dummyTextures[static_cast<int>(type)];
     }
 
-
-    // todo move it somewhere
-    std::vector<TextureHandle> GetDummyTextureSet() {
-        return _dummyTextures;
-    }
-
-    uint32_t CreateColor(float r, float g, float b, float a = 1.0f) {
-        uint8_t rgba[4] = {(uint8_t)(r * 255), (uint8_t)(g * 255), (uint8_t)(b * 255), (uint8_t)(a * 255)};
-
-        std::string cacheKey = std::format("color:{},{},{},{}", rgba[0], rgba[1], rgba[2], rgba[3]);
-        if (auto it = _cache.find(cacheKey); it != _cache.end())
-            return it->second.id;
-
-        auto texture = Texture2D(1, 1, TextureFormat::RGBA8, rgba);
-        auto id = texture.GetID();
-        _cache.insert({cacheKey, TextureHandle{ id, TextureType::Albedo, cacheKey }});
-        _textures.emplace_back(std::move(texture));
-
-        return id;
-    }
-
 private:
     static std::optional<Texture2D> upload(const std::string& path, bool gammaCorrect) {
         int width, height, channels;

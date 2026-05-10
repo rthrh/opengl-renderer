@@ -20,6 +20,7 @@
 #include "shapes.h"
 
 #include "gl/uniform_buffer.h"
+#include "gl/shader_storage_buffer.h"
 
 enum RenderQueueType {
     Forward,
@@ -137,8 +138,10 @@ private:
 
     uint32_t _handleNext{0};
 
-    UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO {};
-    UniformBuffer<PointLightUBO, 1> _pointLightUBO {};
-    UniformBuffer<SpotLightUBO, 2> _spotLightUBO {};
+    UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO;
+    UniformBuffer<PointLightUBO, 1> _pointLightUBO;
+    UniformBuffer<SpotLightUBO, 2> _spotLightUBO;
+    ShaderStorageBuffer<Material, 0> _materialSSBO;
+
     std::shared_ptr<TextureCache> _textureCache;
 };

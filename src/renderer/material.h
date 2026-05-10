@@ -11,7 +11,6 @@
 
 enum class AlphaMode { Opaque, Mask, Blend };
 
-
 // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#schema-reference-material
 struct Material {
 
@@ -25,20 +24,20 @@ struct Material {
         return m;
     }
 
-    GLuint baseColorTexture = 0;
     glm::vec4 baseColorFactor {1.0f};
+    glm::vec4 emissiveFactor {1.0f}; // w = unused
 
+    GLuint baseColorTexture = 0;
     GLuint normalTexture = 0;
-    float normalScale = 1.0f;
-
     GLuint emissiveTexture = 0;
-    glm::vec3 emissiveFactor {1.0f};
     GLuint ormTexture = 0; // r = ambient occlusion, g = roughness, b = metallic
+
+    float normalScale = 1.0f;
     float occlusionStrength = 1.0f;
     float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;
 
     AlphaMode alphaMode = AlphaMode::Opaque;
     float alphaCutoff = 0.5f;
-    bool doubleSided = false;
+    int doubleSided = false;
 };
