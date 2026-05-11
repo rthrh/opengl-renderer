@@ -17,10 +17,10 @@ struct Material {
     // Helper to init texture handles to valid dummy textures
     static Material Default(const std::shared_ptr<TextureCache>& textureCache) {
         Material m;
-        m.baseColorTexture = textureCache->GetDummyTexture(TextureType::Albedo).id;
-        m.normalTexture    = textureCache->GetDummyTexture(TextureType::Normal).id;
-        m.emissiveTexture  = textureCache->GetDummyTexture(TextureType::Emissive).id;
-        m.ormTexture       = textureCache->GetDummyTexture(TextureType::ORM).id;
+        m.baseColorTexture = textureCache->GetDummyTexture(TextureType::Albedo);
+        m.normalTexture    = textureCache->GetDummyTexture(TextureType::Normal);
+        m.emissiveTexture  = textureCache->GetDummyTexture(TextureType::Emissive);
+        m.ormTexture       = textureCache->GetDummyTexture(TextureType::ORM);
         return m;
     }
 

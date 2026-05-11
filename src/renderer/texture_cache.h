@@ -16,12 +16,6 @@ enum class TextureType {
     ORM = 3,
 };
 
-struct TextureHandle {
-    GLuint id;
-    TextureType type;
-    std::string path;
-};
-
 class TextureCache {
 public:
     TextureCache() {
@@ -36,10 +30,10 @@ public:
         auto normalDummy = Texture2D(1, 1, TextureFormat::RGBA8, flatNormal);
         auto ormDummy = Texture2D(1, 1, TextureFormat::RGBA8, ormDefault);
 
-        _dummyTextures.emplace_back(TextureHandle{.id = whiteDummy.GetID(), .type = TextureType::Albedo});
-        _dummyTextures.emplace_back(TextureHandle{.id = normalDummy.GetID(), .type = TextureType::Normal});
-        _dummyTextures.emplace_back(TextureHandle{.id = blackDummy.GetID(), .type = TextureType::Emissive});
-        _dummyTextures.emplace_back(TextureHandle{.id = ormDummy.GetID(), .type = TextureType::ORM});
+        _dummyTextures.emplace_back(whiteDummy.GetID());
+        _dummyTextures.emplace_back(normalDummy.GetID());
+        _dummyTextures.emplace_back(blackDummy.GetID());
+        _dummyTextures.emplace_back(ormDummy.GetID());
 
         _textures.emplace_back(std::move(whiteDummy));
         _textures.emplace_back(std::move(blackDummy));
@@ -50,11 +44,29 @@ public:
     ~TextureCache() = default;
 
 
-    // Returns existing texture id if path was already loaded.
-    uint32_t load(const std::string& path, TextureType type, bool gammaCorrect = false) {
+    // Creates new texture from given data and dimensions
+    GLuint Load(const std::string& path, int width, int height, TextureFormat format, const void* data) {
         auto absPath = std::filesystem::absolute(path).string();
         if (auto it = _cache.find(absPath); it != _cache.end())
-            return it->second.id;
+            return it->second;
+
+        auto texture = Texture2D(width, height, format, data, true);
+        texture.SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
+        texture.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
+
+        auto id = texture.GetID();
+        _cache[absPath] = id;
+        _textures.emplace_back(std::move(texture));
+
+        return id;
+    }
+
+
+    // Returns existing texture id if path was already loaded.
+    GLuint Load(const std::string& path, bool gammaCorrect = false) {
+        auto absPath = std::filesystem::absolute(path).string();
+        if (auto it = _cache.find(absPath); it != _cache.end())
+            return it->second;
 
         auto texture = upload(absPath, gammaCorrect);
         if (!texture) {
@@ -62,13 +74,13 @@ public:
         }
 
         auto id = texture->GetID();
-        _cache[absPath] = TextureHandle{ id, type, absPath };
+        _cache[absPath] = id;
         _textures.emplace_back(std::move(*texture));
 
         return id;
     }
 
-    TextureHandle GetDummyTexture(TextureType type) const {
+    GLuint GetDummyTexture(TextureType type) const {
         return _dummyTextures[static_cast<int>(type)];
     }
 
@@ -100,7 +112,7 @@ private:
         return texture;
     }
 
-    std::unordered_map<std::string, TextureHandle> _cache;
+    std::unordered_map<std::string, GLuint> _cache;
     std::vector<Texture2D> _textures;
-    std::vector<TextureHandle> _dummyTextures;
+    std::vector<GLuint> _dummyTextures;
 };

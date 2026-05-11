@@ -7,6 +7,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/GltfMaterial.h>
 
 #include <string>
 #include <iostream>
@@ -111,10 +112,34 @@ private:
                 indices.push_back(face.mIndices[j]);
         }
         // process materials
-        // TODO
-        //auto textureTypes = {TextureType::Albedo, TextureType::Normal, TextureType::Emissive, TextureType::Metallic, TextureType::Roughness, TextureType::AO};
         aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
         Material meshMaterial = Material::Default(_textureCache);
+
+        aiString alphaMode;
+        if (aiMaterial->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+            std::string_view mode = alphaMode.C_Str();
+            if (mode == "MASK")  meshMaterial.alphaMode = AlphaMode::Mask;
+            if (mode == "BLEND") meshMaterial.alphaMode = AlphaMode::Blend;
+        }
+
+        float alphaCutoff = 0.0f;
+        if (aiMaterial->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS)
+            meshMaterial.alphaCutoff = alphaCutoff;
+
+        int doubleSided = 0;
+        if (aiMaterial->Get(AI_MATKEY_TWOSIDED, doubleSided) == AI_SUCCESS)
+            meshMaterial.doubleSided = doubleSided;
+
+        float metallicFactor = 0.0f, roughnessFactor = 0.0f;
+        if (aiMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor) == AI_SUCCESS)
+            meshMaterial.metallicFactor = metallicFactor;
+
+        if (aiMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughnessFactor) == AI_SUCCESS)
+            meshMaterial.roughnessFactor = roughnessFactor;
+
+        aiColor3D emissive(0.0f, 0.0f, 0.0f);
+        if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
+            meshMaterial.emissiveFactor = glm::vec4(emissive.r, emissive.g, emissive.b, 1.0f);
 
         // DEBUG print all materials available
         /*
@@ -126,32 +151,37 @@ private:
                     mat->GetName().C_Str(), diffuse.r, diffuse.g, diffuse.b);
         }*/
 
-        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_BASE_COLOR, TextureType::Albedo))
-            meshMaterial.baseColorTexture = (*t).id;
+        if (auto texture = loadMaterialTexture(aiMaterial, aiTextureType_BASE_COLOR)) {
+            meshMaterial.baseColorTexture = texture;
+        }
 
-        else {
-            aiColor4D c(1.0f, 1.0f, 1.0f, 1.0f);
-            aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, c);
+        aiColor4D c(1.0f, 1.0f, 1.0f, 1.0f);
+        if (aiMaterial->Get(AI_MATKEY_BASE_COLOR, c) == AI_SUCCESS) {
             meshMaterial.baseColorFactor = {c.r, c.g, c.b, c.a};
         }
 
-        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_NORMALS, TextureType::Normal)) {
-            meshMaterial.normalTexture = (*t).id;
-        }
-        else {
-            //meshMaterial.normalScale //TODO handle
+        if (auto texture = loadMaterialTexture(aiMaterial, aiTextureType_NORMALS)) {
+            meshMaterial.normalTexture = texture;
         }
 
-        if (auto t = loadMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, TextureType::Emissive)) {
-            meshMaterial.emissiveTexture = (*t).id;
-        }
-        else {
-            //meshMaterial.emissiveFactor //TODO handle
+        float normalScale = 1.0f;
+        if (aiMaterial->Get(AI_MATKEY_GLTF_TEXTURE_SCALE(aiTextureType_NORMALS, 0), normalScale) == AI_SUCCESS) {
+            meshMaterial.normalScale = normalScale;
         }
 
-        // 4. Ambient Occlusion - Roughness - Metalness
-        TextureHandle orm = buildORM(aiMaterial);
-        meshMaterial.ormTexture = orm.id;
+        if (auto texture = loadMaterialTexture(aiMaterial, aiTextureType_EMISSIVE)) {
+            meshMaterial.emissiveTexture = texture;
+        }
+
+        float occlusionStrength = 1.0f;
+        if (aiMaterial->Get(AI_MATKEY_GLTF_TEXTURE_STRENGTH(aiTextureType_LIGHTMAP, 0), occlusionStrength) == AI_SUCCESS) {
+            meshMaterial.occlusionStrength = occlusionStrength;
+        }
+
+        // Ambient Occlusion - Roughness - Metalness
+        if (auto texture = buildORM(aiMaterial)) {
+            meshMaterial.ormTexture = texture;
+        }
 
         /*Info("=== Mesh: {} ===", mesh->mName.C_Str());
         for (unsigned int t = 0; t < aiTextureType_UNKNOWN; t++) {
@@ -167,13 +197,13 @@ private:
     }
 
 
-    TextureHandle buildORM(aiMaterial* mat) {
+    GLuint buildORM(aiMaterial* mat) {
         aiString mrPath, aoPath;
         bool hasMR = mat->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS) > 0;
         bool hasAO = mat->GetTextureCount(aiTextureType_LIGHTMAP) > 0;
 
         if (!hasMR && !hasAO)
-            return TextureHandle{0, TextureType::ORM, ""};
+            return _textureCache->GetDummyTexture(TextureType::ORM);
 
         int width = 0, height = 0, channels = 0;
 
@@ -200,27 +230,25 @@ private:
             orm[i * 3 + 2] = mr ? mr[i * channels + 2] : 0;
         }
 
-        uint32_t id;
-        glCreateTextures(GL_TEXTURE_2D, 1, &id);
-        glTextureStorage2D(id, 1, GL_RGB8, width, height);
-        glTextureSubImage2D(id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, orm.data());
-        glGenerateTextureMipmap(id);
+        // Use metallic-roughness path as key
+        std::string fullPath = (std::filesystem::path(_directory) / mrPath.C_Str()).string();
+        auto id = _textureCache->Load(fullPath, width, height, TextureFormat::RGB8, orm.data());
 
         if (mr) stbi_image_free(mr);
         if (ao) stbi_image_free(ao);
 
-        return TextureHandle{ id, TextureType::ORM, "ORM" };
+        return id;
     }
 
 
-    std::optional<TextureHandle> loadMaterialTexture(aiMaterial* mat, aiTextureType aiType, TextureType type) {
-        if (mat->GetTextureCount(aiType) == 0) return std::nullopt;
+    GLuint loadMaterialTexture(aiMaterial* mat, aiTextureType aiType) {
+        if (mat->GetTextureCount(aiType) == 0) return 0;
         aiString str;
         mat->GetTexture(aiType, 0, &str);
         std::string fullPath = (std::filesystem::path(_directory) / str.C_Str()).string();
-        bool gamma = (type == TextureType::Albedo || type == TextureType::Emissive);
-        uint32_t id = _textureCache->load(fullPath, type, gamma);
-        return TextureHandle{id, type, fullPath};
+
+        bool gamma = (aiType == aiTextureType_BASE_COLOR || aiType == aiTextureType_EMISSIVE);
+        return _textureCache->Load(fullPath, gamma);
     }
 
     std::string _directory;
