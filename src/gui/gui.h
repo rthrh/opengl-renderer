@@ -14,8 +14,8 @@
 
 class GuiLayer {
 public:
-    GuiLayer(GLFWwindow* window, const fs::path& modelsDir, const std::shared_ptr<TextureCache>& textureCache)
-        : _modelLoader(modelsDir, textureCache)
+    GuiLayer(GLFWwindow* window, const fs::path& modelsDir, const std::shared_ptr<AssetCache>& assetCache)
+        : _modelLoader(modelsDir, assetCache)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();

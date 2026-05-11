@@ -6,7 +6,7 @@
 #include <ranges>
 #include "renderer/scene.h"
 #include "renderer/model.h"
-#include "texture_cache.h"
+#include "asset_cache.h"
 #include "renderer/model_loader.h"
 #include "utils/logger.h"
 
@@ -14,8 +14,8 @@ namespace fs = std::filesystem;
 
 class ModelLoaderGUI {
 public:
-    ModelLoaderGUI(const fs::path& rootDir, const std::shared_ptr<TextureCache>& textureCache)
-        : _textureCache(textureCache) {
+    ModelLoaderGUI(const fs::path& rootDir, const std::shared_ptr<AssetCache>& assetCache)
+        : _assetCache(assetCache) {
         scan(rootDir);
     }
 
@@ -52,6 +52,6 @@ private:
         std::ranges::sort(_models, {}, [](const auto& p) { return p.first; });
     }
 
-    std::shared_ptr<TextureCache> _textureCache;
+    std::shared_ptr<AssetCache> _assetCache;
     std::vector<std::pair<std::string, fs::path>> _models;
 };

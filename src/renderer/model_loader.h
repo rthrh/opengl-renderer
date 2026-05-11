@@ -15,13 +15,13 @@
 #include <filesystem>
 
 #include "mesh.h"
-#include "texture_cache.h"
+#include "asset_cache.h"
 #include "model.h"
 
 class ModelLoader
 {
 public:
-    ModelLoader(const std::shared_ptr<TextureCache>& textureCache) : _textureCache{textureCache} {
+    ModelLoader(const std::shared_ptr<AssetCache>& assetCache) : _assetCache{assetCache} {
     }
 
     ModelLoader(const ModelLoader&) = delete;
@@ -113,7 +113,7 @@ private:
         }
         // process materials
         aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
-        Material meshMaterial = Material::Default(_textureCache);
+        Material meshMaterial = Material::Default(_assetCache);
 
         aiString alphaMode;
         if (aiMaterial->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
@@ -203,7 +203,7 @@ private:
         bool hasAO = mat->GetTextureCount(aiTextureType_LIGHTMAP) > 0;
 
         if (!hasMR && !hasAO)
-            return _textureCache->GetDummyTexture(TextureType::ORM);
+            return _assetCache->GetDummyTexture(TextureType::ORM);
 
         int width = 0, height = 0, channels = 0;
 
@@ -232,7 +232,7 @@ private:
 
         // Use metallic-roughness path as key
         std::string fullPath = (std::filesystem::path(_directory) / mrPath.C_Str()).string();
-        auto id = _textureCache->Load(fullPath, width, height, TextureFormat::RGB8, orm.data());
+        auto id = _assetCache->Load(fullPath, width, height, TextureFormat::RGB8, orm.data());
 
         if (mr) stbi_image_free(mr);
         if (ao) stbi_image_free(ao);
@@ -248,10 +248,10 @@ private:
         std::string fullPath = (std::filesystem::path(_directory) / str.C_Str()).string();
 
         bool gamma = (aiType == aiTextureType_BASE_COLOR || aiType == aiTextureType_EMISSIVE);
-        return _textureCache->Load(fullPath, gamma);
+        return _assetCache->Load(fullPath, gamma);
     }
 
     std::string _directory;
     std::string _name;
-    std::shared_ptr<TextureCache> _textureCache;
+    std::shared_ptr<AssetCache> _assetCache;
 };

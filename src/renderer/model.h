@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "mesh.h"
-#include "texture_cache.h"
+#include "asset_cache.h"
 
 class Model
 {

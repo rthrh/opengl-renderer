@@ -16,9 +16,9 @@ enum class TextureType {
     ORM = 3,
 };
 
-class TextureCache {
+class AssetCache {
 public:
-    TextureCache() {
+    AssetCache() {
         // Initialize dummy 1x1 fallback textures in case real ones are missing
         uint8_t white[]      = {255, 255, 255, 255};
         uint8_t black[]      = {0, 0, 0, 0};
@@ -41,7 +41,7 @@ public:
         _textures.emplace_back(std::move(ormDummy));
     }
 
-    ~TextureCache() = default;
+    ~AssetCache() = default;
 
 
     // Creates new texture from given data and dimensions
@@ -91,7 +91,7 @@ private:
         unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (!data) {
-            Error("TextureCache: failed to load {}", path);
+            Error("AssetCache: failed to load {}", path);
             return std::nullopt;
         }
 

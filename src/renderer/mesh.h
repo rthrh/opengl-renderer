@@ -8,7 +8,7 @@
 #include <vector>
 #include <utility>
 
-#include "texture_cache.h"
+#include "asset_cache.h"
 #include "material.h"
 #include "texture_slots.h"
 
@@ -88,14 +88,6 @@ public:
 
 
 private:
-    // render data 
-    unsigned int _VAO{0}, _VBO{0}, _EBO{0};
-
-    // mesh Data
-    std::vector<Vertex>       _vertices;
-    std::vector<unsigned int> _indices;
-    Material _material;
-
     // initializes all the buffer objects/arrays
     void setupMesh()
     {
@@ -137,4 +129,12 @@ private:
         stopwatch.Stop();
 
     }
+
+    // render data 
+    GLuint _VAO{0}, _VBO{0}, _EBO{0};
+
+    // mesh Data
+    std::vector<Vertex> _vertices;
+    std::vector<unsigned int> _indices;
+    Material _material;
 };

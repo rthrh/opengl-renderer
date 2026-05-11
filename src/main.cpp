@@ -17,7 +17,7 @@
 #include "renderer/shapes.h"
 #include "renderer/scene.h"
 
-#include "renderer/texture_cache.h"
+#include "renderer/asset_cache.h"
 #include "renderer/shader_cache.h"
 #include "renderer/model_loader.h"
 
@@ -121,7 +121,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
 }
 
 
-void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache, ModelLoader& modelLoader) {
+void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
@@ -139,7 +139,7 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache,
     scene.AddModel(std::move(*ourModel2), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(textureCache));
+    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(assetCache));
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
@@ -165,7 +165,7 @@ void setupScene(Scene& scene, const std::shared_ptr<TextureCache>& textureCache,
 
 }
 
-void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache, ModelLoader& modelLoader) {
+void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoader& modelLoader) {
     std::mt19937 rng(42); // fixed seed for reproducibility
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
     std::uniform_real_distribution<float> heightDist(0.5f, 15.0f);
@@ -183,7 +183,7 @@ void setupScene1k(Scene& scene, std::shared_ptr<TextureCache> textureCache, Mode
     scene.AddModel(std::move(*ourModel), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(textureCache));
+    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(assetCache));
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
@@ -254,7 +254,7 @@ int main()
 
 
     Renderer renderer(windowWidth, windowHeight, camera, skybox);
-    auto textureCache = std::make_shared<TextureCache>();
+    auto assetCache = std::make_shared<AssetCache>();
 
     UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
     configUBO.Upload();
@@ -265,12 +265,12 @@ int main()
 
      // init imgui
     std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
-    GuiLayer guiLayer(window, modelsDirectory, textureCache);
+    GuiLayer guiLayer(window, modelsDirectory, assetCache);
 
     // Scene setup
-    ModelLoader modelLoader(textureCache);
-    Scene scene(textureCache);
-    setupScene(scene, textureCache, modelLoader);
+    ModelLoader modelLoader(assetCache);
+    Scene scene(assetCache);
+    setupScene(scene, assetCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;

@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "gl/texture.h"
-#include "texture_cache.h"
+#include "asset_cache.h"
 
 enum class AlphaMode { Opaque, Mask, Blend };
 
@@ -15,12 +15,12 @@ enum class AlphaMode { Opaque, Mask, Blend };
 struct Material {
 
     // Helper to init texture handles to valid dummy textures
-    static Material Default(const std::shared_ptr<TextureCache>& textureCache) {
+    static Material Default(const std::shared_ptr<AssetCache>& assetCache) {
         Material m;
-        m.baseColorTexture = textureCache->GetDummyTexture(TextureType::Albedo);
-        m.normalTexture    = textureCache->GetDummyTexture(TextureType::Normal);
-        m.emissiveTexture  = textureCache->GetDummyTexture(TextureType::Emissive);
-        m.ormTexture       = textureCache->GetDummyTexture(TextureType::ORM);
+        m.baseColorTexture = assetCache->GetDummyTexture(TextureType::Albedo);
+        m.normalTexture    = assetCache->GetDummyTexture(TextureType::Normal);
+        m.emissiveTexture  = assetCache->GetDummyTexture(TextureType::Emissive);
+        m.ormTexture       = assetCache->GetDummyTexture(TextureType::ORM);
         return m;
     }
 

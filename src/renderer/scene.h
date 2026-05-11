@@ -16,7 +16,7 @@
 
 #include "model.h"
 #include "ubo.h"
-#include "texture_cache.h"
+#include "asset_cache.h"
 #include "shapes.h"
 
 #include "gl/uniform_buffer.h"
@@ -33,8 +33,8 @@ public:
     using Handle = uint32_t;
     using RenderQueue = std::unordered_map<Handle, Model>;
 
-    Scene(const std::shared_ptr<TextureCache>& textureCache) :
-        _textureCache(textureCache)
+    Scene(const std::shared_ptr<AssetCache>& assetCache) :
+        _assetCache(assetCache)
     {
 
     }
@@ -66,7 +66,7 @@ public:
         _pointLightUBO.Upload();
     
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_textureCache));
+        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_assetCache));
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
@@ -87,7 +87,7 @@ public:
         _spotLightUBO.Upload();
 
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_textureCache));
+        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_assetCache));
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
@@ -143,5 +143,5 @@ private:
     UniformBuffer<SpotLightUBO, 2> _spotLightUBO;
     ShaderStorageBuffer<Material, 0> _materialSSBO;
 
-    std::shared_ptr<TextureCache> _textureCache;
+    std::shared_ptr<AssetCache> _assetCache;
 };
