@@ -5,8 +5,10 @@
 #include <iostream>
 #include <stb_image.h>
 
-#include "gl/texture.h"
 #include "utils/logger.h"
+#include "material.h"
+#include "gl/texture.h"
+#include "gl/shader_storage_buffer.h"
 
 // TODO get rid of
 enum class TextureType {
@@ -25,29 +27,51 @@ public:
         uint8_t flatNormal[] = {128, 128, 255, 255};
         uint8_t ormDefault[] = {255, 255, 0, 255}; // TODO find good default values
 
-        auto whiteDummy = Texture2D(1, 1, TextureFormat::RGBA8, white);
-        auto blackDummy = Texture2D(1, 1, TextureFormat::RGBA8, black);
+        auto albedoDummy = Texture2D(1, 1, TextureFormat::RGBA8, white);
         auto normalDummy = Texture2D(1, 1, TextureFormat::RGBA8, flatNormal);
+        auto emissiveDummy = Texture2D(1, 1, TextureFormat::RGBA8, black);
+
         auto ormDummy = Texture2D(1, 1, TextureFormat::RGBA8, ormDefault);
 
-        _dummyTextures.emplace_back(whiteDummy.GetID());
+        _dummyTextures.emplace_back(albedoDummy.GetID());
         _dummyTextures.emplace_back(normalDummy.GetID());
-        _dummyTextures.emplace_back(blackDummy.GetID());
+        _dummyTextures.emplace_back(emissiveDummy.GetID());
         _dummyTextures.emplace_back(ormDummy.GetID());
 
-        _textures.emplace_back(std::move(whiteDummy));
-        _textures.emplace_back(std::move(blackDummy));
+        _textures.emplace_back(std::move(albedoDummy));
         _textures.emplace_back(std::move(normalDummy));
+        _textures.emplace_back(std::move(emissiveDummy));
         _textures.emplace_back(std::move(ormDummy));
     }
 
     ~AssetCache() = default;
 
 
+    uint32_t AddMaterial(Material& material) {
+        return _materialSSBO.Pushback(material);
+    }
+
+    Material& GetMaterial(uint32_t index) {
+        return _materialSSBO.Get(index);
+    }
+
+    Material GetDefaultMaterial() {
+        Material material;
+        material.baseColorTexture = this->GetDummyTexture(TextureType::Albedo);
+        material.normalTexture    = this->GetDummyTexture(TextureType::Normal);
+        material.emissiveTexture  = this->GetDummyTexture(TextureType::Emissive);
+        material.ormTexture       = this->GetDummyTexture(TextureType::ORM);
+        return material;
+    }
+
+    void UploadMaterials() {
+        _materialSSBO.Upload();
+    }
+
     // Creates new texture from given data and dimensions
     GLuint Load(const std::string& path, int width, int height, TextureFormat format, const void* data) {
         auto absPath = std::filesystem::absolute(path).string();
-        if (auto it = _cache.find(absPath); it != _cache.end())
+        if (auto it = _pathToId.find(absPath); it != _pathToId.end())
             return it->second;
 
         auto texture = Texture2D(width, height, format, data, true);
@@ -55,7 +79,7 @@ public:
         texture.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
 
         auto id = texture.GetID();
-        _cache[absPath] = id;
+        _pathToId[absPath] = id;
         _textures.emplace_back(std::move(texture));
 
         return id;
@@ -65,7 +89,7 @@ public:
     // Returns existing texture id if path was already loaded.
     GLuint Load(const std::string& path, bool gammaCorrect = false) {
         auto absPath = std::filesystem::absolute(path).string();
-        if (auto it = _cache.find(absPath); it != _cache.end())
+        if (auto it = _pathToId.find(absPath); it != _pathToId.end())
             return it->second;
 
         auto texture = upload(absPath, gammaCorrect);
@@ -74,7 +98,7 @@ public:
         }
 
         auto id = texture->GetID();
-        _cache[absPath] = id;
+        _pathToId[absPath] = id;
         _textures.emplace_back(std::move(*texture));
 
         return id;
@@ -112,7 +136,9 @@ private:
         return texture;
     }
 
-    std::unordered_map<std::string, GLuint> _cache;
+    std::unordered_map<std::string, GLuint> _pathToId;
     std::vector<Texture2D> _textures;
+    ShaderStorageBuffer<Material, 0> _materialSSBO;
+
     std::vector<GLuint> _dummyTextures;
 };

@@ -113,7 +113,7 @@ private:
         }
         // process materials
         aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
-        Material meshMaterial = Material::Default(_assetCache);
+        Material meshMaterial = _assetCache->GetDefaultMaterial();
 
         aiString alphaMode;
         if (aiMaterial->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {

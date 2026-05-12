@@ -66,7 +66,7 @@ public:
         _pointLightUBO.Upload();
     
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_assetCache));
+        Mesh markerMesh(cube_vertices, cube_indices, _assetCache->GetDefaultMaterial());
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
@@ -87,7 +87,7 @@ public:
         _spotLightUBO.Upload();
 
         // Add debug light marker
-        Mesh markerMesh(cube_vertices, cube_indices, Material::Default(_assetCache));
+        Mesh markerMesh(cube_vertices, cube_indices, _assetCache->GetDefaultMaterial());
         Model markerModel(std::move(markerMesh));
         markerModel.SetTranslation(light.GetPosition());
         markerModel.SetScale({0.1f, 0.1f, 0.1f});
@@ -141,7 +141,6 @@ private:
     UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO;
     UniformBuffer<PointLightUBO, 1> _pointLightUBO;
     UniformBuffer<SpotLightUBO, 2> _spotLightUBO;
-    ShaderStorageBuffer<Material, 0> _materialSSBO;
 
     std::shared_ptr<AssetCache> _assetCache;
 };

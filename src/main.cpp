@@ -139,7 +139,7 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     scene.AddModel(std::move(*ourModel2), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(assetCache));
+    Mesh floorMesh(floor_vertices, floor_indices, assetCache->GetDefaultMaterial());
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
@@ -183,7 +183,7 @@ void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoa
     scene.AddModel(std::move(*ourModel), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, Material::Default(assetCache));
+    Mesh floorMesh(floor_vertices, floor_indices, assetCache->GetDefaultMaterial());
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
