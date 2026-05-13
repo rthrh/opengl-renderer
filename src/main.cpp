@@ -139,7 +139,8 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     scene.AddModel(std::move(*ourModel2), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, assetCache->GetDefaultMaterial());
+    uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
+    Mesh floorMesh(floor_vertices, floor_indices, defaultMatIndex);
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
@@ -183,7 +184,8 @@ void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoa
     scene.AddModel(std::move(*ourModel), Deferred);
 
     // floor model
-    Mesh floorMesh(floor_vertices, floor_indices, assetCache->GetDefaultMaterial());
+    uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
+    Mesh floorMesh(floor_vertices, floor_indices, defaultMatIndex);
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
     floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
     floorModel.SetScale({50.0f, 1.0f, 50.0f});
@@ -252,9 +254,8 @@ int main()
     std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
     auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
 
-
-    Renderer renderer(windowWidth, windowHeight, camera, skybox);
     auto assetCache = std::make_shared<AssetCache>();
+    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache);
 
     UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
     configUBO.Upload();
@@ -316,6 +317,7 @@ int main()
 
         // Render scene
         camera->UploadUBO();
+        assetCache->UploadMaterials();
 
         renderer.PassShadowDirectional(scene, *shadowDirShader);
         renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());

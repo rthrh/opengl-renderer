@@ -27,4 +27,5 @@ struct Material {
     AlphaMode alphaMode = AlphaMode::Opaque;
     float alphaCutoff = 0.5f;
     int doubleSided = false;
+    float _pad;
 };

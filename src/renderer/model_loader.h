@@ -72,27 +72,27 @@ private:
         }
     }
 
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
+    Mesh processMesh(aiMesh *aiMesh, const aiScene *scene) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
-        for (auto i = 0u; i < mesh->mNumVertices; i++) {
+        for (auto i = 0u; i < aiMesh->mNumVertices; i++) {
             Vertex vertex;
-            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+            vertex.Position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
 
-            if (mesh->HasNormals()) {
-                vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+            if (aiMesh->HasNormals()) {
+                vertex.Normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
             } else {
                 Warn("Mesh has no normals");
             }
 
-            if (mesh->mTextureCoords[0]) { // does the mesh contain texture coordinates?
+            if (aiMesh->mTextureCoords[0]) { // does the mesh contain texture coordinates?
                 // take the first set (0) of texture coordinates
-                vertex.TexCoords = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+                vertex.TexCoords = { aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y };
 
                 // tangent + calculate handness sign for mirrored geometry
-                glm::vec3 T = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
-                glm::vec3 B = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+                glm::vec3 T = { aiMesh->mTangents[i].x, aiMesh->mTangents[i].y, aiMesh->mTangents[i].z };
+                glm::vec3 B = { aiMesh->mBitangents[i].x, aiMesh->mBitangents[i].y, aiMesh->mBitangents[i].z };
                 glm::vec3 N = vertex.Normal;
 
                 float sign = (glm::dot(glm::cross(N, T), B) < 0.0f) ? -1.0f : 1.0f;
@@ -105,14 +105,14 @@ private:
             vertices.push_back(vertex);
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        for(auto i = 0u; i < mesh->mNumFaces; i++) {
-            aiFace face = mesh->mFaces[i];
+        for(auto i = 0u; i < aiMesh->mNumFaces; i++) {
+            aiFace face = aiMesh->mFaces[i];
             // retrieve all indices of the face and store them in the indices vector
             for(auto j = 0u; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);
         }
         // process materials
-        aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial* aiMaterial = scene->mMaterials[aiMesh->mMaterialIndex];
         Material meshMaterial = _assetCache->GetDefaultMaterial();
 
         aiString alphaMode;
@@ -193,7 +193,9 @@ private:
         }*/
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, meshMaterial);
+        
+        uint32_t materialIndex = _assetCache->AddMaterial(meshMaterial);
+        return Mesh(vertices, indices, materialIndex);
     }
 
 

@@ -8,10 +8,6 @@
 #include <vector>
 #include <utility>
 
-#include "asset_cache.h"
-#include "material.h"
-#include "texture_slots.h"
-
 #include "utils/stopwatch.h"
 
 // TODO GL_INT_2_10_10_10_REV packing
@@ -25,8 +21,8 @@ struct Vertex {
 
 class Mesh {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material material)
-        : _vertices(std::move(vertices)), _indices(std::move(indices)), _material(std::move(material))
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, uint32_t materialIndex)
+        : _vertices(std::move(vertices)), _indices(std::move(indices)), _materialIndex(materialIndex)
     {
         setupMesh();
     }
@@ -39,7 +35,7 @@ public:
         _EBO(std::exchange(o._EBO, 0)),
         _vertices(std::move(o._vertices)),
         _indices(std::move(o._indices)),
-        _material(std::move(o._material))
+        _materialIndex(o._materialIndex)
     {}
 
     Mesh& operator=(Mesh&& o) noexcept {
@@ -52,7 +48,7 @@ public:
         _EBO = std::exchange(o._EBO, 0);
         _vertices = std::move(o._vertices);
         _indices  = std::move(o._indices);
-        _material  = std::move(o._material);
+        _materialIndex  = o._materialIndex;
         return *this;
     }
 
@@ -67,25 +63,12 @@ public:
         return _VAO;
     }
 
-    const Material& GetMaterial() const {
-        return _material;
-    }
-
-    void SetMaterial(const Material& material) {
-        _material = material;
-    }
-
     const std::vector<unsigned int>& GetIndices() const {
         return _indices;
     }
 
-    void BindTextures() const {
-        glBindTextureUnit(slot(SlotGeometry::Albedo), _material.baseColorTexture);
-        glBindTextureUnit(slot(SlotGeometry::Normal), _material.normalTexture);
-        glBindTextureUnit(slot(SlotGeometry::Emissive), _material.emissiveTexture);
-        glBindTextureUnit(slot(SlotGeometry::ORM), _material.ormTexture);
-    }
-
+    uint32_t GetMaterialIndex() const { return _materialIndex; }
+    GLuint GetIndexCount() const { return _indices.size(); }
 
 private:
     // initializes all the buffer objects/arrays
@@ -136,5 +119,5 @@ private:
     // mesh Data
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;
-    Material _material;
+    uint32_t _materialIndex;
 };

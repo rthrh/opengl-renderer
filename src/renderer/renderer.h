@@ -4,26 +4,27 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
-#include "renderer/model.h"
-#include "renderer/mesh.h"
-#include "renderer/scene.h"
-#include "renderer/gbuffer.h"
-#include "renderer/camera.h"
-#include "renderer/skybox.h"
-#include "renderer/shadow_map_directional.h"
-#include "renderer/shadow_map_point.h"
-#include "renderer/shadow_map_spot.h"
-#include "renderer/texture_slots.h"
-#include "renderer/math.h"
-#include "renderer/bloom.h"
-#include "renderer/ssao.h"
+#include "model.h"
+#include "mesh.h"
+#include "scene.h"
+#include "gbuffer.h"
+#include "camera.h"
+#include "skybox.h"
+#include "shadow_map_directional.h"
+#include "shadow_map_point.h"
+#include "shadow_map_spot.h"
+#include "texture_slots.h"
+#include "math.h"
+#include "bloom.h"
+#include "ssao.h"
+#include "asset_cache.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
 
 class Renderer {
 public:
-    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox) :
+    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox, std::shared_ptr<AssetCache>& assetCache) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
         _scrWidth(scrWidth),
@@ -33,7 +34,8 @@ public:
         _shadowMapSpot(),
         _bloom(scrWidth, scrHeight),
         _ssao(scrWidth, scrHeight),
-        _skybox(skybox)
+        _skybox(skybox),
+        _assetCache(assetCache)
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -47,7 +49,6 @@ public:
     Renderer& operator=(Renderer&&) noexcept = default;
 
     void Draw(const Model& model, Shader& shader) const {
-        shader.Activate(); // TODO redundant
         shader.SetMat4("model", model.GetModelMatrix());
 
         auto& meshes = model.GetMeshes();
@@ -201,10 +202,14 @@ private:
 
     void drawMesh(const Mesh& mesh, Shader& shader) const
     {
-        mesh.BindTextures();
+        const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
+        glBindTextureUnit(slot(SlotGeometry::Albedo),   mat.baseColorTexture);
+        glBindTextureUnit(slot(SlotGeometry::Normal),   mat.normalTexture);
+        glBindTextureUnit(slot(SlotGeometry::Emissive), mat.emissiveTexture);
+        glBindTextureUnit(slot(SlotGeometry::ORM),      mat.ormTexture);
+        shader.SetInt("materialIndex", mesh.GetMaterialIndex());
         glBindVertexArray(mesh.GetVAO());
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndices().size()),
-            GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndexCount()), GL_UNSIGNED_INT, nullptr);
     }
 
     std::shared_ptr<Camera> _cameraPtr;
@@ -216,8 +221,9 @@ private:
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;
     ShadowMapSpot _shadowMapSpot;
-    UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO {};
+    UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO;
     Bloom _bloom;
     SSAO _ssao;
     std::shared_ptr<Skybox> _skybox;
+    std::shared_ptr<AssetCache> _assetCache;
 };

@@ -47,8 +47,8 @@ public:
     ~AssetCache() = default;
 
 
-    uint32_t AddMaterial(Material& material) {
-        return _materialSSBO.Pushback(material);
+    uint32_t AddMaterial(Material material) {
+        return _materialSSBO.Pushback(std::move(material));
     }
 
     Material& GetMaterial(uint32_t index) {
