@@ -69,7 +69,7 @@ public:
         shader.Activate();
 
         this->render(scene.GetQueue(Deferred), shader);
-        this->render(scene.GetQueue(Forward), shader);
+        //this->render(scene.GetQueue(Forward), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -93,7 +93,7 @@ public:
                 shader.SetMat4("shadowMatrices[" + std::to_string(face) + "]", shadowMatrices[face]);
             }
             this->render(scene.GetQueue(Deferred), shader);
-            this->render(scene.GetQueue(Forward), shader);
+            //this->render(scene.GetQueue(Forward), shader);
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -116,7 +116,7 @@ public:
 
             shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
             this->render(scene.GetQueue(Deferred), shader);
-            this->render(scene.GetQueue(Forward), shader);
+            //this->render(scene.GetQueue(Forward), shader);
         }
 
         _shadowMapUBO.Upload();
@@ -159,7 +159,20 @@ public:
     void PassForward(Scene& scene, Shader& shader) {
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
+        shader.Activate();
+
+        // Render opaque/masked meshes first
+        shader.SetBool("blendPass", false);
         this->render(scene.GetQueue(Forward), shader);
+
+        // Render blend meshes
+        shader.SetBool("blendPass", true);
+        glEnable(GL_BLEND);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        this->render(scene.GetQueue(Forward), shader);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
     }
 
     void PassNoShadow(Scene& scene, Shader& unlitShader) {

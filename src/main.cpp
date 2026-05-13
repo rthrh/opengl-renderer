@@ -126,17 +126,22 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     std::filesystem::path modelPath2 = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
+    std::filesystem::path modelPath3 = root / ".." / "glTF-Sample-Models/2.0" / "AlphaBlendModeTest//glTF/AlphaBlendModeTest.gltf";
+
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
 
     auto absPath = std::filesystem::absolute(modelPath);
     auto ourModel = modelLoader.Load(absPath);
-
     scene.AddModel(std::move(*ourModel), Deferred);
 
     auto absPath2 = std::filesystem::absolute(modelPath2);
     auto ourModel2 = modelLoader.Load(absPath2);
-
+    (*ourModel2).SetTranslation({0.0f, -2.0f, 0.0f});
     scene.AddModel(std::move(*ourModel2), Deferred);
+
+    auto absPath3 = std::filesystem::absolute(modelPath3);
+    auto ourModel3 = modelLoader.Load(absPath3);
+    scene.AddModel(std::move(*ourModel3), Forward);
 
     // floor model
     uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());

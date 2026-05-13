@@ -26,18 +26,55 @@ layout(binding = 12) uniform sampler2D brdfLUT;
 #include "include/pbr_lights.glsl"
 #include "include/shadows.glsl"
 
-void main() {
-    vec4  albedoSample = texture(albedoMap, TexCoords).rgba;
-    vec3  albedo    = albedoSample.rgb;
-    vec3  orm       = texture(ormMap, TexCoords).rgb;
-    float ao        = orm.r;
-    float roughness = orm.g;
-    float metallic  = orm.b;
-    roughness = max(0.04, roughness);
+// Material SSBO
+struct Material {
+    vec4  baseColorFactor;
+    vec4  emissiveFactor;
+    uvec4 textureHandles; // unused here
+    float normalScale;
+    float occlusionStrength;
+    float metallicFactor;
+    float roughnessFactor;
+    int   alphaMode;
+    float alphaCutoff;
+    int   doubleSided;
+    float _pad;
+};
 
-    vec3 emissive = texture(emissiveMap, TexCoords).rgb;
+layout(std430, binding = 0) readonly buffer MaterialBuffer {
+    Material materials[];
+};
+
+uniform int materialIndex;
+uniform bool blendPass;
+
+void main() {
+    Material material = materials[materialIndex];
+
+    if (!blendPass && material.alphaMode == 2) discard; // discard BLEND in opaque pass
+    if (blendPass && material.alphaMode != 2) discard; // discard other in blend pass
+
+    vec4  albedoSample = texture(albedoMap, TexCoords).rgba;
+    vec3 albedo   = albedoSample.rgb * material.baseColorFactor.rgb;
+    if (material.alphaMode == 1 && albedoSample.a < material.alphaCutoff)
+        discard;
+
+    float alpha = 1.0;
+    if (material.alphaMode == 2) // BLEND
+        alpha = albedoSample.a * material.baseColorFactor.a;
+
+
+
+    vec3 orm      = texture(ormMap, TexCoords).rgb;
+    float ao        = orm.r * material.occlusionStrength;
+    float roughness = orm.g * material.roughnessFactor;
+    roughness = max(0.04, roughness);
+    float metallic  = orm.b * material.metallicFactor;
+
+    vec3 emissive = texture(emissiveMap, TexCoords).rgb * material.emissiveFactor.rgb;
 
     vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;
+    //TODO add normal scale
     vec3 N = normalize(TBN * normalSample);
     vec3 V = normalize(camera.position.xyz - FragPos);
 
@@ -69,24 +106,24 @@ void main() {
     // IBL ambient + AO
     // ambient lighting (we now use IBL as the ambient term)
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    
+
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;	  
-    
+    kD *= 1.0 - metallic;
+
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuse = irradiance * albedo;
-    
+
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     vec3 R = reflect(-V, N);
-    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * Config.maxReflectionLOD).rgb;    
+    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * Config.maxReflectionLOD).rgb;
     vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
-    
+
     vec3 color = ambient + Lo + emissive;
-    FragColor = vec4(color, albedoSample.a); // any(isnan(color)) TODO NaN sometimes on FragColor
+    FragColor = vec4(color, alpha); // any(isnan(color)) TODO NaN sometimes on FragColor
 
     // For Bloom pass and tone mapping + gamma
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
