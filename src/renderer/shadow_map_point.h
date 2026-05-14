@@ -10,7 +10,7 @@
 
 class ShadowMapPoint {
 public:
-    explicit ShadowMapPoint(int size = 2048, int maxShadowCasters = 4) :
+    explicit ShadowMapPoint(int size = 512, int maxShadowCasters = 4) :
         _size(size)
     {
         // Create depth texture

@@ -44,6 +44,7 @@ public:
     }
 
     void Build(UniformBuffer<ConfigUBO, 5>& configUBO, Scene& scene, float deltaTime, ModelLoader& modelLoader) {
+        Stopwatch stopwatch("GuiLayer::Build");
         _settings.Build(configUBO);
         _modelList.Build(scene);
         _modelLoader.Build(scene, modelLoader);

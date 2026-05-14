@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "utils/stopwatch.h"
+
 // aligned to std140
 struct CameraUBO {
     glm::mat4 view;
@@ -50,6 +52,7 @@ public:
 
     // Call every frame
     void UploadUBO() {
+        Stopwatch Stopwatch("Camera::UploadUBO");
         CameraUBO data {
             .view = GetViewMatrix(),
             .projection = GetProjectionMatrix(),

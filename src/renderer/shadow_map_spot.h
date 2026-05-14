@@ -14,7 +14,7 @@
 
 class ShadowMapSpot {
 public:
-    ShadowMapSpot(int size = 2048, int maxShadowCasters = 4) :
+    ShadowMapSpot(int size = 512, int maxShadowCasters = 4) :
         _size(size)
     {
         // Create depth texture

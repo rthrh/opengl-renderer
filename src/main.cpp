@@ -113,7 +113,7 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
         Info("KHR_debug enabled");
     }
 
-    // configure global opengl state
+    // Configure default opengl state
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // fixes seams artifacts from skybox shape
 
@@ -308,9 +308,15 @@ int main()
     skyboxShader->Activate();
     skyboxShader->SetMat4("projection", projection);
 
+    // Cull back faces
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
+        Stopwatch stopwatch("Render loop");
         // poll events
         glfwPollEvents();
         fileWatcher.Update();
@@ -342,20 +348,31 @@ int main()
         camera->UploadUBO();
         assetCache->UploadMaterials();
 
+        glCullFace(GL_FRONT);
         renderer.PassShadowDirectional(scene, *shadowDirShader);
         renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
         renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
+        glCullFace(GL_BACK);
+
         renderer.PassGeometryBuffer(scene, *gBufferShader);
         renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
         renderer.PassDeferred(scene, *deferredLightShader);
         renderer.PassForward(scene, *forwardShader);
+
+        glDisable(GL_CULL_FACE);
         renderer.PassSkybox(*skybox, *skyboxShader);
+        glEnable(GL_CULL_FACE);
+
         renderer.PassNoShadow(scene, *unlitShader);
         renderer.PassBloom(*blurShader, *bloomShader);
+
+        Stopwatch stopwatch1("GuiLayer::EndFrame");
         // Renders the ImGUI elements
 		guiLayer.EndFrame();
+        stopwatch1.Stop();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        Stopwatch stopwatch2("glfwSwapBuffers(window);");
         glfwSwapBuffers(window);
     }
 
@@ -384,7 +401,7 @@ void processInput(GLFWwindow *window, const std::shared_ptr<Camera>& camera)
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    // make sure the viewport matches the new window dimensions; note that width and 
+    // make sure the viewport matches the new window dimensions; note that width and
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
