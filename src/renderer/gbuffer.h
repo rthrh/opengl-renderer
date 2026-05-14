@@ -12,22 +12,20 @@
 class GBuffer {
 public:
     explicit GBuffer(int width, int height) : _width(width), _height(height) {
-        using enum TextureAttachment;
-        TextureAttachment attachments[] = { Color0, Color1, Color2, Color3, Color4 };
+        using enum TextureAttachment; // TODO add check if we attach to wrong attachments
+        TextureAttachment attachments[] = { Color0, Color1, Color2, Color3 };
         _framebuffer = FrameBuffer(attachments);
 
-        _texturePosition = this->createTexture(width, height);
-        _textureAlbedo = this->createTexture(width, height);
-        _textureNormal = this->createTexture(width, height);
-        _textureORM = this->createTexture(width, height);
-        _textureEmissive = this->createTexture(width, height);
+        _textureAlbedo = this->createTexture(width, height, TextureFormat::RGBA8);
+        _textureNormal = this->createTexture(width, height, TextureFormat::RGB16F);
+        _textureORM = this->createTexture(width, height, TextureFormat::RGBA8);
+        _textureEmissive = this->createTexture(width, height, TextureFormat::RGB16F);
         _textureDepth = Texture2D(width, height, TextureFormat::Depth24Stencil8);
 
-        _framebuffer.AttachTexture(Color0, _texturePosition.GetID());
-        _framebuffer.AttachTexture(Color1, _textureAlbedo.GetID());
-        _framebuffer.AttachTexture(Color2, _textureNormal.GetID());
-        _framebuffer.AttachTexture(Color3, _textureORM.GetID());
-        _framebuffer.AttachTexture(Color4, _textureEmissive.GetID());
+        _framebuffer.AttachTexture(Color0, _textureAlbedo.GetID());
+        _framebuffer.AttachTexture(Color1, _textureNormal.GetID());
+        _framebuffer.AttachTexture(Color2, _textureORM.GetID());
+        _framebuffer.AttachTexture(Color3, _textureEmissive.GetID());
         _framebuffer.AttachTexture(DepthStencil, _textureDepth.GetID());
 
         _framebuffer.Status();
@@ -48,7 +46,6 @@ public:
 
     void BindTextures() const {
         using enum SlotDeferred;
-        _texturePosition.Bind(slot(Position));
         _textureAlbedo.Bind(slot(Albedo));
         _textureNormal.Bind(slot(Normal));
         _textureORM.Bind(slot(ORM));
@@ -69,7 +66,6 @@ private:
 
     int _width = 0, _height = 0;
     FrameBuffer _framebuffer;
-    Texture2D _texturePosition;
     Texture2D _textureAlbedo;
     Texture2D _textureNormal;
     Texture2D _textureORM;

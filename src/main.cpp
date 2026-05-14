@@ -154,7 +154,7 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     auto absPath2 = std::filesystem::absolute(modelPath2);
     auto ourModel2 = modelLoader.Load(absPath2);
     (*ourModel2).SetTranslation({0.0f, -2.0f, 0.0f});
-    (*ourModel2).SetInstances(randomTransforms(1));
+    (*ourModel2).SetInstances(randomTransforms(1000));
     scene.AddModel(std::move(*ourModel2), Deferred);
 
     auto absPath3 = std::filesystem::absolute(modelPath3);

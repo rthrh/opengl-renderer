@@ -3,8 +3,9 @@ out float FragColor;
 
 in vec2 TexCoords;
 
-layout(binding = 0) uniform sampler2D gPosition;
-layout(binding = 2) uniform sampler2D gNormal;
+layout(binding = 1) uniform sampler2D gNormal;
+layout(binding = 4) uniform sampler2D depthMap;
+
 layout(binding = 13) uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
@@ -13,6 +14,15 @@ uniform vec3 samples[64];
 uniform vec2 noiseScale;
 
 #include "include/ubo.glsl"
+
+
+// get view space position from depth map
+vec3 ReconstructViewPos(vec2 uv, float depth) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 view = inverse(camera.projection) * clip;
+    view /= view.w;
+    return view.xyz; // stay in view space
+}
 
 void main()
 {
@@ -26,14 +36,13 @@ void main()
     float bias = Config.ssaoBias;
     int kernelSize = Config.ssaoKernel;
 
-    // get input for SSAO algorithm
-    vec3 fragPosWorld = texture(gPosition, TexCoords).xyz;
-    vec3 fragPos = vec3(camera.view * vec4(fragPosWorld, 1.0)); // from world to view space
+    // Reconstruct view space position from depth map
+    float fragDepth = texture(depthMap, TexCoords).r;
+    vec3 fragPos = ReconstructViewPos(TexCoords, fragDepth);
 
-    // OLD TODO
-    //vec3 fragPos = texture(gPosition, TexCoords).xyz; // from world to view space
+    //vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
+    vec3 normal = normalize(mat3(camera.view) * texture(gNormal, TexCoords).rgb); // normal to view space
 
-    vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
     // create TBN change-of-basis matrix: from tangent-space to view-space
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
@@ -45,26 +54,22 @@ void main()
     {
         // get sample position
         vec3 samplePos = TBN * samples[i]; // from tangent to view-space
-        samplePos = fragPos + samplePos * radius; 
-        
+        samplePos = fragPos + samplePos * radius;
+
         // project sample position (to sample texture) (to get position on screen/texture)
         vec4 offset = vec4(samplePos, 1.0);
         offset = camera.projection * offset;
         offset.xyz /= offset.w; // perspective divide
         offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
-        
-        // get sample depth
-        vec3 sampleDepthWorld = texture(gPosition, offset.xy).xyz; // get depth value of kernel sample
-        float sampleDepth = vec3(camera.view * vec4(sampleDepthWorld, 1.0)).z; // to view space
 
-        // original TODO we can use depth texture instead?
-        //float sampleDepth = texture(gPosition, offset.xy).x; // get depth value of kernel sample
-        
+        // get sample depth
+        float sampleDepth = ReconstructViewPos(offset.xy, texture(depthMap, offset.xy).r).z;
+
         // range check & accumulate
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-        occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;           
+        occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
     occlusion = 1.0 - (occlusion / kernelSize);
-    
+
     FragColor = occlusion;
 }

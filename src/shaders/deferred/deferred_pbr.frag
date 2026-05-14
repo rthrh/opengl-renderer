@@ -5,14 +5,12 @@ out vec4 BrightColor;
 
 in vec2 TexCoords;
 
-//gbuffer                                           // TODO target formats
-//TODO positionMap can be reconstructed from depthMap
-layout(binding = 0) uniform sampler2D positionMap;  // RGB16F
-layout(binding = 1) uniform sampler2D albedoMap;    // RGB8
-layout(binding = 2) uniform sampler2D normalMap;    // RGB16F
-layout(binding = 3) uniform sampler2D ormMap;       // RGB8  r=ao g=roughness b=metallic
-layout(binding = 4) uniform sampler2D emissiveMap;  // RGB16F
-layout(binding = 5) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
+// From gbuffer
+layout(binding = 0) uniform sampler2D albedoMap;    // RGB8
+layout(binding = 1) uniform sampler2D normalMap;    // RGB16F
+layout(binding = 2) uniform sampler2D ormMap;       // RGB8  r=ao g=roughness b=metallic
+layout(binding = 3) uniform sampler2D emissiveMap;  // RGB16F
+layout(binding = 4) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
 
 layout(binding = 7) uniform sampler2D shadowDirMap;
 layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
@@ -27,6 +25,14 @@ layout(binding = 13) uniform sampler2D ssaoMap;
 #include "include/pbr_lights.glsl"
 #include "include/shadows.glsl"
 
+// get world space position from depth map
+vec3 ReconstructPosition(vec2 uv, float depth) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 view = inverse(camera.projection) * clip;
+    view /= view.w;
+    return (inverse(camera.view) * view).xyz;
+}
+
 void main() {
     vec3 albedo = texture(albedoMap,TexCoords).rgb;
     vec3 orm = texture(ormMap, TexCoords).rgb;
@@ -38,17 +44,20 @@ void main() {
 
     float metallic = orm.b;
     vec3 emissive = texture(emissiveMap, TexCoords).rgb;
-    vec3 FragPos = texture(positionMap, TexCoords).rgb;
 
-    vec3 N = normalize(texture(normalMap, TexCoords).rgb);
-    vec3 V = normalize(camera.position.xyz - FragPos);
-    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
     float depth = texture(depthMap, TexCoords).r;
+    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
     if (depth == 1.0) {
         FragColor = vec4(0.05, 0.05, 0.05, 1.0);
         BrightColor = vec4(0.0, 0.0, 0.0, 1.0); // skybox should not be lit
         return;
     }
+
+    vec3 FragPos = ReconstructPosition(TexCoords, depth);
+
+    vec3 N = normalize(texture(normalMap, TexCoords).rgb);
+    vec3 V = normalize(camera.position.xyz - FragPos);
+
 
     // F0: base reflectance
     // dielectrics: 0.04, metals: tinted by albedo
@@ -81,22 +90,22 @@ void main() {
     // IBL ambient + AO
     // ambient lighting (we now use IBL as the ambient term)
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    
+
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;	  
-    
+    kD *= 1.0 - metallic;
+
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuse = irradiance * albedo;
-    
+
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     vec3 R = reflect(-V, N);
-    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * Config.maxReflectionLOD).rgb;    
+    vec3 prefilteredColor = textureLod(prefilteredMap, R,  roughness * Config.maxReflectionLOD).rgb;
     vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
-    
+
     vec3 color = ambient + Lo + emissive;
     FragColor = vec4(color, 1.0); // any(isnan(color)) TODO NaN sometimes on FragColor
 

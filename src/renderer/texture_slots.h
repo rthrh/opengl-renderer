@@ -10,12 +10,11 @@ enum class SlotGeometry : GLuint {
 };
 
 enum class SlotDeferred : GLuint {
-    Position = 0,
-    Albedo = 1,
-    Normal = 2,
-    ORM = 3,
-    Emissive = 4,
-    Depth = 5
+    Albedo = 0,
+    Normal = 1,
+    ORM = 2,
+    Emissive = 3,
+    Depth = 4
 };
 
 enum class SlotOther : GLuint {
