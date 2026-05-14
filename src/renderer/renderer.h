@@ -59,78 +59,76 @@ public:
 
     void PassShadowDirectional(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowDirectional");
-        if (config.shadowsEnabled) {
-            auto directionalLight = scene.GetDirectionalLight();
-            auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
-            auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
+        if (!config.shadowsEnabled) return;
 
-            _shadowMapUBO.Data().dirLightProjMatrix = lightSpaceMatrix;
-            _shadowMapUBO.Upload();
-            _shadowMapDirectional.BindFramebuffer();
-            _shadowMapDirectional.BindTexture();
-            shader.Activate();
+        auto directionalLight = scene.GetDirectionalLight();
+        auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
+        auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
 
-            this->render(scene.GetQueue(Deferred), shader);
-            //this->render(scene.GetQueue(Forward), shader);
+        _shadowMapUBO.Data().dirLightProjMatrix = lightSpaceMatrix;
+        _shadowMapUBO.Upload();
+        _shadowMapDirectional.BindFramebuffer();
+        _shadowMapDirectional.BindTexture();
+        shader.Activate();
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, _scrWidth, _scrHeight);
-        }
+        this->render(scene.GetQueue(Deferred), shader);
+        //this->render(scene.GetQueue(Forward), shader);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
     void PassShadowPoint(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowPoint");
-        if (config.shadowsEnabled) {
-            const auto& pointLights = scene.GetPointLights();
+        if (!config.shadowsEnabled) return;
 
-            _shadowMapPoint.BindFramebuffer();
-            _shadowMapPoint.BindTexture();
-            shader.Activate();
+        const auto& pointLights = scene.GetPointLights();
+        _shadowMapPoint.BindTexture();
+        shader.Activate();
 
-            const int count = std::min(pointLights.Count(), config.maxPointShadowCasters);
-            for (int i = 0; i < count; i++) {
-                auto lightPos = pointLights.At(i).GetPosition();
-                auto shadowMatrices = math::GetPointShadowMatrices(lightPos, 0.1, config.pointShadowFarPlane);
+        const int count = std::min(pointLights.Count(), config.maxPointShadowCasters);
+        for (int i = 0; i < count; i++) {
+            auto lightPos = pointLights.At(i).GetPosition();
+            auto shadowMatrices = math::GetPointShadowMatrices(lightPos, 0.1f, config.pointShadowFarPlane);
 
-                shader.SetInt("lightIndex", i);
-                shader.SetVec3("lightPos", lightPos);
-                for (auto face = 0u; face < 6; ++face) {
-                    shader.SetMat4("shadowMatrices[" + std::to_string(face) + "]", shadowMatrices[face]);
-                }
+            shader.SetVec3("lightPos", lightPos);
+            for (int face = 0; face < 6; face++) {
+                _shadowMapPoint.BindFramebufferFace(i, face);
+                shader.SetMat4("lightSpaceMatrix", shadowMatrices[face]);
                 this->render(scene.GetQueue(Deferred), shader);
                 //this->render(scene.GetQueue(Forward), shader);
             }
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, _scrWidth, _scrHeight);
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
     void PassShadowSpot(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowSpot");
-        if (config.shadowsEnabled) {
-            auto& spotLights = scene.GetSpotLights();
-            auto& ubo = _shadowMapUBO.Data();
+        if (!config.shadowsEnabled) return;
 
-            _shadowMapSpot.BindTexture();
-            shader.Activate();
-            int count = std::min(spotLights.Count(), config.maxSpotShadowCasers);
-            for (int i = 0; i < count; i++) {
-                auto& light = spotLights.At(i);
-                auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees(), 0.1f, config.pointShadowFarPlane);
+        auto& spotLights = scene.GetSpotLights();
+        auto& ubo = _shadowMapUBO.Data();
 
-                ubo.spotLightProjMatrices[i] = lightSpaceMatrix;
-                _shadowMapSpot.BindFramebufferLayer(i);
+        _shadowMapSpot.BindTexture();
+        shader.Activate();
+        int count = std::min(spotLights.Count(), config.maxSpotShadowCasers);
+        for (int i = 0; i < count; i++) {
+            auto& light = spotLights.At(i);
+            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees(), 0.1f, config.pointShadowFarPlane);
 
-                shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
-                this->render(scene.GetQueue(Deferred), shader);
-                //this->render(scene.GetQueue(Forward), shader);
-            }
+            ubo.spotLightProjMatrices[i] = lightSpaceMatrix;
+            _shadowMapSpot.BindFramebufferLayer(i);
 
-            _shadowMapUBO.Upload();
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, _scrWidth, _scrHeight);
+            shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
+            this->render(scene.GetQueue(Deferred), shader);
+            //this->render(scene.GetQueue(Forward), shader);
         }
+
+        _shadowMapUBO.Upload();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
@@ -231,6 +229,7 @@ private:
 
     void drawMesh(const Mesh& mesh, Shader& shader) const
     {
+        // TODO always binds texture even during shadow passes where they're not needed
         const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
         glBindTextureUnit(slot(SlotGeometry::Albedo),   mat.baseColorTexture);
         glBindTextureUnit(slot(SlotGeometry::Normal),   mat.normalTexture);

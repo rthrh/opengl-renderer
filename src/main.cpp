@@ -120,9 +120,8 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     return window;
 }
 
-std::vector<Transform> randomTransforms(int num) {
-
-    std::mt19937 rng(std::random_device{}());
+std::vector<Transform> randomTransforms(int num, unsigned int seed = 888) {
+    std::mt19937 rng(seed);
     std::uniform_real_distribution<float> posDist(-10.f, 10.f);
     std::uniform_real_distribution<float> rotDist(-180.f, 180.f);
     std::uniform_real_distribution<float> scaleDist(0.5f, 2.f);
@@ -134,7 +133,6 @@ std::vector<Transform> randomTransforms(int num) {
             //.scale       = { scaleDist(rng), scaleDist(rng), scaleDist(rng) }
         });
     }
-
     return transforms;
 }
 
@@ -190,7 +188,7 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
 }
 
 void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoader& modelLoader) {
-    std::mt19937 rng(42); // fixed seed for reproducibility
+    std::mt19937 rng(888); // fixed seed for reproducibility
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
     std::uniform_real_distribution<float> heightDist(0.5f, 15.0f);
     std::uniform_int_distribution<int> colorDist(50, 255);
@@ -249,7 +247,7 @@ int main()
     auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
 
     auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
-    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag", "shadow_point.geom");
+    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
     auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
 
     auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");

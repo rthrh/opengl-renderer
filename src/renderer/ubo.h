@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <cassert>
 
+// All UBOs field sizes must exactly match to ubo.glsl !
+// Data must be aligned to 16 bits
+
 struct DirectionalLightUBO {
     DirectionalLightUBO() = default;
     DirectionalLightUBO(glm::vec3 direction, float intensity = 1.0f)
@@ -133,14 +136,12 @@ struct SpotLightUBO {
     int Count() const { return count.x; }
 };
 
-constexpr int MAX_POINT_SHADOW_CASTERS = 4;
 constexpr int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
 struct ShadowMapUBO {
     glm::mat4 dirLightProjMatrix;
     glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];
 };
 
-// Field sizes must match exactly to ubo.glsl !
 struct ConfigUBO {
     // Bloom + tonemapping
     int bloomEnabled = true;

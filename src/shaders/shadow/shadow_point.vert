@@ -4,7 +4,9 @@ layout(location = 4) in mat4 aInstanceMatrix;
 
 out vec3 FragPos;
 
+uniform mat4 lightSpaceMatrix;
+
 void main() {
-    FragPos     = vec3(aInstanceMatrix * vec4(aPos, 1.0)); //TODO not on opengl
-    gl_Position = vec4(FragPos, 1.0);
+    FragPos     = vec3(aInstanceMatrix * vec4(aPos, 1.0));
+    gl_Position = lightSpaceMatrix * vec4(FragPos, 1.0);
 }

@@ -17,7 +17,7 @@ public:
         _depthTexture = TextureCubeArray(size, maxShadowCasters, TextureFormat::Depth32F);
         _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
-    
+
         // Attach to framebuffer
         constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
         _framebuffer = FrameBuffer(attachments);
@@ -31,8 +31,9 @@ public:
     ShadowMapPoint(ShadowMapPoint&&) noexcept = default;
     ShadowMapPoint& operator=(ShadowMapPoint&&) noexcept = default;
 
-    void BindFramebuffer() const {
+    void BindFramebufferFace(int lightIndex, int face) const {
         _framebuffer.Bind();
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0, lightIndex * 6 + face);
         glViewport(0, 0, _size, _size);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
