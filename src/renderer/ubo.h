@@ -88,7 +88,7 @@ struct SpotLightBlockGPU {
     SpotLightBlockGPU& SetIntensity(float intensity) { _colorAndIntensity.a = intensity; return *this; }
     SpotLightBlockGPU& SetRange(float range) { _range = range; return *this; }
     SpotLightBlockGPU& SetCone(float inner, float outer) { _innerCone = glm::cos(glm::radians(inner)); _outerCone = glm::cos(glm::radians(outer)); return *this; } // input values in degrees, stored as cosine
- 
+
     glm::vec3 GetPosition() const { return glm::vec3(_position); }
     glm::vec3 GetDirection() const { return glm::vec3(_direction); }
     glm::vec3 GetColor() const { return glm::vec3(_colorAndIntensity); }
@@ -140,6 +140,7 @@ struct ShadowMapUBO {
     glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];
 };
 
+// Field sizes must match exactly to ubo.glsl !
 struct ConfigUBO {
     // Bloom + tonemapping
     int bloomEnabled = true;
@@ -154,15 +155,19 @@ struct ConfigUBO {
     int ssaoKernel = 64;
 
     // Shadows
+    int shadowsEnabled = true; // for CPU
+    int maxPointShadowCasters = 4;
     float pointShadowFarPlane = 25.0f;
     float pointShadowBias = 0.05;
     float dirShadowBiasMin = 0.005;
     float dirShadowBiasMax = 0.05;
 
+    int maxSpotShadowCasers = 4;
     float spotShadowBiasMin = 0.0005;
     float spotShadowBiasMax = 0.005;
 
     // IBL
     float maxReflectionLOD = 4.0f;
     float _pad0;
+    float _pad1;
 };

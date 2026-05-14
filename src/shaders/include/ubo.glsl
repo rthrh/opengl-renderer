@@ -51,13 +51,18 @@ layout(std140, binding = 5) uniform ConfigBlock {
     float ssaoBias;
     int   ssaoKernel;
 
+    int   shadowsEnabled;
+    int   maxPointShadowCasters;
     float pointShadowFarPlane;
     float pointShadowBias;
+
     float dirShadowBiasMin;
     float dirShadowBiasMax;
-
+    int   maxSpotShadowCasters;
     float spotShadowBiasMin;
+
     float spotShadowBiasMax;
     float maxReflectionLOD;
     float _pad0;
+    float _pad1;
 } Config;

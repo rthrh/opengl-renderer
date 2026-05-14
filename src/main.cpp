@@ -348,8 +348,8 @@ int main()
         camera->UploadUBO();
         assetCache->UploadMaterials();
 
-        glCullFace(GL_FRONT);
-        renderer.PassShadowDirectional(scene, *shadowDirShader);
+        glCullFace(GL_FRONT); // TODO move
+        renderer.PassShadowDirectional(scene, *shadowDirShader, configUBO.Data());
         renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
         renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
         glCullFace(GL_BACK);
