@@ -120,6 +120,23 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     return window;
 }
 
+std::vector<Transform> randomTransforms(int num) {
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> posDist(-10.f, 10.f);
+    std::uniform_real_distribution<float> rotDist(-180.f, 180.f);
+    std::uniform_real_distribution<float> scaleDist(0.5f, 2.f);
+    std::vector<Transform> transforms;
+    for (int i = 0; i < num; i++) {
+        transforms.push_back({
+            .translation = { posDist(rng), posDist(rng), posDist(rng) },
+            .eulerAngles = { rotDist(rng), rotDist(rng), rotDist(rng) },
+            //.scale       = { scaleDist(rng), scaleDist(rng), scaleDist(rng) }
+        });
+    }
+
+    return transforms;
+}
 
 void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
@@ -137,6 +154,7 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     auto absPath2 = std::filesystem::absolute(modelPath2);
     auto ourModel2 = modelLoader.Load(absPath2);
     (*ourModel2).SetTranslation({0.0f, -2.0f, 0.0f});
+    (*ourModel2).SetInstances(randomTransforms(100));
     scene.AddModel(std::move(*ourModel2), Deferred);
 
     auto absPath3 = std::filesystem::absolute(modelPath3);

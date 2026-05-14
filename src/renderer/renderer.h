@@ -48,9 +48,8 @@ public:
     Renderer(Renderer&&) noexcept = default;
     Renderer& operator=(Renderer&&) noexcept = default;
 
-    void Draw(const Model& model, Shader& shader) const {
-        shader.SetMat4("model", model.GetModelMatrix());
-
+    void Draw(Model& model, Shader& shader) const {
+        model.UploadTransforms();
         auto& meshes = model.GetMeshes();
         for (auto& mesh : meshes) {
             this->drawMesh(mesh, shader);
@@ -207,8 +206,8 @@ public:
     }
 
 private:
-    void render(const Scene::RenderQueue& renderQueue, Shader& shader) const {
-        for (const auto& [handle, model] : renderQueue) {
+    void render(Scene::RenderQueue& renderQueue, Shader& shader) {
+        for (auto& [handle, model] : renderQueue) {
             Draw(model, shader);
         }
     }
@@ -222,7 +221,7 @@ private:
         glBindTextureUnit(slot(SlotGeometry::ORM),      mat.ormTexture);
         shader.SetInt("materialIndex", mesh.GetMaterialIndex());
         glBindVertexArray(mesh.GetVAO());
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndexCount()), GL_UNSIGNED_INT, nullptr);
+        glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndexCount()), GL_UNSIGNED_INT, nullptr, mesh.GetInstanceCount());
     }
 
     std::shared_ptr<Camera> _cameraPtr;

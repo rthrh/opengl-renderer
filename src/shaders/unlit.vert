@@ -1,10 +1,10 @@
 #version 420 core
 layout(location = 0) in vec3 aPos;
 
-uniform mat4 model;
+layout(location = 4) in mat4 aInstanceMatrix;
 
 #include "include/ubo.glsl"
 
 void main() {
-    gl_Position = camera.projection * camera.view * model * vec4(aPos, 1.0);
+    gl_Position = camera.projection * camera.view * aInstanceMatrix * vec4(aPos, 1.0);
 }
