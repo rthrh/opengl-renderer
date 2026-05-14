@@ -49,11 +49,11 @@ public:
     Renderer(Renderer&&) noexcept = default;
     Renderer& operator=(Renderer&&) noexcept = default;
 
-    void Draw(Model& model, Shader& shader) const {
+    void Draw(Model& model, Shader& shader, bool depthOnly = false) const {
         model.UploadTransforms();
         auto& meshes = model.GetMeshes();
         for (auto& mesh : meshes) {
-            this->drawMesh(mesh, shader);
+            this->drawMesh(mesh, shader, depthOnly);
         }
     }
 
@@ -71,7 +71,7 @@ public:
         _shadowMapDirectional.BindTexture();
         shader.Activate();
 
-        this->render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Deferred), shader, true);
         //this->render(scene.GetQueue(Forward), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -95,7 +95,7 @@ public:
             for (int face = 0; face < 6; face++) {
                 _shadowMapPoint.BindFramebufferFace(i, face);
                 shader.SetMat4("lightSpaceMatrix", shadowMatrices[face]);
-                this->render(scene.GetQueue(Deferred), shader);
+                this->render(scene.GetQueue(Deferred), shader, true);
                 //this->render(scene.GetQueue(Forward), shader);
             }
         }
@@ -122,7 +122,7 @@ public:
             _shadowMapSpot.BindFramebufferLayer(i);
 
             shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
-            this->render(scene.GetQueue(Deferred), shader);
+            this->render(scene.GetQueue(Deferred), shader, true);
             //this->render(scene.GetQueue(Forward), shader);
         }
 
@@ -221,21 +221,23 @@ public:
     }
 
 private:
-    void render(Scene::RenderQueue& renderQueue, Shader& shader) {
+    void render(Scene::RenderQueue& renderQueue, Shader& shader, bool depthOnly = false) {
         for (auto& [handle, model] : renderQueue) {
-            Draw(model, shader);
+            Draw(model, shader, depthOnly);
         }
     }
 
-    void drawMesh(const Mesh& mesh, Shader& shader) const
+    void drawMesh(const Mesh& mesh, Shader& shader, bool depthOnly) const
     {
-        // TODO always binds texture even during shadow passes where they're not needed
-        const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
-        glBindTextureUnit(slot(SlotGeometry::Albedo),   mat.baseColorTexture);
-        glBindTextureUnit(slot(SlotGeometry::Normal),   mat.normalTexture);
-        glBindTextureUnit(slot(SlotGeometry::Emissive), mat.emissiveTexture);
-        glBindTextureUnit(slot(SlotGeometry::ORM),      mat.ormTexture);
-        shader.SetInt("materialIndex", mesh.GetMaterialIndex());
+        if (!depthOnly) {
+            const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
+            glBindTextureUnit(slot(SlotGeometry::Albedo),   mat.baseColorTexture);
+            glBindTextureUnit(slot(SlotGeometry::Normal),   mat.normalTexture);
+            glBindTextureUnit(slot(SlotGeometry::Emissive), mat.emissiveTexture);
+            glBindTextureUnit(slot(SlotGeometry::ORM),      mat.ormTexture);
+            shader.SetInt("materialIndex", mesh.GetMaterialIndex());
+        }
+
         glBindVertexArray(mesh.GetVAO());
         glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(mesh.GetIndexCount()), GL_UNSIGNED_INT, nullptr, mesh.GetInstanceCount());
     }
