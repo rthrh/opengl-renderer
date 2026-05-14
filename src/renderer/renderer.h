@@ -57,6 +57,8 @@ public:
     }
 
     void PassShadowDirectional(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassShadowDirectional");
+
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
         auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
@@ -75,6 +77,7 @@ public:
     }
 
     void PassShadowPoint(Scene& scene, Shader& shader, const ConfigUBO& config) {
+        Stopwatch stopwatch("PassShadowPoint");
         const auto& pointLights = scene.GetPointLights();
 
         _shadowMapPoint.BindFramebuffer();
@@ -100,6 +103,7 @@ public:
     }
 
     void PassShadowSpot(Scene& scene, Shader& shader, const ConfigUBO& config) {
+        Stopwatch stopwatch("PassShadowSpot");
         auto& spotLights = scene.GetSpotLights();
         auto& ubo = _shadowMapUBO.Data();
     
@@ -124,6 +128,7 @@ public:
     }
 
     void PassGeometryBuffer(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassGeometryBuffer");
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
@@ -134,6 +139,7 @@ public:
     }
 
     void PassSSAO(Scene& scene, Shader& shaderSSAO, Shader& shaderBlur) {
+        Stopwatch stopwatch("PassSSAO");
         _gBuffer.BindTextures();
         _ssao.Run(shaderSSAO);
         _ssao.Blur(shaderBlur);
@@ -141,6 +147,7 @@ public:
     }
 
     void PassDeferred(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassDeferred");
         _gBuffer.BindTextures();
         _ssao.BindSSAOTexture();
         _skybox->BindTexturesIBL();
@@ -156,6 +163,7 @@ public:
     }
 
     void PassForward(Scene& scene, Shader& shader) {
+        Stopwatch stopwatch("PassForward");
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         shader.Activate();
@@ -175,12 +183,14 @@ public:
     }
 
     void PassNoShadow(Scene& scene, Shader& unlitShader) {
+        Stopwatch stopwatch("PassNoShadow");
         _bloom.BindHdrFramebuffer();
         unlitShader.Activate();
         this->render(scene.GetQueue(NoShadow), unlitShader);
     }
 
     void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
+        Stopwatch stopwatch("PassSkybox");
         _bloom.BindHdrFramebuffer();
 
         glDepthFunc(GL_LEQUAL);  // pass when depth equals 1.0
@@ -193,6 +203,7 @@ public:
     }
 
     void PassBloom(Shader& blurShader, Shader& bloomShader) {
+        Stopwatch stopwatch("PassBloom");
         // Blur bright fragments with two-pass Gaussian Blur 
         blurShader.Activate();
         _bloom.Blur(blurShader, 20);

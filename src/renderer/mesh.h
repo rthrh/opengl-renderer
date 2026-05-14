@@ -87,8 +87,6 @@ private:
     // initializes all the buffer objects/arrays
     void setupMesh()
     {
-        Stopwatch stopwatch("setupMesh");
-
         // create buffers/arrays
         glCreateVertexArrays(1, &_VAO);
         glCreateBuffers(1, &_VBO);
@@ -140,9 +138,6 @@ private:
         glEnableVertexArrayAttrib(_VAO, 7);
         glVertexArrayAttribFormat(_VAO, 7, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(glm::vec4));
         glVertexArrayAttribBinding(_VAO, 7, 1);
-
-        stopwatch.Stop();
-
     }
 
     // render data 

@@ -8,9 +8,9 @@
 #include "gl/uniform_buffer.h"
 #include "renderer/ubo.h"
 #include "gui/settings.h"
-#include "gui/stats.h"
 #include "gui/model_list.h"
 #include "gui/model_loader_gui.h"
+#include "gui/benchmark.h"
 
 class GuiLayer {
 public:
@@ -44,10 +44,10 @@ public:
     }
 
     void Build(UniformBuffer<ConfigUBO, 5>& configUBO, Scene& scene, float deltaTime, ModelLoader& modelLoader) {
-        _stats.Build(deltaTime);
         _settings.Build(configUBO);
         _modelList.Build(scene);
         _modelLoader.Build(scene, modelLoader);
+        _benchmark.Build(deltaTime);
     }
 
     static void SetMouseEnabled(bool value) {
@@ -62,8 +62,8 @@ public:
     static bool WantCaptureKeyboard() { return ImGui::GetIO().WantCaptureKeyboard; }
 
 private:
-    Stats       _stats;
-    Settings    _settings;
-    ModelList   _modelList;
+    Settings _settings;
+    ModelList _modelList;
     ModelLoaderGUI _modelLoader;
+    Benchmark _benchmark;
 };
