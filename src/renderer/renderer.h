@@ -1,4 +1,4 @@
-#include <glad/glad.h> 
+#include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,14 +9,15 @@
 #include "scene.h"
 #include "gbuffer.h"
 #include "camera.h"
-#include "skybox.h"
-#include "shadow_map_directional.h"
-#include "shadow_map_point.h"
-#include "shadow_map_spot.h"
+#include "renderpass/skybox.h"
+#include "renderpass/shadow_map_directional.h"
+#include "renderpass/shadow_map_point.h"
+#include "renderpass/shadow_map_spot.h"
+#include "renderpass/bloom.h"
+#include "renderpass/ssao.h"
+
 #include "texture_slots.h"
 #include "math.h"
-#include "bloom.h"
-#include "ssao.h"
 #include "asset_cache.h"
 
 #include "utils/logger.h"
@@ -106,7 +107,7 @@ public:
         Stopwatch stopwatch("PassShadowSpot");
         auto& spotLights = scene.GetSpotLights();
         auto& ubo = _shadowMapUBO.Data();
-    
+
         _shadowMapSpot.BindTexture();
         shader.Activate();
         int count = std::min(spotLights.Count(), MAX_SPOT_SHADOW_CASTERS);
@@ -204,7 +205,7 @@ public:
 
     void PassBloom(Shader& blurShader, Shader& bloomShader) {
         Stopwatch stopwatch("PassBloom");
-        // Blur bright fragments with two-pass Gaussian Blur 
+        // Blur bright fragments with two-pass Gaussian Blur
         blurShader.Activate();
         _bloom.Blur(blurShader, 20);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

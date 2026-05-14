@@ -45,7 +45,7 @@ set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 # sources
 file(GLOB GLAD_SRC ${CMAKE_SOURCE_DIR}/deps/glad/glad.*)
 file(GLOB STB_IMAGE_SRC ${CMAKE_SOURCE_DIR}/deps/stb_image/*.*)
-file(GLOB IMGUI_SRC 
+file(GLOB IMGUI_SRC
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.h
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.cpp
 )
@@ -64,6 +64,7 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.h
     ${CMAKE_SOURCE_DIR}/src/renderer/*.cpp
     ${CMAKE_SOURCE_DIR}/src/renderer/*.h
+    ${CMAKE_SOURCE_DIR}/src/renderer/renderpass/*.h
     ${CMAKE_SOURCE_DIR}/src/utils/*.h
     ${CMAKE_SOURCE_DIR}/src/gui/*.h
 )
@@ -72,6 +73,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/gl)
 include_directories(${CMAKE_SOURCE_DIR}/src/gui)
 include_directories(${CMAKE_SOURCE_DIR}/src/renderer)
+include_directories(${CMAKE_SOURCE_DIR}/src/renderpass)
 include_directories(${CMAKE_SOURCE_DIR}/utils)
 include_directories(${CMAKE_SOURCE_DIR}/deps/)
 include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
