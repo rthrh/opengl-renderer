@@ -89,7 +89,9 @@ public:
         const int count = std::min(pointLights.Count(), config.maxPointShadowCasters);
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
-            auto shadowMatrices = math::GetPointShadowMatrices(lightPos, 0.1f, config.pointShadowFarPlane);
+            float farPlane = pointLights.At(i).GetRange();
+            shader.SetFloat("farPlane", farPlane);
+            auto shadowMatrices = math::GetPointShadowMatrices(lightPos, 0.1f, farPlane);
 
             shader.SetVec3("lightPos", lightPos);
             for (int face = 0; face < 6; face++) {
@@ -116,7 +118,8 @@ public:
         int count = std::min(spotLights.Count(), config.maxSpotShadowCasers);
         for (int i = 0; i < count; i++) {
             auto& light = spotLights.At(i);
-            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees(), 0.1f, config.pointShadowFarPlane);
+            float farPlane = light.GetRange();
+            auto lightSpaceMatrix = math::GetSpotLightSpaceMatrix(light.GetPosition(), light.GetDirection(), light.GetOuterConeDegrees(), 0.1f, farPlane);
 
             ubo.spotLightProjMatrices[i] = lightSpaceMatrix;
             _shadowMapSpot.BindFramebufferLayer(i);

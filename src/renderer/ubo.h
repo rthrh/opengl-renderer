@@ -158,7 +158,6 @@ struct ConfigUBO {
     // Shadows
     int shadowsEnabled = true; // for CPU
     int maxPointShadowCasters = 4;
-    float pointShadowFarPlane = 25.0f;
     float pointShadowBias = 0.05;
     float dirShadowBiasMin = 0.005;
     float dirShadowBiasMax = 0.05;
@@ -171,4 +170,5 @@ struct ConfigUBO {
     float maxReflectionLOD = 4.0f;
     float _pad0;
     float _pad1;
+    float _pad2;
 };

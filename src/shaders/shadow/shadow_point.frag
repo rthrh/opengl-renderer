@@ -3,11 +3,12 @@
 in vec3 FragPos;
 
 uniform vec3 lightPos;
+uniform float farPlane;
 
 #include "include/ubo.glsl"
 
 void main() {
     float lightDistance = length(FragPos - lightPos);
-    lightDistance       = lightDistance / Config.pointShadowFarPlane;
+    lightDistance       = lightDistance / farPlane;
     gl_FragDepth        = lightDistance;
 }

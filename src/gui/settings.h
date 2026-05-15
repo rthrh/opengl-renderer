@@ -47,7 +47,6 @@ public:
             dirty |= ImGui::SliderInt("Max Spot Casters",  &config.maxSpotShadowCasers,   0, 4);
             dirty |= ImGui::SliderFloat("Dir Bias Min",    &config.dirShadowBiasMin,  0.0f, 0.1f,  "%.4f");
             dirty |= ImGui::SliderFloat("Dir Bias Max",    &config.dirShadowBiasMax,  0.0f, 0.5f,  "%.4f");
-            dirty |= ImGui::SliderFloat("Point Far Plane", &config.pointShadowFarPlane, 1.0f, 500.0f);
             dirty |= ImGui::SliderFloat("Point Bias",      &config.pointShadowBias,   0.0f, 0.5f,  "%.4f");
             dirty |= ImGui::SliderFloat("Spot Bias Min",   &config.spotShadowBiasMin, 0.0f, 0.01f, "%.5f");
             dirty |= ImGui::SliderFloat("Spot Bias Max",   &config.spotShadowBiasMax, 0.0f, 0.1f,  "%.4f");

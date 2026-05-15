@@ -53,7 +53,6 @@ layout(std140, binding = 5) uniform ConfigBlock {
 
     int   shadowsEnabled;
     int   maxPointShadowCasters;
-    float pointShadowFarPlane;
     float pointShadowBias;
 
     float dirShadowBiasMin;
@@ -65,4 +64,5 @@ layout(std140, binding = 5) uniform ConfigBlock {
     float maxReflectionLOD;
     float _pad0;
     float _pad1;
+    float _pad2;
 } Config;
