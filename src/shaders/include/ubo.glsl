@@ -45,6 +45,7 @@ layout(std140, binding = 5) uniform ConfigBlock {
     float exposure;
     float gamma;
     float bloomStrength;
+    float filterRadius;
 
     int   ssaoEnabled;
     float ssaoRadius;

@@ -33,28 +33,42 @@ vec3 ReconstructPosition(vec2 uv, float depth) {
 }
 
 void main() {
+    float depth = texture(depthMap, TexCoords).r;
+    if (depth == 1.0) {
+        FragColor = vec4(0.05, 0.05, 0.05, 1.0);
+        return;
+    }
+
     vec3 albedo = texture(albedoMap,TexCoords).rgb;
     vec3 orm = texture(ormMap, TexCoords).rgb;
     float ao = orm.r;
     float ssao = texture(ssaoMap, TexCoords).r;
     ao = ao * ssao;
     float roughness = orm.g;
-    roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
+
+    //roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
 
     float metallic = orm.b;
     vec3 emissive = texture(emissiveMap, TexCoords).rgb;
-
-    float depth = texture(depthMap, TexCoords).r;
-    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
-    if (depth == 1.0) {
-        FragColor = vec4(0.05, 0.05, 0.05, 1.0);
-        return;
-    }
 
     vec3 FragPos = ReconstructPosition(TexCoords, depth);
 
     vec3 N = normalize(texture(normalMap, TexCoords).rgb);
     vec3 V = normalize(camera.position.xyz - FragPos);
+    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
+
+    // Improved Geometric Specular Antialiasing https://www.jp.square-enix.com/tech/library/pdf/ImprovedGeometricSpecularAA(slides).pdf
+    //TODO add to forward shader
+    const float SIGMA2 = 0.25;
+    const float KAPPA  = 0.18;
+
+    vec3 dndu = dFdx(N);
+    vec3 dndv = dFdy(N);
+    float variance = SIGMA2 * (dot(dndu, dndu) + dot(dndv, dndv));
+    float kernelRoughness2 = min(variance, KAPPA);
+    float filteredRoughness2 = clamp(roughness * roughness + kernelRoughness2, 0.0, 1.0);
+    roughness = sqrt(filteredRoughness2);
+    //roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
 
 
     // F0: base reflectance
@@ -110,7 +124,7 @@ void main() {
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
-
+    //emissive = emissive * 10.0;
     vec3 color = ambient + Lo + emissive;
     FragColor = vec4(color, 1.0);
 }

@@ -165,8 +165,8 @@ public:
     }
 
     void BindTextures() {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _hdrColor.GetID());
+        _hdrColor.Bind(0);
+
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, BloomTexture());
     }
@@ -212,7 +212,7 @@ public:
     }
 
 
-    void RenderDownsamples(Shader& mDownsampleShader, unsigned int srcTexture = 0)
+    void RenderDownsamples(Shader& mDownsampleShader)
     {
         mFBO.BindForWriting(); //TODO redundant
         const std::vector<bloomMip>& mipChain = mFBO.MipChain();
