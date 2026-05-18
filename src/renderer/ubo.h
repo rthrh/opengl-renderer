@@ -147,7 +147,7 @@ struct ConfigUBO {
     int bloomEnabled = true;
     float exposure = 1.0f;
     float gamma = 2.2f;
-    float brightnessThreshold = 1.0f;
+    float bloomStrength = 0.04f;
 
     // SSAO
     int ssaoEnabled = true;

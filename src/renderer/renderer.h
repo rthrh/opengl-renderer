@@ -209,17 +209,19 @@ public:
         glDepthFunc(GL_LESS); // restore default
     }
 
-    void PassBloom(Shader& blurShader, Shader& bloomShader) {
+    void PassBloom(Shader& downsampleShader, Shader& upsampleShader, Shader& bloomFinalShader) {
         Stopwatch stopwatch("PassBloom");
-        // Blur bright fragments with two-pass Gaussian Blur
-        blurShader.Activate();
-        _bloom.Blur(blurShader, 20);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindVertexArray(_emptyVAO);
 
-        // Render to quad, apply HDR tonemapping in bloom shader
+        _bloom.RenderDownsamples(downsampleShader);
+        _bloom.RenderUpsamples(upsampleShader);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        bloomShader.Activate();
+
+        bloomFinalShader.Activate();
         _bloom.BindTextures();
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 

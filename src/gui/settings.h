@@ -26,7 +26,7 @@ public:
             dirty |= ImGui::Checkbox("Bloom Enabled", (bool*)&config.bloomEnabled);
             dirty |= ImGui::SliderFloat("Exposure",             &config.exposure,            0.1f, 10.0f);
             dirty |= ImGui::SliderFloat("Gamma",                &config.gamma,               1.0f, 3.0f);
-            dirty |= ImGui::SliderFloat("Brightness Threshold", &config.brightnessThreshold, 0.1f, 5.0f);
+            dirty |= ImGui::SliderFloat("Brightness Threshold", &config.bloomStrength,       0.0f, 1.0f);
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);

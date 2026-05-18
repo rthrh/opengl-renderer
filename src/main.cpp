@@ -253,6 +253,10 @@ int main()
     auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");
     auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
 
+    auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
+    auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
+    auto bloomFinalShader = shaderCache.Build("bloomFinal", "quad.vert", "bloom_final.frag");
+
     auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
     auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
     auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
@@ -362,7 +366,7 @@ int main()
         glEnable(GL_CULL_FACE);
 
         renderer.PassNoShadow(scene, *unlitShader);
-        renderer.PassBloom(*blurShader, *bloomShader);
+        renderer.PassBloom(*downsampleShader, *upsampleShader, *bloomFinalShader);
 
         Stopwatch stopwatch1("GuiLayer::EndFrame");
         // Renders the ImGUI elements

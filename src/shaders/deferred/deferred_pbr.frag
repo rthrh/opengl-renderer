@@ -1,7 +1,6 @@
 #version 450 core
 
 out vec4 FragColor;
-out vec4 BrightColor;
 
 in vec2 TexCoords;
 
@@ -49,7 +48,6 @@ void main() {
     //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
     if (depth == 1.0) {
         FragColor = vec4(0.05, 0.05, 0.05, 1.0);
-        BrightColor = vec4(0.0, 0.0, 0.0, 1.0); // skybox should not be lit
         return;
     }
 
@@ -114,13 +112,5 @@ void main() {
     vec3 ambient = (kD * diffuse + specular) * ao;
 
     vec3 color = ambient + Lo + emissive;
-    FragColor = vec4(color, 1.0); // any(isnan(color)) TODO NaN sometimes on FragColor
-
-    // For Bloom pass and tone mapping + gamma
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > Config.brightnessThreshold)
-        BrightColor = vec4(FragColor.rgb, 1.0);
-	else
-		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
-
+    FragColor = vec4(color, 1.0);
 }
