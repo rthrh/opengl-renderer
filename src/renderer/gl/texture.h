@@ -32,6 +32,7 @@ enum class TextureFormat {
     RGBA16F = GL_RGBA16F,
     R32F = GL_R32F,
     RGB32F = GL_RGB32F,
+    R11F_G11F_B10F = GL_R11F_G11F_B10F,
     Depth24 = GL_DEPTH_COMPONENT24,
     Depth32F = GL_DEPTH_COMPONENT32F,
     Depth24Stencil8 = GL_DEPTH24_STENCIL8,
@@ -52,10 +53,11 @@ static GLenum FormatToChannels(TextureFormat fmt) {
         case TextureFormat::RGB16F:
         case TextureFormat::RGB32F:
         case TextureFormat::SRGB8:
+        case TextureFormat::R11F_G11F_B10F:
             return GL_RGB;
         case TextureFormat::RGBA8:
         case TextureFormat::RGBA16F:
-        case TextureFormat::SRGB8_A8: 
+        case TextureFormat::SRGB8_A8:
             return GL_RGBA;
         case TextureFormat::Depth24Stencil8:
             return GL_DEPTH_STENCIL;
@@ -176,7 +178,7 @@ public:
         return *this;
     }
 
-    // Convenience to set all wraps to the same value at once
+    // Sets all wraps to the same value at once
     void SetWrap(TextureWrap wraps) const {
         glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)wraps);
         glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)wraps);
@@ -196,7 +198,7 @@ public:
         glTextureParameteri(_id, GL_TEXTURE_WRAP_R, (GLint)r);
     }
 
-    // Convenience to set all filters to the same value at once
+    // Sets all filters to the same value at once
     void SetFilter(TextureFilter minMag) const {
         SetFilter(minMag, minMag);
     }
@@ -234,9 +236,9 @@ public:
         glBindTextureUnit(slot, _id);
     }
 
-    GLuint GetID() const {
-        return _id;
-    }
+    GLuint GetID() const { return _id; }
+    int GetWidth() const { return _width; }
+    int GetHeight() const { return _height; }
 
     void Destroy() {
         if (_id) {
