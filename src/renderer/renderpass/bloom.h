@@ -1,10 +1,8 @@
 #pragma once
 #include <glad/glad.h>
-#include <iostream>
 
 #include "utils/logger.h"
 #include "renderer/shader.h"
-#include "gl/render_buffer.h"
 #include "gl/frame_buffer.h"
 #include "gl/texture.h"
 
@@ -130,7 +128,6 @@ private:
             Texture2D& mip = _mipChain.back();
             mip.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
             mip.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
-            std::cout << "Created bloom mip " << mipIntSize.x << 'x' << mipIntSize.y << std::endl;
         }
     }
 

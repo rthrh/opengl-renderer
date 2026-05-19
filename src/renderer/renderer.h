@@ -15,6 +15,7 @@
 #include "renderpass/shadow_map_spot.h"
 #include "renderpass/bloom.h"
 #include "renderpass/ssao.h"
+#include "renderpass/fxaa.h"
 
 #include "texture_slots.h"
 #include "math.h"
@@ -35,6 +36,7 @@ public:
         _shadowMapSpot(),
         _bloom(scrWidth, scrHeight),
         _ssao(scrWidth, scrHeight),
+        _fxaa(scrWidth, scrHeight),
         _skybox(skybox),
         _assetCache(assetCache)
     {
@@ -215,12 +217,28 @@ public:
 
         _bloom.RenderDownsamples(downsampleShader);
         _bloom.RenderUpsamples(upsampleShader);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        _fxaa.BindFramebuffer();
         glViewport(0, 0, _scrWidth, _scrHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         bloomFinalShader.Activate();
         _bloom.BindTextures();
+
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+
+    void PassFXAA(Shader& fxaaShader) {
+        Stopwatch stopwatch("FXAA");
+        glBindVertexArray(_emptyVAO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, _scrWidth, _scrHeight);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        _fxaa.BindTexture(0);
+
+        fxaaShader.Activate();
+        fxaaShader.SetVec2("resolution", glm::vec2(_scrWidth, _scrHeight));
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
@@ -259,6 +277,7 @@ private:
     UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO;
     Bloom _bloom;
     SSAO _ssao;
+    FXAA _fxaa;
     std::shared_ptr<Skybox> _skybox;
     std::shared_ptr<AssetCache> _assetCache;
 };

@@ -239,7 +239,6 @@ int main()
 
     auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
     auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
-    auto debugShader = shaderCache.Build("deferred_debug", "quad.vert", "deferred_pbr.frag");
     auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
     auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
 
@@ -263,6 +262,8 @@ int main()
 
     auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
     auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
+
+    auto fxaaShader = shaderCache.Build("fxaa", "quad.vert", "fxaa.frag");
 
     auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
 
@@ -367,7 +368,7 @@ int main()
 
         renderer.PassNoShadow(scene, *unlitShader);
         renderer.PassBloom(*downsampleShader, *upsampleShader, *bloomFinalShader);
-
+        renderer.PassFXAA(*fxaaShader);
         Stopwatch stopwatch1("GuiLayer::EndFrame");
         // Renders the ImGUI elements
 		guiLayer.EndFrame();
