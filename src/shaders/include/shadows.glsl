@@ -1,4 +1,4 @@
-
+#include "include/pcss.glsl"
 
 float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, float biasMin, float biasMax)
 {
@@ -10,44 +10,48 @@ float ShadowDirectionalLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, f
         return 0.0;
 
     projCoords = projCoords * 0.5 + 0.5; // transform to [0,1] range
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowDirMap, projCoords.xy).r; 
-    float currentDepth = projCoords.z;
 
     // calculate bias
     vec3 lightDir = normalize(-dirLight.direction.xyz);
     float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
-    // check whether current frag pos is in shadow
-    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-    // PCF 3x3 kernel
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowDirMap, 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowDirMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
-        }    
-    }
 
-    shadow /= 9.0;  
-    return shadow;
+    // PCSS
+    vec3 biasedCoords = vec3(projCoords.xy, projCoords.z - bias);
+    float visibility = PCSS_Dir(biasedCoords);
+    return 1.0 - visibility;
 }
+
+
+// array of offset direction for sampling
+vec3 gridSamplingDisk[20] = vec3[]
+(
+   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1),
+   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
+   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
+   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
+);
 
 
 float ShadowPointLight(vec3 fragPos, vec3 lightPos, float farPlane, float bias, int lightIndex)
 {
     vec3 fragToLight = fragPos - lightPos;
-    float closestDepth = texture(shadowPointMaps, vec4(fragToLight, float(lightIndex))).r;
-    closestDepth *= farPlane;
     float currentDepth = length(fragToLight);
 
-    float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
-    // TODO PCF kernel
-    // display closestDepth as debug (to visualize depth cubemap)
-    // FragColor = vec4(vec3(closestDepth / far_plane), 1.0);    
-        
+    // PCF kernel
+    float shadow = 0.0;
+    int samples = 20;
+    float viewDistance = currentDepth;//length(viewPos - fragPos); TODO
+    float diskRadius = (1.0 + (viewDistance / farPlane)) / 25.0;
+    for(int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(shadowPointMaps, vec4(fragToLight + gridSamplingDisk[i] * diskRadius, float(lightIndex))).r;
+        closestDepth *= farPlane; // undo mapping [0;1]
+        if(currentDepth - bias > closestDepth)
+            shadow += 1.0;
+    }
+    shadow /= float(samples);
+
     return shadow;
 }
 
@@ -63,25 +67,12 @@ float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, float bi
 
     projCoords = projCoords * 0.5 + 0.5; // transform to [0,1] range
 
-    float currentDepth = projCoords.z; // get depth of current fragment from light's perspective
-
     // calculate bias (based on depth map resolution and slope)
     vec3 lightDir = normalize(-spotLights.lights[lightIndex].direction.xyz);
     float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
-    // check whether current frag pos is in shadow
-    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-    // PCF 3x3 kernel
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / vec2(textureSize(shadowSpotMap, 0).xy);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowSpotMap, vec3(projCoords.xy + vec2(x, y) * texelSize, float(lightIndex))).r;
-            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
-        }    
-    }
 
-    shadow /= 9.0;  
-    return shadow;
+    // PCSS
+    vec3 biasedCoords = vec3(projCoords.xy, projCoords.z - bias);
+    float visibility = PCSS_Spot(biasedCoords, lightIndex);
+    return 1.0 - visibility;
 }
