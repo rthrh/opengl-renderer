@@ -42,7 +42,7 @@ public:
     }
 
     ~Camera() {
-        if (_ubo) glDeleteBuffers(1, &_ubo);        
+        if (_ubo) glDeleteBuffers(1, &_ubo);
     }
 
     Camera(const Camera&) = delete;
@@ -72,6 +72,10 @@ public:
 
     float GetZoom() {
         return _zoom;
+    }
+
+    void SetAspectRatio(float aspectRatio) {
+        _aspectRatio = aspectRatio;
     }
 
     void ProcessKeyboard(CameraMovement direction, float deltaTime)

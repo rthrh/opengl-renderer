@@ -11,16 +11,27 @@
 
 class GBuffer {
 public:
-    explicit GBuffer(int width, int height) : _width(width), _height(height) {
+    explicit GBuffer(int scrWidth, int scrHeight) : _scrWidth(scrWidth), _scrHeight(scrHeight) {
+        Init(scrWidth, scrHeight);
+    }
+
+    ~GBuffer() = default;
+
+    GBuffer(const GBuffer&) = delete;
+    GBuffer& operator=(const GBuffer&) = delete;
+    GBuffer(GBuffer&& o) noexcept = default;
+    GBuffer& operator=(GBuffer&& o) noexcept = default;
+
+    void Init(int scrWidth, int scrHeight) {
         using enum TextureAttachment; // TODO add check if we attach to wrong attachments
         TextureAttachment attachments[] = { Color0, Color1, Color2, Color3 };
         _framebuffer = FrameBuffer(attachments);
 
-        _textureAlbedo = this->createTexture(width, height, TextureFormat::RGBA8);
-        _textureNormal = this->createTexture(width, height, TextureFormat::RGB16F);
-        _textureORM = this->createTexture(width, height, TextureFormat::RGBA8);
-        _textureEmissive = this->createTexture(width, height, TextureFormat::RGB16F);
-        _textureDepth = Texture2D(width, height, TextureFormat::Depth24Stencil8);
+        _textureAlbedo = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
+        _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
+        _textureORM = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
+        _textureEmissive = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
+        _textureDepth = Texture2D(scrWidth, scrHeight, TextureFormat::Depth24Stencil8);
 
         _framebuffer.AttachTexture(Color0, _textureAlbedo.GetID());
         _framebuffer.AttachTexture(Color1, _textureNormal.GetID());
@@ -31,16 +42,15 @@ public:
         _framebuffer.Status();
     }
 
-    ~GBuffer() = default;
-
-    GBuffer(const GBuffer&) = delete;
-    GBuffer& operator=(const GBuffer&) = delete;
-    GBuffer(GBuffer&& o) noexcept = default;
-    GBuffer& operator=(GBuffer&& o) noexcept = default;
+    void Resize(int scrWidth, int scrHeight) {
+        _scrWidth = scrWidth;
+        _scrHeight = scrHeight;
+        this->Init(scrWidth, scrHeight);
+    }
 
     void BindFramebuffer() {
         _framebuffer.Bind();
-        glViewport(0, 0, _width, _height); // will render white stripe on top without this call
+        glViewport(0, 0, _scrWidth, _scrHeight); // will render white stripe on top without this call
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
@@ -54,17 +64,17 @@ public:
     }
 
     void BlitFramebuffer(GLuint targetFBO, int targetWidth, int targetHeight) const {
-        FrameBuffer::Blit(_framebuffer.GetId(), targetFBO, _width, _height, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT);
+        FrameBuffer::Blit(_framebuffer.GetId(), targetFBO, _scrWidth, _scrHeight, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT);
     }
 
 private:
-    Texture2D createTexture(int width, int height, TextureFormat format = TextureFormat::RGB32F) {
-        auto texture = Texture2D(width, height, format);
+    Texture2D createTexture(int scrWidth, int scrHeight, TextureFormat format = TextureFormat::RGB32F) {
+        auto texture = Texture2D(scrWidth, scrHeight, format);
         texture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         return texture;
     }
 
-    int _width = 0, _height = 0;
+    int _scrWidth = 0, _scrHeight = 0;
     FrameBuffer _framebuffer;
     Texture2D _textureAlbedo;
     Texture2D _textureNormal;

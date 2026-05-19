@@ -12,26 +12,13 @@
 
 class SSAO {
 public:
-    SSAO(int scrWidth, int scrHeight) : 
+    SSAO(int scrWidth, int scrHeight) :
         _scrWidth(scrWidth), _scrHeight(scrHeight),
-        _ssaoColorBuffer(scrWidth, scrHeight, TextureFormat::R8),
-        _ssaoColorBufferBlur(scrWidth, scrHeight, TextureFormat::R8),
-        _noiseTexture(generateNoiseTexture())
+        _noiseTexture(generateNoiseTexture()),
+        _ssaoKernel(generateSampleKernel())
     {
-        //TODO check wrap
-        _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
-        _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
-
-        constexpr TextureAttachment attachments[] = {TextureAttachment::Color0};
-        _ssaoFBO = FrameBuffer(attachments);
-        _ssaoBlurFBO = FrameBuffer(attachments);
-        _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
-        _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
-
-        _ssaoKernel = generateSampleKernel();
-
         glCreateVertexArrays(1, &_emptyVAO);
-
+        this->Init(scrWidth, scrHeight);
     }
 
     ~SSAO() {
@@ -41,11 +28,34 @@ public:
     SSAO(const SSAO&) = delete;
     SSAO& operator=(const SSAO&) = delete;
 
+    void Init(int scrWidth, int scrHeight) {
+        //TODO check wrap
+        _ssaoColorBuffer = Texture2D(scrWidth, scrHeight, TextureFormat::R8);
+        _ssaoColorBufferBlur = Texture2D(scrWidth, scrHeight, TextureFormat::R8);
+
+        _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+
+        constexpr TextureAttachment attachments[] = {TextureAttachment::Color0};
+        _ssaoFBO = FrameBuffer(attachments);
+        _ssaoBlurFBO = FrameBuffer(attachments);
+        _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
+        _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
+
+
+    }
+
+    void Resize(int scrWidth, int scrHeight) {
+        _scrWidth = scrWidth;
+        _scrHeight = scrHeight;
+        this->Init(scrWidth, scrHeight);
+    }
+
     void Run(Shader& shaderSSAO) {
         _ssaoFBO.Bind();
         glClear(GL_COLOR_BUFFER_BIT);
         shaderSSAO.Activate();
-        // Send kernel + rotation 
+        // Send kernel + rotation
         shaderSSAO.SetVec2("noiseScale", glm::vec2(_scrWidth / 4.0f, _scrHeight / 4.0f));
         for (unsigned int i = 0; i < 64; ++i)
             shaderSSAO.SetVec3("samples[" + std::to_string(i) + "]", _ssaoKernel[i]);

@@ -59,6 +59,15 @@ public:
         }
     }
 
+    void Resize(int scrWidth, int scrHeight) {
+        _scrWidth = scrWidth;
+        _scrHeight = scrHeight;
+        _gBuffer.Resize(scrWidth, scrHeight);
+        _bloom.Resize(scrWidth, scrHeight);
+        _ssao.Resize(scrWidth, scrHeight);
+        _fxaa.Resize(scrWidth, scrHeight);
+    }
+
     void PassShadowDirectional(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowDirectional");
         if (!config.shadowsEnabled) return;

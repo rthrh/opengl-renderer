@@ -39,11 +39,18 @@ bool wireframe = false;
 bool uiMode = false;
 
 
-struct MouseCallbackData {
+struct AppCallbackData {
     std::shared_ptr<Camera> cameraPtr;
-    float lastX; //{ SCR_WIDTH / 2.0f };
-    float lastY; //{ SCR_HEIGHT / 2.0f };
+    Renderer* rendererPtr;
+
+    // Mouse callback
+    float mouseLastX; //{ SCR_WIDTH / 2.0f };
+    float mouseLastY; //{ SCR_HEIGHT / 2.0f };
     bool firstMouse = true;
+
+    // Resize callback
+    int newScrWidth;
+    int newScrHeight;
 };
 
 
@@ -286,7 +293,10 @@ int main()
     configUBO.Upload();
 
     // App context data for callbacks
-    MouseCallbackData callbackData {.cameraPtr{camera}, .lastX = windowWidth / 2.0f, .lastY = windowHeight / 2.0f };
+    AppCallbackData callbackData {.cameraPtr{camera},
+                                  .rendererPtr{&renderer},
+                                  .mouseLastX = windowWidth / 2.0f,
+                                  .mouseLastY = windowHeight / 2.0f };
     glfwSetWindowUserPointer(window, &callbackData);
 
      // init imgui
@@ -405,28 +415,31 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and
     // height will be significantly larger than specified on retina displays.
+    auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
+    data->rendererPtr->Resize(width, height);
+    data->cameraPtr->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     glViewport(0, 0, width, height);
 }
 
 // glfw: whenever the mouse moves, this callback is called
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    auto* data = static_cast<MouseCallbackData*>(glfwGetWindowUserPointer(window));
+    auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
     if (data->firstMouse)
     {
-        data->lastX = xpos;
-        data->lastY = ypos;
+        data->mouseLastX = xpos;
+        data->mouseLastY = ypos;
         data->firstMouse = false;
     }
 
-    float xoffset = xpos - data->lastX;
-    float yoffset = data->lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float xoffset = xpos - data->mouseLastX;
+    float yoffset = data->mouseLastY - ypos; // reversed since y-coordinates go from bottom to top
 
-    data->lastX = xpos;
-    data->lastY = ypos;
+    data->mouseLastX = xpos;
+    data->mouseLastY = ypos;
 
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantCaptureMouse || uiMode)
@@ -438,7 +451,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    auto* data = static_cast<MouseCallbackData*>(glfwGetWindowUserPointer(window));
+    auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
     data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
 }
 

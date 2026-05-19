@@ -10,8 +10,17 @@
 class Bloom {
 public:
     Bloom(int scrWidth, int scrHeight) :
-        _width(scrWidth), _height(scrHeight)
+        _scrWidth(scrWidth), _scrHeight(scrHeight)
     {
+        this->Init(scrWidth, scrHeight);
+    }
+
+    ~Bloom() = default;
+
+    Bloom(const Bloom&) = delete;
+    Bloom& operator=(const Bloom&) = delete;
+
+    void Init(int scrWidth, int scrHeight) {
         _hdrColor = Texture2D(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _hdrColor.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         _hdrColor.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
@@ -23,13 +32,15 @@ public:
         _hdrFBO.AttachTexture(TextureAttachment::Color0, _hdrColor.GetID());
         _hdrFBO.AttachRenderBuffer(TextureAttachment::Depth, _depthRBO);
         _hdrFBO.Status();
-        this->initMipmaps(_width, _height);
+        this->initMipmaps(_scrWidth, _scrHeight);
     }
 
-    ~Bloom() = default;
-
-    Bloom(const Bloom&) = delete;
-    Bloom& operator=(const Bloom&) = delete;
+    void Resize(int scrWidth, int scrHeight) {
+        _scrWidth = scrWidth;
+        _scrHeight = scrHeight;
+        _mipChain.clear();
+        this->Init(scrWidth, scrHeight);
+    }
 
     void BindHdrFramebuffer() {
         _hdrFBO.Bind();
@@ -86,7 +97,7 @@ public:
         _bloomFBO.Bind();
 
         downsampleShader.Activate();
-        downsampleShader.SetVec2("srcResolution", {_width, _height});
+        downsampleShader.SetVec2("srcResolution", {_scrWidth, _scrHeight});
         downsampleShader.SetInt("srcTexture", 0);
         if (_karisAverage) {
             downsampleShader.SetInt("mipLevel", 0);
@@ -124,6 +135,7 @@ private:
         _mipChain.reserve(numBloomMips);
         for (unsigned int i = 0; i < numBloomMips; i++) {
             mipIntSize /= 2;
+            if (mipIntSize.x < 1 || mipIntSize.y < 1) return;
             _mipChain.emplace_back(mipIntSize.x, mipIntSize.y, TextureFormat::R11F_G11F_B10F);
             Texture2D& mip = _mipChain.back();
             mip.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
@@ -131,7 +143,7 @@ private:
         }
     }
 
-    int _width, _height;
+    int _scrWidth, _scrHeight;
     FrameBuffer _hdrFBO;
 	FrameBuffer _bloomFBO;
     Texture2D _hdrColor;
