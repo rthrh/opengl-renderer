@@ -154,17 +154,17 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
 
     auto absPath = std::filesystem::absolute(modelPath);
     auto ourModel = modelLoader.Load(absPath);
-    scene.AddModel(std::move(*ourModel), Deferred);
+    scene.AddModel(std::move(*ourModel), Opaque);
 
     auto absPath2 = std::filesystem::absolute(modelPath2);
     auto ourModel2 = modelLoader.Load(absPath2);
     (*ourModel2).SetTranslation({0.0f, -2.0f, 0.0f});
     (*ourModel2).SetInstances(randomTransforms(2));
-    scene.AddModel(std::move(*ourModel2), Deferred);
+    scene.AddModel(std::move(*ourModel2), Opaque);
 
     auto absPath3 = std::filesystem::absolute(modelPath3);
     auto ourModel3 = modelLoader.Load(absPath3);
-    scene.AddModel(std::move(*ourModel3), Forward);
+    scene.AddModel(std::move(*ourModel3), Blend);
 
     // floor model
     uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
@@ -207,7 +207,7 @@ void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoa
     //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
     auto absPath = std::filesystem::absolute(modelPath);
     auto ourModel = modelLoader.Load(absPath);
-    scene.AddModel(std::move(*ourModel), Deferred);
+    scene.AddModel(std::move(*ourModel), Opaque);
 
     // floor model
     uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
@@ -242,7 +242,7 @@ Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader
     };
 
     scene.AddModel(loadModel("MetalRoughSpheres/glTF/MetalRoughSpheres.gltf", {0, 0, 0}));
-    scene.AddModel(loadModel("AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf", {10, 0, 0}), RenderQueueType::Forward);
+    scene.AddModel(loadModel("AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf", {10, 0, 0}), RenderQueueType::Blend);
     scene.AddModel(loadModel("TextureCoordinateTest/glTF/TextureCoordinateTest.gltf", {10, -3, 0}));
     scene.AddModel(loadModel("NormalTangentTest/glTF/NormalTangentTest.gltf", {8, 5, 0}));
     scene.AddModel(loadModel("NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf", {11, 5, 0}));

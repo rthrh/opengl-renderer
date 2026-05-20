@@ -23,9 +23,10 @@
 #include "gl/shader_storage_buffer.h"
 
 enum RenderQueueType {
-    Forward,
-    Deferred,
-    NoShadow
+    Masked, // Alpha masked + alpha cut off
+    Opaque, // Opaque
+    Blend, // Blend rendered, sorted TODO
+    NoShadow // Debug unlit
 };
 
 class Scene {
@@ -64,7 +65,7 @@ public:
 
         _pointLightUBO.Data().Pushback(light);
         _pointLightUBO.Upload();
-    
+
         // Add debug light marker
         uint32_t defaultMatIndex = _assetCache->AddMaterial(_assetCache->GetDefaultMaterial());
         Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
@@ -102,15 +103,17 @@ public:
         return _spotLightUBO.Data();
     }
 
-    Handle AddModel(Model model, RenderQueueType queue = Deferred) {
+    Handle AddModel(Model model, RenderQueueType queue = Opaque) {
         Handle index = _handleNext;
-        switch (queue)
-        {
-            case Forward:
-                _forwardQueue.insert({_handleNext, std::move(model)});
+        switch (queue) {
+            case Masked:
+                _maskedQueue.insert({_handleNext, std::move(model)});
                 break;
-            case Deferred:
-                _deferredQueue.insert({_handleNext, std::move(model)});
+            case Opaque:
+                _opaqueQueue.insert({_handleNext, std::move(model)});
+                break;
+            case Blend:
+                _blendQueue.insert({_handleNext, std::move(model)});
                 break;
             case NoShadow:
                 _noShadowQueue.insert({_handleNext, std::move(model)});
@@ -123,10 +126,12 @@ public:
 
     RenderQueue& GetQueue(RenderQueueType queue) {
         switch (queue) {
-            case Forward:
-                return _forwardQueue;
-            case Deferred:
-                return _deferredQueue;
+            case Masked:
+                return _maskedQueue;
+            case Opaque:
+                return _opaqueQueue;
+            case Blend:
+                return _blendQueue;
             case NoShadow:
                 return _noShadowQueue;
         }
@@ -134,8 +139,9 @@ public:
     }
 
 private:
-    RenderQueue _forwardQueue;
-    RenderQueue _deferredQueue;
+    RenderQueue _maskedQueue;
+    RenderQueue _blendQueue;
+    RenderQueue _opaqueQueue;
     RenderQueue _noShadowQueue;
 
     uint32_t _handleNext{0};

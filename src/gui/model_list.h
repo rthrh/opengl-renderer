@@ -11,10 +11,10 @@ public:
         ImGui::Begin("Models");
         ImGui::BeginChild("##modellist", ImVec2(0, 0), false, ImGuiWindowFlags_None);
 
-        ImGui::SeparatorText("Deferred");
-        buildQueue(scene.GetQueue(Deferred));
-        ImGui::SeparatorText("Forward");
-        buildQueue(scene.GetQueue(Forward));
+        ImGui::SeparatorText("Opaque");
+        buildQueue(scene.GetQueue(Opaque));
+        ImGui::SeparatorText("Blend");
+        buildQueue(scene.GetQueue(Blend));
         ImGui::SeparatorText("No Shadow");
         buildQueue(scene.GetQueue(NoShadow));
 

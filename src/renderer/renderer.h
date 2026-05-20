@@ -68,6 +68,14 @@ public:
         _fxaa.Resize(scrWidth, scrHeight);
     }
 
+    void DepthMaskedPrepassOpaque(Scene& scene, Shader& depthMaskedShader, const ConfigUBO& config) {
+        Stopwatch stopwatch("DepthPrepassOpaque");
+        depthMaskedShader.Activate();
+
+        this->render(scene.GetQueue(Opaque), depthMaskedShader, true);
+
+    }
+
     void PassShadowDirectional(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowDirectional");
         if (!config.dirShadowsEnabled) return;
@@ -82,8 +90,8 @@ public:
         _shadowMapDirectional.BindTexture();
         shader.Activate();
 
-        this->render(scene.GetQueue(Deferred), shader, true);
-        //this->render(scene.GetQueue(Forward), shader);
+        this->render(scene.GetQueue(Opaque), shader, true);
+        //this->render(scene.GetQueue(Blend), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -108,8 +116,8 @@ public:
             for (int face = 0; face < 6; face++) {
                 _shadowMapPoint.BindFramebufferFace(i, face);
                 shader.SetMat4("lightSpaceMatrix", shadowMatrices[face]);
-                this->render(scene.GetQueue(Deferred), shader, true);
-                //this->render(scene.GetQueue(Forward), shader);
+                this->render(scene.GetQueue(Opaque), shader, true);
+                //this->render(scene.GetQueue(Blend), shader);
             }
         }
 
@@ -136,8 +144,8 @@ public:
             _shadowMapSpot.BindFramebufferLayer(i);
 
             shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
-            this->render(scene.GetQueue(Deferred), shader, true);
-            //this->render(scene.GetQueue(Forward), shader);
+            this->render(scene.GetQueue(Opaque), shader, true);
+            //this->render(scene.GetQueue(Blend), shader);
         }
 
         _shadowMapUBO.Upload();
@@ -150,7 +158,7 @@ public:
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
-        this->render(scene.GetQueue(Deferred), shader);
+        this->render(scene.GetQueue(Opaque), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
@@ -188,14 +196,14 @@ public:
 
         // Render opaque/masked meshes first
         shader.SetBool("blendPass", false);
-        this->render(scene.GetQueue(Forward), shader);
+        this->render(scene.GetQueue(Blend), shader);
 
         // Render blend meshes
         shader.SetBool("blendPass", true);
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_FALSE);
-        this->render(scene.GetQueue(Forward), shader);
+        this->render(scene.GetQueue(Blend), shader);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }

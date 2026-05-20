@@ -29,7 +29,7 @@ public:
             if (ImGui::Selectable(displayName.c_str())) {
                 auto model = loader.Load(fullPath);
                 if (model) {
-                    scene.AddModel(std::move(*model), Deferred);
+                    scene.AddModel(std::move(*model), Opaque);
                 } else {
                     Warn("Error loading model: {}", fullPath.string());
                 }
