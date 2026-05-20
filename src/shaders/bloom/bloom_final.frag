@@ -12,7 +12,7 @@ void main() {
     vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
 
     vec3 result;
-    if (Config.bloomEnabled == 1) {
+    if (Config.bloomEnabled) {
         result = mix(hdrColor, bloomColor, Config.bloomStrength);
     } else {
         result = hdrColor;

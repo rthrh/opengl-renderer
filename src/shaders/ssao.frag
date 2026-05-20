@@ -26,7 +26,7 @@ vec3 ReconstructViewPos(vec2 uv, float depth) {
 
 void main()
 {
-    if(Config.ssaoEnabled == 0) {
+    if(!Config.ssaoEnabled) {
         FragColor = 1.0;
         return;
     }

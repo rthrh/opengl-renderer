@@ -81,7 +81,7 @@ void main() {
     // accumulate lights
     vec3 Lo = vec3(0.0);
     float shadow = 0.0;
-    if (Config.shadowsEnabled == 1) {
+    if (Config.shadowsEnabled) {
         shadow = ShadowDirectionalLight(FragPos, N, Shadow.dirLightSpaceMatrix, Config.dirShadowBiasMin, Config.dirShadowBiasMax);
     }
     Lo += CalcDirectionalLight(N, V, albedo, metallic, roughness, F0) * (1.0 - shadow);
@@ -89,7 +89,7 @@ void main() {
     int pointCount = pointLights.count.x;
     for (int i = 0; i < pointCount; i++) {
         float shadow = 0.0;
-        if (i < Config.maxPointShadowCasters && Config.shadowsEnabled == 1) {
+        if (i < Config.maxPointShadowCasters && Config.shadowsEnabled) {
             vec3 lightPos = pointLights.lights[i].positionAndRange.xyz;
             float farPlane = pointLights.lights[i].positionAndRange.w;
             shadow = ShadowPointLight(FragPos, lightPos, farPlane, Config.pointShadowBias, i);
@@ -102,7 +102,7 @@ void main() {
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++) {
         float shadow = 0.0;
-        if (i < Config.maxSpotShadowCasters && Config.shadowsEnabled == 1) {
+        if (i < Config.maxSpotShadowCasters && Config.shadowsEnabled) {
             shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrices[i], Config.spotShadowBiasMin, Config.spotShadowBiasMax, i);
         }
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,

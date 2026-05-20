@@ -255,6 +255,30 @@ Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader
     return scene;
 }
 
+Scene setupSponza(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
+    Scene scene(assetCache);
+    std::filesystem::path root = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "glTF-Sample-Models/2.0";
+
+    auto loadModel = [&modelLoader, &root](const char* filename, glm::vec3 translation) {
+        auto path = root / filename;
+        auto testModel = *modelLoader.Load(path);
+        testModel.SetTranslation(translation);
+        return testModel;
+    };
+
+    scene.AddModel(loadModel("Sponza/glTF/Sponza.gltf", {0, 0, 0}));
+
+    //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
+    DirectionalLightUBO dirLight({0.0, -1.0, 0.0});
+    dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
+    dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
+    //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
+    //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
+    scene.AddDirectionalLight(std::move(dirLight));
+
+    return scene;
+}
+
 int main()
 {
     const unsigned int windowWidth = 1600u;
@@ -278,9 +302,6 @@ int main()
     auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
     auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
     auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
-
-    auto blurShader = shaderCache.Build("blur", "quad.vert", "blur.frag");
-    auto bloomShader = shaderCache.Build("bloom", "quad.vert", "bloom.frag");
 
     auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
     auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
@@ -329,8 +350,9 @@ int main()
 
     // Scene setup
     ModelLoader modelLoader(assetCache);
-    Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
+    //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
     //auto scene = setupTestModels(assetCache, modelLoader);
+    auto scene = setupSponza(assetCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;

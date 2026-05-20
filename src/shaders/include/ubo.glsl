@@ -41,18 +41,18 @@ layout(std140, binding = 4) uniform ShadowBlock {
 } Shadow;
 
 layout(std140, binding = 5) uniform ConfigBlock {
-    int   bloomEnabled;
+    bool  bloomEnabled;
     float exposure;
     float gamma;
     float bloomStrength;
     float filterRadius;
 
-    int   ssaoEnabled;
+    bool  ssaoEnabled;
     float ssaoRadius;
     float ssaoBias;
     int   ssaoKernel;
 
-    int   shadowsEnabled;
+    bool  shadowsEnabled;
     int   maxPointShadowCasters;
     float pointShadowBias;
 
@@ -63,7 +63,7 @@ layout(std140, binding = 5) uniform ConfigBlock {
 
     float spotShadowBiasMax;
 
-    int   fxaaEnable;
+    bool  fxaaEnable;
     float fxaaEdgeThresholdMin;
     float fxaaEdgeThresholdMax;
     float fxaaSubpixelQuality;

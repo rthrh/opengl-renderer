@@ -52,6 +52,11 @@ float rgb2luma(vec3 rgb){
 /** Performs FXAA post-process anti-aliasing as described in the Nvidia FXAA white paper and the associated shader code.
 */
 void main(){
+	// TODO move this check entirely to CPU?
+    if (!Config.fxaaEnable) {
+        FragColor = vec4(texture(screenTexture, TexCoords).rgb, 1.0);
+        return;
+    }
 
     vec2 inverseScreenSize = 1.0 / resolution;
 	vec3 colorCenter = texture(screenTexture, TexCoords).rgb;
