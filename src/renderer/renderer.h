@@ -70,7 +70,7 @@ public:
 
     void PassShadowDirectional(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowDirectional");
-        if (!config.shadowsEnabled) return;
+        if (!config.dirShadowsEnabled) return;
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
@@ -91,7 +91,7 @@ public:
 
     void PassShadowPoint(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowPoint");
-        if (!config.shadowsEnabled) return;
+        if (!config.pointShadowsEnabled) return;
 
         const auto& pointLights = scene.GetPointLights();
         _shadowMapPoint.BindTexture();
@@ -119,7 +119,7 @@ public:
 
     void PassShadowSpot(Scene& scene, Shader& shader, const ConfigUBO& config) {
         Stopwatch stopwatch("PassShadowSpot");
-        if (!config.shadowsEnabled) return;
+        if (!config.spotShadowsEnabled) return;
 
         auto& spotLights = scene.GetSpotLights();
         auto& ubo = _shadowMapUBO.Data();

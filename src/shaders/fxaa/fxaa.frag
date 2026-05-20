@@ -8,29 +8,18 @@ layout(binding = 0) uniform sampler2D screenTexture; ///< Image to filter.
 
 
 // Settings for FXAA.
-//   0.0833 - upper limit (default, the start of visible unfiltered edges)
-//   0.0625 - high quality (faster)
-//   0.0312 - visible limit (slower)
+// 0.0833 - upper limit (default, the start of visible unfiltered edges) / 0.0625 - high quality (faster) / 0.0312 - visible limit (slower)
 //#define EDGE_THRESHOLD_MIN 0.0312
 
-//   0.333 - too little (faster)
-//   0.250 - low quality
-//   0.166 - default
-//   0.125 - high quality
-//   0.063 - overkill (slower)
+// 0.333 - too little (faster) / 0.250 - low quality / 0.166 - default / 0.125 - high quality / 0.063 - overkill (slower)
 //#define EDGE_THRESHOLD_MAX 0.125
-
 
 #define QUALITY(q) ((q) < 5 ? 1.0 : ((q) > 5 ? ((q) < 10 ? 2.0 : ((q) < 11 ? 4.0 : 8.0)) : 1.5))
 
 //#define ITERATIONS 12
 
 // This can effect sharpness.
-//   1.00 - upper limit (softer)
-//   0.75 - default amount of filtering
-//   0.50 - lower limit (sharper, less sub-pixel aliasing removal)
-//   0.25 - almost off
-//   0.00 - completely off
+// 1.00 - upper limit (softer) / 0.75 - default amount of filtering / 0.50 - lower limit (sharper, less sub-pixel aliasing removal) / 0.25 - almost off / 0.00 - completely off
 //#define SUBPIXEL_QUALITY 0.75
 
 // Output: the fragment color

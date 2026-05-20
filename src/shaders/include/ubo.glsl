@@ -52,15 +52,18 @@ layout(std140, binding = 5) uniform ConfigBlock {
     float ssaoBias;
     int   ssaoKernel;
 
-    bool  shadowsEnabled;
+    bool  dirShadowsEnabled;
+    bool  pointShadowsEnabled;
+    bool  spotShadowsEnabled;
+
     int   maxPointShadowCasters;
     float pointShadowBias;
 
     float dirShadowBiasMin;
     float dirShadowBiasMax;
+
     int   maxSpotShadowCasters;
     float spotShadowBiasMin;
-
     float spotShadowBiasMax;
 
     bool  fxaaEnable;

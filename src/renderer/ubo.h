@@ -157,9 +157,13 @@ struct ConfigUBO {
     int ssaoKernel = 64;
 
     // Shadows
-    int shadowsEnabled = true;
+    int dirShadowsEnabled = true;
+    int pointShadowsEnabled = true;
+    int spotShadowsEnabled = true;
+
     int maxPointShadowCasters = 4;
     float pointShadowBias = 0.05f;
+
     float dirShadowBiasMin = 0.005f;
     float dirShadowBiasMax = 0.05f;
 
@@ -176,6 +180,5 @@ struct ConfigUBO {
 
     // IBL
     float maxReflectionLOD = 4.0f;
-    float _pad0;
-    float _pad1;
+    //float _pad0;
 };

@@ -2,16 +2,18 @@
 Source: https://developer.download.nvidia.com/whitepapers/2008/PCSS_Integration.pdf
 */
 
-#define BLOCKER_SEARCH_NUM_SAMPLES 16
-#define PCF_NUM_SAMPLES 16
+
+
 #define NEAR_PLANE 3.1//9.5
 #define LIGHT_WORLD_SIZE .5 //TODO
 #define LIGHT_FRUSTUM_WIDTH 3.75 //TODO should come from the light
 // Assuming that LIGHT_FRUSTUM_WIDTH == LIGHT_FRUSTUM_HEIGHT
 #define LIGHT_SIZE_UV_SPOT (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH) // TODO range 0.05 – 0.15 / 0.15 – 0.3
 #define LIGHT_SIZE_UV_DIR 0.005 // should be tuned to something TODO range 0.001 – 0.005 / 0.005 – 0.01
-//TODO those constants
 
+// To modify these values, poissonDisk must be also regenerated
+#define BLOCKER_SEARCH_NUM_SAMPLES 16
+#define PCF_NUM_SAMPLES 16
 
 const vec2 poissonDisk[16] = vec2[](
     vec2( -0.94201624, -0.39906216 ),
