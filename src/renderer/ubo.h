@@ -157,19 +157,25 @@ struct ConfigUBO {
     int ssaoKernel = 64;
 
     // Shadows
-    int shadowsEnabled = true; // for CPU
+    int shadowsEnabled = true;
     int maxPointShadowCasters = 4;
-    float pointShadowBias = 0.05;
-    float dirShadowBiasMin = 0.005;
-    float dirShadowBiasMax = 0.05;
+    float pointShadowBias = 0.05f;
+    float dirShadowBiasMin = 0.005f;
+    float dirShadowBiasMax = 0.05f;
 
     int maxSpotShadowCasers = 4;
-    float spotShadowBiasMin = 0.0005;
-    float spotShadowBiasMax = 0.005;
+    float spotShadowBiasMin = 0.0005f;
+    float spotShadowBiasMax = 0.005f;
+
+    // FXAA
+    int fxaaEnable = true;
+    float fxaaEdgeThresholdMin = 0.0833f; // range [0.0312, 0.0833]
+    float fxaaEdgeThresholdMax = 0.166f; // range [0.063, 0.333]
+    float fxaaSubpixelQuality = 0.75f; // range [0.0, 1.0]
+    int fxaaIterations = 12; // range [3, 12]
 
     // IBL
     float maxReflectionLOD = 4.0f;
     float _pad0;
     float _pad1;
-    float _pad2;
 };

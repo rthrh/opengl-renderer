@@ -8,17 +8,38 @@ layout(binding = 0) uniform sampler2D screenTexture; ///< Image to filter.
 
 
 // Settings for FXAA.
-#define EDGE_THRESHOLD_MIN 0.0312
-#define EDGE_THRESHOLD_MAX 0.125
+//   0.0833 - upper limit (default, the start of visible unfiltered edges)
+//   0.0625 - high quality (faster)
+//   0.0312 - visible limit (slower)
+//#define EDGE_THRESHOLD_MIN 0.0312
+
+//   0.333 - too little (faster)
+//   0.250 - low quality
+//   0.166 - default
+//   0.125 - high quality
+//   0.063 - overkill (slower)
+//#define EDGE_THRESHOLD_MAX 0.125
+
+
 #define QUALITY(q) ((q) < 5 ? 1.0 : ((q) > 5 ? ((q) < 10 ? 2.0 : ((q) < 11 ? 4.0 : 8.0)) : 1.5))
-#define ITERATIONS 12
-#define SUBPIXEL_QUALITY 0.75
+
+//#define ITERATIONS 12
+
+// This can effect sharpness.
+//   1.00 - upper limit (softer)
+//   0.75 - default amount of filtering
+//   0.50 - lower limit (sharper, less sub-pixel aliasing removal)
+//   0.25 - almost off
+//   0.00 - completely off
+//#define SUBPIXEL_QUALITY 0.75
 
 // Output: the fragment color
 out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform vec2 resolution;
+
+#include "include/ubo.glsl"
 
 /** Evalute the luma value in perceptual space for a given RGB color in linear space.
 \param rgb the input RGB color
@@ -52,7 +73,7 @@ void main(){
 	float lumaRange = lumaMax - lumaMin;
 
 	// If the luma variation is lower that a threshold (or if we are in a really dark area), we are not on an edge, don't perform any AA.
-	if(lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX)){
+	if(lumaRange < max(Config.fxaaEdgeThresholdMin, lumaMax * Config.fxaaEdgeThresholdMax)){
 		FragColor = vec4(colorCenter, 1.0);
 		return;
 	}
@@ -142,7 +163,7 @@ void main(){
 	// If both sides have not been reached, continue to explore.
 	if(!reachedBoth){
 
-		for(int i = 2; i < ITERATIONS; i++){
+		for(int i = 2; i < Config.fxaaIterations; i++){
 			// If needed, read luma in 1st direction, compute delta.
 			if(!reached1){
 				lumaEnd1 = rgb2luma(textureLod(screenTexture, uv1, 0.0).rgb);
@@ -206,7 +227,7 @@ void main(){
 	float subPixelOffset1 = clamp(abs(lumaAverage - lumaCenter)/lumaRange,0.0,1.0);
 	float subPixelOffset2 = (-2.0 * subPixelOffset1 + 3.0) * subPixelOffset1 * subPixelOffset1;
 	// Compute a sub-pixel offset based on this delta.
-	float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * SUBPIXEL_QUALITY;
+	float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * Config.fxaaSubpixelQuality;
 
 	// Pick the biggest of the two offsets.
 	finalOffset = max(finalOffset,subPixelOffsetFinal);
@@ -222,5 +243,4 @@ void main(){
 	// Read the color at the new UV coordinates, and use it.
 	vec3 finalColor = textureLod(screenTexture, finalUv, 0.0).rgb;
 	FragColor = vec4(finalColor, 1.0);
-
 }

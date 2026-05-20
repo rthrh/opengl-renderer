@@ -183,7 +183,6 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
 
     auto spotLight1 = SpotLightBlockGPU({0, 3, 6}, {0, -0.5, -1}).SetColor(0, 0, 255).SetRange(25.0).SetIntensity(10);
     auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
-    //auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0.1}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
 
     scene.AddDirectionalLight(std::move(dirLight));
     scene.AddPointLight(std::move(light1));
@@ -194,7 +193,7 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
 }
 
 void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoader& modelLoader) {
-    std::mt19937 rng(888); // fixed seed for reproducibility
+    std::mt19937 rng(888);
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
     std::uniform_real_distribution<float> heightDist(0.5f, 15.0f);
     std::uniform_int_distribution<int> colorDist(50, 255);
@@ -229,6 +228,31 @@ void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoa
 
         scene.AddPointLight(std::move(light));
     }
+}
+
+Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
+    Scene scene(assetCache);
+    std::filesystem::path root = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "glTF-Sample-Models/2.0";
+
+    auto loadModel = [&modelLoader, &root](const char* filename, glm::vec3 translation) {
+        auto path = root / filename;
+        auto testModel = *modelLoader.Load(path);
+        testModel.SetTranslation(translation);
+        return testModel;
+    };
+
+    scene.AddModel(loadModel("MetalRoughSpheres/glTF/MetalRoughSpheres.gltf", {0, 0, 0}));
+    scene.AddModel(loadModel("AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf", {10, 0, 0}), RenderQueueType::Forward);
+    scene.AddModel(loadModel("TextureCoordinateTest/glTF/TextureCoordinateTest.gltf", {10, -3, 0}));
+    scene.AddModel(loadModel("NormalTangentTest/glTF/NormalTangentTest.gltf", {8, 5, 0}));
+    scene.AddModel(loadModel("NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf", {11, 5, 0}));
+
+    //scene.AddModel(loadModel("TextureEncodingTest/glTF/TextureEncodingTest.gltf", {25, 0, 0}));
+    scene.AddModel(loadModel("TextureLinearInterpolationTest/glTF/TextureLinearInterpolationTest.gltf", {20, 0, 0}));
+    scene.AddModel(loadModel("TextureSettingsTest/glTF/TextureSettingsTest.gltf", {30, 0, 0}));
+    scene.AddModel(loadModel("NegativeScaleTest/glTF/NegativeScaleTest.gltf", {42, 0, 0}));
+
+    return scene;
 }
 
 int main()
@@ -305,8 +329,8 @@ int main()
 
     // Scene setup
     ModelLoader modelLoader(assetCache);
-    Scene scene(assetCache);
-    setupScene(scene, assetCache, modelLoader);
+    Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
+    //auto scene = setupTestModels(assetCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;

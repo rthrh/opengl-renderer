@@ -85,6 +85,7 @@ template<GLenum T> concept Supported = (T == GL_TEXTURE_2D || T == GL_TEXTURE_2D
 template<GLenum T> concept Array = (T == GL_TEXTURE_2D_ARRAY || T == GL_TEXTURE_CUBE_MAP_ARRAY);
 template<GLenum T> concept Cube = (T == GL_TEXTURE_CUBE_MAP || T == GL_TEXTURE_CUBE_MAP_ARRAY);
 
+//TODO refactor data, genMipMaps
 template<GLenum T> requires Supported<T>
 class TextureGL {
 public:

@@ -1,7 +1,6 @@
 #version 450 core
 
 out vec4 FragColor;
-out vec4 BrightColor;
 
 in vec2 TexCoords;
 in vec3 FragPos;

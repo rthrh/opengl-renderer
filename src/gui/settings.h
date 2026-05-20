@@ -24,9 +24,9 @@ public:
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Bloom & Tonemapping")) {
             dirty |= ImGui::Checkbox("Bloom Enabled", (bool*)&config.bloomEnabled);
-            dirty |= ImGui::SliderFloat("Exposure",             &config.exposure,            0.1f, 10.0f);
-            dirty |= ImGui::SliderFloat("Gamma",                &config.gamma,               1.0f, 3.0f);
-            dirty |= ImGui::SliderFloat("Bloom Strength", &config.bloomStrength,       0.0f, 1.0f);
+            dirty |= ImGui::SliderFloat("Exposure",          &config.exposure,   0.1f, 10.0f);
+            dirty |= ImGui::SliderFloat("Gamma",             &config.gamma,      1.0f, 3.0f);
+            dirty |= ImGui::SliderFloat("Bloom Strength", &config.bloomStrength, 0.0f, 1.0f);
             //dirty |= ImGui::Checkbox("Karis Average", (bool*)&config.bloomKarisMipLevel);
         }
 
@@ -51,6 +51,15 @@ public:
             dirty |= ImGui::SliderFloat("Point Bias",      &config.pointShadowBias,   0.0f, 0.5f,  "%.4f");
             dirty |= ImGui::SliderFloat("Spot Bias Min",   &config.spotShadowBiasMin, 0.0f, 0.01f, "%.5f");
             dirty |= ImGui::SliderFloat("Spot Bias Max",   &config.spotShadowBiasMax, 0.0f, 0.1f,  "%.4f");
+        }
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("FXAA")) {
+            dirty |= ImGui::Checkbox("FXAA Enabled",   (bool*)&config.fxaaEnable);
+            dirty |= ImGui::SliderFloat("Edge Threshold Min", &config.fxaaEdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+            dirty |= ImGui::SliderFloat("Edge Threshold Max", &config.fxaaEdgeThresholdMax, 0.063f,  0.333f,  "%.3f");
+            dirty |= ImGui::SliderFloat("Subpixel Quality",   &config.fxaaSubpixelQuality,  0.0f,    1.0f,    "%.2f");
+            dirty |= ImGui::SliderInt("Iterations",           &config.fxaaIterations,       3,       12);
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);

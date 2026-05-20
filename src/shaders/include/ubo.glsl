@@ -62,8 +62,14 @@ layout(std140, binding = 5) uniform ConfigBlock {
     float spotShadowBiasMin;
 
     float spotShadowBiasMax;
+
+    int   fxaaEnable;
+    float fxaaEdgeThresholdMin;
+    float fxaaEdgeThresholdMax;
+    float fxaaSubpixelQuality;
+    int   fxaaIterations;
+
     float maxReflectionLOD;
     float _pad0;
     float _pad1;
-    float _pad2;
 } Config;
