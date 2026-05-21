@@ -27,8 +27,8 @@ public:
 
         _depthRBO = RenderBuffer(scrWidth, scrHeight, TextureFormat::Depth24);
 
-        _bloomFBO = FrameBuffer({TextureAttachment::Color0});
-        _hdrFBO = FrameBuffer({TextureAttachment::Color0});
+        _bloomFBO = FrameBuffer();
+        _hdrFBO = FrameBuffer();
         _hdrFBO.AttachTexture(TextureAttachment::Color0, _hdrColor.GetID());
         _hdrFBO.AttachRenderBuffer(TextureAttachment::Depth, _depthRBO);
         _hdrFBO.Status();

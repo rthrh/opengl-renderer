@@ -9,6 +9,7 @@
 #include "shader.h"
 #include "texture_slots.h"
 #include "gl/texture.h"
+#include "gl/frame_buffer.h"
 
 class SSAO {
 public:
@@ -36,9 +37,8 @@ public:
         _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
 
-        constexpr TextureAttachment attachments[] = {TextureAttachment::Color0};
-        _ssaoFBO = FrameBuffer(attachments);
-        _ssaoBlurFBO = FrameBuffer(attachments);
+        _ssaoFBO = FrameBuffer();
+        _ssaoBlurFBO = FrameBuffer();
         _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
         _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
 

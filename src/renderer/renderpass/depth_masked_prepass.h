@@ -21,7 +21,7 @@ public:
     DepthMaskedPrepass& operator=(const DepthMaskedPrepass&) = delete;
 
     void Init(int scrWidth, int scrHeight) {
-        _FBO = FrameBuffer({TextureAttachment::Depth});
+        _FBO = FrameBuffer();
         _FBO.Status();
     }
 

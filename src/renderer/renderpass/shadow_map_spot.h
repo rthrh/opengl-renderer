@@ -23,8 +23,7 @@ public:
         _depthTexture.SetWrap(TextureWrap::ClampToBorder, TextureWrap::ClampToBorder);
         _depthTexture.SetBorderColor(1, 1, 1, 1);
 
-        constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
-        _framebuffer = FrameBuffer(attachments);
+        _framebuffer = FrameBuffer();
     }
 
     ~ShadowMapSpot() = default;

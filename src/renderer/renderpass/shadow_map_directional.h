@@ -24,8 +24,7 @@ public:
         _depthTexture.SetBorderColor(1, 1, 1, 1);
 
         // Attach to framebuffer
-        constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
-        _framebuffer = FrameBuffer(attachments);
+        _framebuffer = FrameBuffer();
         _framebuffer.AttachTexture(TextureAttachment::Depth, _depthTexture.GetID());
     }
 

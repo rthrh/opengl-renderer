@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <ranges>
 #include "gl/render_buffer.h"
+#include <ranges>
+#include <vector>
 
 enum class TextureAttachment : GLenum {
     Color0 = GL_COLOR_ATTACHMENT0,
@@ -13,32 +15,17 @@ enum class TextureAttachment : GLenum {
     Color2 = GL_COLOR_ATTACHMENT2,
     Color3 = GL_COLOR_ATTACHMENT3,
     Color4 = GL_COLOR_ATTACHMENT4,
-    Depth = GL_DEPTH_ATTACHMENT,
+    Depth  = GL_DEPTH_ATTACHMENT,
     Stencil = GL_STENCIL_ATTACHMENT,
     DepthStencil = GL_DEPTH_STENCIL_ATTACHMENT,
 };
 
 class FrameBuffer {
 public:
-    FrameBuffer() = default;
-
-    FrameBuffer(std::initializer_list<TextureAttachment> attachments)
-        : FrameBuffer(std::span<const TextureAttachment>(attachments.begin(), attachments.size())) {}
-
-    FrameBuffer(std::span<const TextureAttachment> attachments) {
+    FrameBuffer() {
         glCreateFramebuffers(1, &_id);
-
-        bool hasColor = std::ranges::any_of(attachments, [](auto a) {
-            using enum TextureAttachment;
-            return a != Depth && a != Stencil && a != DepthStencil;
-        });
-
-        if (hasColor)
-            glNamedFramebufferDrawBuffers(_id, attachments.size(), (GLenum*)attachments.data());
-        else {
-            glNamedFramebufferDrawBuffer(_id, GL_NONE);
-            glNamedFramebufferReadBuffer(_id, GL_NONE);
-        }
+        glNamedFramebufferDrawBuffer(_id, GL_NONE);
+        glNamedFramebufferReadBuffer(_id, GL_NONE);
     }
 
     ~FrameBuffer() {
@@ -50,12 +37,14 @@ public:
 
     FrameBuffer(FrameBuffer&& o) noexcept {
         _id = std::exchange(o._id, 0);
+        _colorAttachments = std::move(o._colorAttachments);
     }
 
     FrameBuffer& operator=(FrameBuffer&& o) {
         if (this != &o) {
             glDeleteFramebuffers(1, &_id);
             _id = std::exchange(o._id, 0);
+            _colorAttachments = std::move(o._colorAttachments);
         }
         return *this;
     }
@@ -66,14 +55,17 @@ public:
 
     void AttachTexture(TextureAttachment attachment, GLuint tex) const {
         glNamedFramebufferTexture(_id, (GLenum)attachment, tex, 0);
+        this->updateAttachments(attachment);
     }
 
     void AttachTextureLayer(TextureAttachment attachment, GLuint tex, int layer, int mip = 0) const {
         glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
+        this->updateAttachments(attachment);
     }
 
     void AttachRenderBuffer(TextureAttachment attachment, const RenderBuffer& renderBuffer) const {
         glNamedFramebufferRenderbuffer(_id, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
+        this->updateAttachments(attachment);
     }
 
     void Bind() const {
@@ -100,5 +92,15 @@ public:
     }
 
 private:
+    void updateAttachments(TextureAttachment attachment) const {
+        using enum TextureAttachment;
+        bool isColor = attachment != Depth && attachment != Stencil && attachment != DepthStencil;
+        if (isColor && !std::ranges::contains(_colorAttachments, attachment)) {
+            _colorAttachments.emplace_back(attachment);
+            glNamedFramebufferDrawBuffers(_id, _colorAttachments.size(), (GLenum*)_colorAttachments.data());
+        }
+    }
+
     GLuint _id = 0;
+    mutable std::vector<TextureAttachment> _colorAttachments;
 };

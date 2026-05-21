@@ -23,9 +23,8 @@ public:
     GBuffer& operator=(GBuffer&& o) noexcept = default;
 
     void Init(int scrWidth, int scrHeight) {
-        using enum TextureAttachment; // TODO add check if we attach to wrong attachments
-        TextureAttachment attachments[] = { Color0, Color1, Color2, Color3 };
-        _framebuffer = FrameBuffer(attachments);
+        using enum TextureAttachment;
+        _framebuffer = FrameBuffer();
 
         _textureAlbedo = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
         _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);

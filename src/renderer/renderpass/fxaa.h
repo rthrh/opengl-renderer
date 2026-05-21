@@ -22,7 +22,7 @@ public:
 
     void Init(int scrWidth, int scrHeight) {
         _texture = Texture2D(scrWidth, scrHeight, TextureFormat::RGBA8);
-        _FBO = FrameBuffer({TextureAttachment::Color0});
+        _FBO = FrameBuffer();
         _texture.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         _texture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         _FBO.AttachTexture(TextureAttachment::Color0, _texture.GetID());

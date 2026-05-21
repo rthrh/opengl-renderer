@@ -18,6 +18,8 @@
 #include "renderer/shapes.h"
 #include "renderer/texture_slots.h"
 #include "gl/texture.h"
+#include "gl/render_buffer.h"
+#include "gl/frame_buffer.h"
 
 class Skybox {
 public:
@@ -45,8 +47,6 @@ public:
 
     ~Skybox() {
         //TODO FBO, RBO, HDR texture can be removed after init
-        glDeleteFramebuffers(1, &_captureFBO);
-        glDeleteRenderbuffers(1, &_captureRBO);
         glDeleteVertexArrays(1, &_cubeVAO);
         glDeleteBuffers(1, &_cubeVBO);
         glDeleteVertexArrays(1, &_emptyVAO);
@@ -68,16 +68,14 @@ public:
         _irradianceCubemap.Bind(slot(SlotOther::Irradiance));
         _prefilteredCubemap.Bind(slot(SlotOther::PrefilterEnv));
         _brdfLUT.Bind(slot(SlotOther::BrdfLUT));
-        
     }
 
 private:
     // Initializes capture FBO and RBO
     void initBuffers() {
-        glCreateFramebuffers(1, &_captureFBO);
-        glCreateRenderbuffers(1, &_captureRBO);
-        glNamedRenderbufferStorage(_captureRBO, GL_DEPTH_COMPONENT24, _cubeSize, _cubeSize);
-        glNamedFramebufferRenderbuffer(_captureFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _captureRBO);
+        _captureFBO = FrameBuffer();
+        _captureRBO = RenderBuffer(_cubeSize, _cubeSize, TextureFormat::Depth24);
+        _captureFBO.AttachRenderBuffer(TextureAttachment::Depth, _captureRBO);
     }
 
     Texture2D initTextureHDR(const std::filesystem::path& path) {
@@ -161,14 +159,14 @@ private:
 
         equirectShader.Activate();
         equirectShader.SetMat4("projection", _captureProjection);
-        _hdrTexture.Bind(0); // TODO set binding to enum
+        _hdrTexture.Bind(0);
 
         glViewport(0, 0, _cubeSize, _cubeSize);
-        glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
+        _captureFBO.Bind();
         for (unsigned int i = 0; i < 6; ++i)
         {
             equirectShader.SetMat4("view", _captureViews[i]);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _envCubemap.GetID(), 0, i);
+            _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _envCubemap.GetID(), i);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             this->renderCube();
         }
@@ -190,17 +188,18 @@ private:
 
     void bakeIrradianceMap(Shader& irradianceShader) {
         // resize capture RBO to 32x32
-        glNamedRenderbufferStorage(_captureRBO, GL_DEPTH_COMPONENT24, 32, 32);
+        _captureRBO.Resize(32, 32);
 
         irradianceShader.Activate();
         irradianceShader.SetMat4("projection", _captureProjection);
         _envCubemap.Bind(slot(SlotOther::Skybox));
 
         glViewport(0, 0, 32, 32);
-        glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
+        _captureFBO.Bind();
         for (unsigned int i = 0; i < 6; i++) {
             irradianceShader.SetMat4("view", _captureViews[i]);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _irradianceCubemap.GetID(), 0, i);
+            _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _irradianceCubemap.GetID(), i);
+
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             renderCube();
         }
@@ -220,7 +219,7 @@ private:
         prefilterShader.SetMat4("projection", _captureProjection);
 
         _envCubemap.Bind(slot(SlotOther::Skybox));
-        glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
+        _captureFBO.Bind();
 
         unsigned int maxMipLevels = 5;
         for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
@@ -228,7 +227,8 @@ private:
             // reisze framebuffer according to mip-level size.
             unsigned int mipWidth  = static_cast<unsigned int>(128 * std::pow(0.5, mip));
             unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-            glNamedRenderbufferStorage(_captureRBO, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+            _captureRBO.Resize(mipWidth, mipHeight);
+
             glViewport(0, 0, mipWidth, mipHeight);
 
             float roughness = (float)mip / (float)(maxMipLevels - 1);
@@ -236,7 +236,7 @@ private:
             for (unsigned int i = 0; i < 6; ++i)
             {
                 prefilterShader.SetMat4("view", _captureViews[i]);
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _prefilteredCubemap.GetID(), mip, i);
+                _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _prefilteredCubemap.GetID(), i, mip);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 renderCube();
             }
@@ -254,16 +254,12 @@ private:
     void bakeBrdfLUT(Shader& brdfShader) {
         constexpr int size = 512;
 
-        GLuint lutFBO, lutRBO;
-        glCreateFramebuffers(1, &lutFBO);
-        glCreateRenderbuffers(1, &lutRBO);
-        glNamedRenderbufferStorage(lutRBO, GL_DEPTH_COMPONENT24, size, size);
-        glNamedFramebufferRenderbuffer(lutFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, lutRBO);
-        glNamedFramebufferTexture(lutFBO, GL_COLOR_ATTACHMENT0, _brdfLUT.GetID(), 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, lutFBO);
-
-        GLenum status = glCheckNamedFramebufferStatus(lutFBO, GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) Error("BRDF LUT FBO incomplete: {}", status);
+        auto lutFBO = FrameBuffer();
+        auto lutRBO = RenderBuffer(size, size, TextureFormat::Depth24);
+        lutFBO.Bind();
+        lutFBO.AttachRenderBuffer(TextureAttachment::Depth, lutRBO);
+        lutFBO.AttachTexture(TextureAttachment::Color0, _brdfLUT.GetID());
+        lutFBO.Status();
 
         glViewport(0, 0, size, size);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -271,14 +267,11 @@ private:
         glBindVertexArray(_emptyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        glDeleteFramebuffers(1, &lutFBO);
-        glDeleteRenderbuffers(1, &lutRBO);
     }
 
     GLsizei _cubeSize = 0;
-    GLuint _captureFBO = 0;
-    GLuint _captureRBO = 0;
+    FrameBuffer _captureFBO;
+    RenderBuffer _captureRBO;
     GLuint _cubeVAO = 0;
     GLuint _cubeVBO = 0;
 

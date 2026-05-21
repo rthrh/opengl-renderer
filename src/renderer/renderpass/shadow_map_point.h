@@ -19,8 +19,7 @@ public:
         _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
         // Attach to framebuffer
-        constexpr TextureAttachment attachments[] = {TextureAttachment::Depth};
-        _framebuffer = FrameBuffer(attachments);
+        _framebuffer = FrameBuffer();
         _framebuffer.AttachTexture(TextureAttachment::Depth, _depthTexture.GetID());
     }
 
