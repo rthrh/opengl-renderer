@@ -74,7 +74,7 @@ private:
     // Initializes capture FBO and RBO
     void initBuffers() {
         _captureFBO = FrameBuffer();
-        _captureRBO = RenderBuffer(_cubeSize, _cubeSize, TextureFormat::Depth24);
+        _captureRBO = RenderBuffer(_cubeSize, _cubeSize, TextureFormat::Depth32F);
         _captureFBO.AttachRenderBuffer(TextureAttachment::Depth, _captureRBO);
     }
 
@@ -255,7 +255,7 @@ private:
         constexpr int size = 512;
 
         auto lutFBO = FrameBuffer();
-        auto lutRBO = RenderBuffer(size, size, TextureFormat::Depth24);
+        auto lutRBO = RenderBuffer(size, size, TextureFormat::Depth32F);
         lutFBO.Bind();
         lutFBO.AttachRenderBuffer(TextureAttachment::Depth, lutRBO);
         lutFBO.AttachTexture(TextureAttachment::Color0, _brdfLUT.GetID());

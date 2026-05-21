@@ -30,13 +30,13 @@ public:
         _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
         _textureORM = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
         _textureEmissive = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
-        _textureDepth = Texture2D(scrWidth, scrHeight, TextureFormat::Depth24Stencil8);
+        _textureDepth = Texture2D(scrWidth, scrHeight, TextureFormat::Depth32F);
 
         _framebuffer.AttachTexture(Color0, _textureAlbedo.GetID());
         _framebuffer.AttachTexture(Color1, _textureNormal.GetID());
         _framebuffer.AttachTexture(Color2, _textureORM.GetID());
         _framebuffer.AttachTexture(Color3, _textureEmissive.GetID());
-        _framebuffer.AttachTexture(DepthStencil, _textureDepth.GetID());
+        _framebuffer.AttachTexture(Depth, _textureDepth.GetID());
 
         _framebuffer.Status();
     }

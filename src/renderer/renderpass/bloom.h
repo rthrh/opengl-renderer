@@ -25,7 +25,7 @@ public:
         _hdrColor.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         _hdrColor.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
-        _depthRBO = RenderBuffer(scrWidth, scrHeight, TextureFormat::Depth24);
+        _depthRBO = RenderBuffer(scrWidth, scrHeight, TextureFormat::Depth32F);
 
         _bloomFBO = FrameBuffer();
         _hdrFBO = FrameBuffer();
