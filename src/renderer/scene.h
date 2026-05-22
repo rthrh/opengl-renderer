@@ -18,16 +18,12 @@
 #include "ubo.h"
 #include "asset_cache.h"
 #include "shapes.h"
+#include "mesh_cache.h"
 
 #include "gl/uniform_buffer.h"
 #include "gl/shader_storage_buffer.h"
 
-enum RenderQueueType {
-    Masked, // Alpha masked + alpha cut off
-    Opaque, // Opaque
-    Blend, // Blend rendered, sorted TODO
-    NoShadow // Debug unlit
-};
+#include "mesh_cache.h"
 
 class Scene {
 public:
