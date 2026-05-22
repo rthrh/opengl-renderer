@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h> 
+#include <glad/glad.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -16,12 +16,18 @@
 
 #include "mesh.h"
 #include "asset_cache.h"
+#include "mesh_cache.h"
 #include "model.h"
+#include "utils/logger.h"
+
 
 class ModelLoader
 {
 public:
-    ModelLoader(const std::shared_ptr<AssetCache>& assetCache) : _assetCache{assetCache} {
+    ModelLoader(const std::shared_ptr<AssetCache>& assetCache, const std::shared_ptr<MeshCache>& meshCache) :
+        _assetCache{assetCache},
+        _meshCache(meshCache)
+    {
     }
 
     ModelLoader(const ModelLoader&) = delete;
@@ -32,11 +38,8 @@ public:
     std::optional<Model> Load(const std::filesystem::path& path) {
         std::vector<Mesh> meshes;
         this->loadModel(path.string(), meshes);
-        return Model(std::move(meshes));
-    }
-
-    Model Load(Mesh mesh) {
-        return Model(std::move(mesh));
+        auto meshHandles = _meshCache->AddMeshes(std::move(meshes));
+        return Model(std::move(meshHandles));
     }
 
 private:
@@ -45,7 +48,7 @@ private:
         Assimp::Importer importer;
 
         // aiProcess_PreTransformVertices will disable animations
-        auto flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals| aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices; 
+        auto flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals| aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices;
         const aiScene* scene = importer.ReadFile(path, flags);
 
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) { // if is Not Zero
@@ -61,7 +64,7 @@ private:
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode *node, const aiScene *scene, std::vector<Mesh>& meshes) {
         for(auto i = 0u; i < node->mNumMeshes; i++) {
-            // the node object only contains indices to index the actual objects in the scene. 
+            // the node object only contains indices to index the actual objects in the scene.
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
             meshes.emplace_back(std::move(processMesh(mesh, scene)));
@@ -141,16 +144,6 @@ private:
         if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
             meshMaterial.emissiveFactor = glm::vec4(emissive.r, emissive.g, emissive.b, 1.0f);
 
-        // DEBUG print all materials available
-        /*
-        for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
-            aiMaterial* mat = scene->mMaterials[i];
-            aiColor4D diffuse;
-            if (AI_SUCCESS == mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse))
-                Info("Material {} diffuse color: {:.2f} {:.2f} {:.2f}", 
-                    mat->GetName().C_Str(), diffuse.r, diffuse.g, diffuse.b);
-        }*/
-
         if (auto texture = loadMaterialTexture(aiMaterial, aiTextureType_BASE_COLOR)) {
             meshMaterial.baseColorTexture = texture;
         }
@@ -183,17 +176,7 @@ private:
             meshMaterial.ormTexture = texture;
         }
 
-        /*Info("=== Mesh: {} ===", mesh->mName.C_Str());
-        for (unsigned int t = 0; t < aiTextureType_UNKNOWN; t++) {
-            if (aiMaterial->GetTextureCount((aiTextureType)t) > 0) {
-                aiString p;
-                aiMaterial->GetTexture((aiTextureType)t, 0, &p);
-                Info("  [{}] {} = {}", t, aiTextureTypeToString((aiTextureType)t), p.C_Str());
-            }
-        }*/
-
         // return a mesh object created from the extracted mesh data
-        
         uint32_t materialIndex = _assetCache->AddMaterial(meshMaterial);
         return Mesh(vertices, indices, materialIndex);
     }
@@ -256,4 +239,5 @@ private:
     std::string _directory;
     std::string _name;
     std::shared_ptr<AssetCache> _assetCache;
+    std::shared_ptr<MeshCache> _meshCache;
 };

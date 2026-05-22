@@ -20,13 +20,14 @@
 #include "texture_slots.h"
 #include "math.h"
 #include "asset_cache.h"
+#include "mesh_cache.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
 
 class Renderer {
 public:
-    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox, std::shared_ptr<AssetCache>& assetCache) :
+    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
         _scrWidth(scrWidth),
@@ -38,7 +39,8 @@ public:
         _ssao(scrWidth, scrHeight),
         _fxaa(scrWidth, scrHeight),
         _skybox(skybox),
-        _assetCache(assetCache)
+        _assetCache(assetCache),
+        _meshCache(meshCache)
     {
         glCreateVertexArrays(1, &_emptyVAO);
     }
@@ -52,9 +54,10 @@ public:
     Renderer& operator=(Renderer&&) noexcept = default;
 
     void Draw(Model& model, Shader& shader, bool depthOnly = false) const {
-        model.UploadTransforms();
-        auto& meshes = model.GetMeshes();
-        for (auto& mesh : meshes) {
+        model.UploadTransforms(_meshCache);
+        auto& meshHandles = model.GetMeshes();
+        for (auto& meshHandle : meshHandles) {
+            auto& mesh = *_meshCache->FindMesh(meshHandle); //TODO REMOVE!!
             this->drawMesh(mesh, shader, depthOnly);
         }
     }
@@ -295,6 +298,7 @@ private:
     Bloom _bloom;
     SSAO _ssao;
     FXAA _fxaa;
-    std::shared_ptr<Skybox> _skybox;
+    std::shared_ptr<Skybox> _skybox; //TODO should not be shared
     std::shared_ptr<AssetCache> _assetCache;
+    std::shared_ptr<MeshCache> _meshCache;
 };

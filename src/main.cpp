@@ -143,6 +143,7 @@ std::vector<Transform> randomTransforms(int num, unsigned int seed = 888) {
     return transforms;
 }
 
+/*
 void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
@@ -228,7 +229,7 @@ void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoa
 
         scene.AddPointLight(std::move(light));
     }
-}
+}*/
 
 Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     Scene scene(assetCache);
@@ -332,7 +333,8 @@ int main()
     auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
 
     auto assetCache = std::make_shared<AssetCache>();
-    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache);
+    auto meshCache = std::make_shared<MeshCache>(assetCache);
+    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache, meshCache);
 
     UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
     configUBO.Upload();
@@ -349,7 +351,7 @@ int main()
     GuiLayer guiLayer(window, modelsDirectory, assetCache);
 
     // Scene setup
-    ModelLoader modelLoader(assetCache);
+    ModelLoader modelLoader(assetCache, meshCache);
     //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
     //auto scene = setupTestModels(assetCache, modelLoader);
     auto scene = setupSponza(assetCache, modelLoader);

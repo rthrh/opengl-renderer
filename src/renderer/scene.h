@@ -64,11 +64,11 @@ public:
 
         // Add debug light marker
         uint32_t defaultMatIndex = _assetCache->AddMaterial(_assetCache->GetDefaultMaterial());
-        Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
-        Model markerModel(std::move(markerMesh));
-        markerModel.SetTranslation(light.GetPosition());
-        markerModel.SetScale({0.1f, 0.1f, 0.1f});
-        AddModel(std::move(markerModel), NoShadow);
+        //Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
+        //Model markerModel(std::move(markerMesh));
+        //markerModel.SetTranslation(light.GetPosition());
+        //markerModel.SetScale({0.1f, 0.1f, 0.1f});
+        //AddModel(std::move(markerModel), NoShadow);
 
         return index;
     }
@@ -86,11 +86,11 @@ public:
 
         // Add debug light marker
         uint32_t defaultMatIndex = _assetCache->AddMaterial(_assetCache->GetDefaultMaterial());
-        Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
-        Model markerModel(std::move(markerMesh));
-        markerModel.SetTranslation(light.GetPosition());
-        markerModel.SetScale({0.1f, 0.1f, 0.1f});
-        AddModel(std::move(markerModel), NoShadow);
+        //Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
+        //Model markerModel(std::move(markerMesh));
+        //markerModel.SetTranslation(light.GetPosition());
+        //markerModel.SetScale({0.1f, 0.1f, 0.1f});
+        //AddModel(std::move(markerModel), NoShadow);
 
         return index;
     }
@@ -133,6 +133,7 @@ public:
         }
         std::unreachable();
     }
+
 
 private:
     RenderQueue _maskedQueue;
