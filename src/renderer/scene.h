@@ -27,8 +27,7 @@
 
 class Scene {
 public:
-    using Handle = uint32_t;
-    using RenderQueue = std::unordered_map<Handle, Model>;
+    using ModelHandle = uint32_t;
 
     Scene(const std::shared_ptr<AssetCache>& assetCache) :
         _assetCache(assetCache)
@@ -42,8 +41,8 @@ public:
     Scene(Scene&&) noexcept = default;
     Scene& operator=(Scene&&) noexcept = default;
 
-    Handle AddDirectionalLight(DirectionalLightUBO light) {
-        Handle index = _handleNext;
+    ModelHandle AddDirectionalLight(DirectionalLightUBO light) {
+        ModelHandle index = _handleNext;
         _handleNext++;
 
         _directionalLightUBO.Data() = light;
@@ -55,8 +54,8 @@ public:
         return _directionalLightUBO.Data();
     }
 
-    Handle AddPointLight(PointLightBlockGPU light) {
-        Handle index = _handleNext;
+    ModelHandle AddPointLight(PointLightBlockGPU light) {
+        ModelHandle index = _handleNext;
         _handleNext++;
 
         _pointLightUBO.Data().Pushback(light);
@@ -77,8 +76,8 @@ public:
         return _pointLightUBO.Data();
     }
 
-    Handle AddSpotLight(SpotLightBlockGPU light) {
-        Handle index = _handleNext;
+    ModelHandle AddSpotLight(SpotLightBlockGPU light) {
+        ModelHandle index = _handleNext;
         _handleNext++;
 
         _spotLightUBO.Data().Pushback(light);
@@ -99,53 +98,24 @@ public:
         return _spotLightUBO.Data();
     }
 
-    Handle AddModel(Model model, RenderQueueType queue = Opaque) {
-        Handle index = _handleNext;
-        switch (queue) {
-            case Masked:
-                _maskedQueue.insert({_handleNext, std::move(model)});
-                break;
-            case Opaque:
-                _opaqueQueue.insert({_handleNext, std::move(model)});
-                break;
-            case Blend:
-                _blendQueue.insert({_handleNext, std::move(model)});
-                break;
-            case NoShadow:
-                _noShadowQueue.insert({_handleNext, std::move(model)});
-                break;
-        }
-
-        _handleNext++;
-        return index;
+    ModelHandle AddModel(Model model) {
+        ModelHandle handle = _handleNext++;
+        _modelMap.insert({handle, std::move(model)});
+        return handle;
     }
 
-    RenderQueue& GetQueue(RenderQueueType queue) {
-        switch (queue) {
-            case Masked:
-                return _maskedQueue;
-            case Opaque:
-                return _opaqueQueue;
-            case Blend:
-                return _blendQueue;
-            case NoShadow:
-                return _noShadowQueue;
-        }
-        std::unreachable();
+    // Call at start of each frame to update
+    void UploadTransforms(const std::shared_ptr<MeshCache>& meshCache) {
+        for (auto& [handle, model] : _modelMap) model.UploadTransforms(meshCache);
+
     }
 
 
 private:
-    RenderQueue _maskedQueue;
-    RenderQueue _blendQueue;
-    RenderQueue _opaqueQueue;
-    RenderQueue _noShadowQueue;
-
-    uint32_t _handleNext{0};
-
+    uint32_t _handleNext = 0;
     UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO;
     UniformBuffer<PointLightUBO, 1> _pointLightUBO;
     UniformBuffer<SpotLightUBO, 2> _spotLightUBO;
-
     std::shared_ptr<AssetCache> _assetCache;
+    std::unordered_map<ModelHandle, Model> _modelMap;
 };

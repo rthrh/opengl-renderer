@@ -11,19 +11,13 @@ public:
         ImGui::Begin("Models");
         ImGui::BeginChild("##modellist", ImVec2(0, 0), false, ImGuiWindowFlags_None);
 
-        ImGui::SeparatorText("Opaque");
-        buildQueue(scene.GetQueue(Opaque));
-        ImGui::SeparatorText("Blend");
-        buildQueue(scene.GetQueue(Blend));
-        ImGui::SeparatorText("No Shadow");
-        buildQueue(scene.GetQueue(NoShadow));
 
         ImGui::EndChild();
         ImGui::End();
     }
 
 private:
-    void buildQueue(Scene::RenderQueue& queue) {
+    /*void buildQueue(Scene::RenderQueue& queue) {
         for (auto& [handle, model] : queue) {
             auto label = model.GetName().empty()
                 ? "Model #" + std::to_string(handle)
@@ -46,6 +40,6 @@ private:
 
             ImGui::TreePop();
         }
-    }
+    }*/
 
 };

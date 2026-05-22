@@ -20,7 +20,7 @@ public:
     }
 
     void Build(Scene& scene, ModelLoader& loader) {
-        ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_Once);
+        /*ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_Once);
         ImGui::SetNextWindowPos(ImVec2(680, 10), ImGuiCond_Once);
         ImGui::Begin("Model Loader");
         ImGui::BeginChild("##modelfiles", ImVec2(0, 0), false);
@@ -40,7 +40,7 @@ public:
 
         ImGui::EndChild();
         ImGui::End();
-    }
+    }*/
 
 private:
     void scan(const fs::path& dir) {

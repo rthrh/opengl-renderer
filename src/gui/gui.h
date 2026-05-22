@@ -9,13 +9,13 @@
 #include "renderer/ubo.h"
 #include "gui/settings.h"
 #include "gui/model_list.h"
-#include "gui/model_loader_gui.h"
+//#include "gui/model_loader_gui.h"
 #include "gui/benchmark.h"
 
 class GuiLayer {
 public:
-    GuiLayer(GLFWwindow* window, const fs::path& modelsDir, const std::shared_ptr<AssetCache>& assetCache)
-        : _modelLoader(modelsDir, assetCache)
+    GuiLayer(GLFWwindow* window, const std::filesystem::path& modelsDir, const std::shared_ptr<AssetCache>& assetCache)
+        //: _modelLoader(modelsDir, assetCache)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -47,7 +47,7 @@ public:
         Stopwatch stopwatch("GuiLayer::Build");
         _settings.Build(configUBO);
         _modelList.Build(scene);
-        _modelLoader.Build(scene, modelLoader);
+        //_modelLoader.Build(scene, modelLoader);
         _benchmark.Build(deltaTime);
     }
 
@@ -65,6 +65,6 @@ public:
 private:
     Settings _settings;
     ModelList _modelList;
-    ModelLoaderGUI _modelLoader;
+    //ModelLoaderGUI _modelLoader;
     Benchmark _benchmark;
 };

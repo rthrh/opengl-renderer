@@ -243,7 +243,7 @@ Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader
     };
 
     scene.AddModel(loadModel("MetalRoughSpheres/glTF/MetalRoughSpheres.gltf", {0, 0, 0}));
-    scene.AddModel(loadModel("AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf", {10, 0, 0}), RenderQueueType::Blend);
+    scene.AddModel(loadModel("AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf", {10, 0, 0}));
     scene.AddModel(loadModel("TextureCoordinateTest/glTF/TextureCoordinateTest.gltf", {10, -3, 0}));
     scene.AddModel(loadModel("NormalTangentTest/glTF/NormalTangentTest.gltf", {8, 5, 0}));
     scene.AddModel(loadModel("NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf", {11, 5, 0}));
@@ -272,7 +272,7 @@ Scene setupSponza(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mo
     //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
     DirectionalLightUBO dirLight({0.0, -1.0, 0.0});
     dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
-    dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
+    //dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
     //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
     //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
     scene.AddDirectionalLight(std::move(dirLight));
@@ -353,8 +353,8 @@ int main()
     // Scene setup
     ModelLoader modelLoader(assetCache, meshCache);
     //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
-    //auto scene = setupTestModels(assetCache, modelLoader);
-    auto scene = setupSponza(assetCache, modelLoader);
+    auto scene = setupTestModels(assetCache, modelLoader);
+    //auto scene = setupSponza(assetCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;
@@ -407,6 +407,7 @@ int main()
         // Render scene
         camera->UploadUBO();
         assetCache->UploadMaterials();
+        scene.UploadTransforms(meshCache);
 
         glCullFace(GL_FRONT); // TODO move
         renderer.PassShadowDirectional(scene, *shadowDirShader, configUBO.Data());

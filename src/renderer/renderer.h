@@ -53,13 +53,8 @@ public:
     Renderer(Renderer&&) noexcept = default;
     Renderer& operator=(Renderer&&) noexcept = default;
 
-    void Draw(Model& model, Shader& shader, bool depthOnly = false) const {
-        model.UploadTransforms(_meshCache);
-        auto& meshHandles = model.GetMeshes();
-        for (auto& meshHandle : meshHandles) {
-            auto& mesh = *_meshCache->FindMesh(meshHandle); //TODO REMOVE!!
-            this->drawMesh(mesh, shader, depthOnly);
-        }
+    void Draw(Mesh& mesh, Shader& shader, bool depthOnly = false) const {
+        this->drawMesh(mesh, shader, depthOnly);
     }
 
     void Resize(int scrWidth, int scrHeight) {
@@ -75,7 +70,7 @@ public:
         Stopwatch stopwatch("DepthPrepassOpaque");
         depthMaskedShader.Activate();
 
-        this->render(scene.GetQueue(Opaque), depthMaskedShader, true);
+        this->render(_meshCache->GetQueue(Masked), depthMaskedShader, true);
 
     }
 
@@ -93,7 +88,7 @@ public:
         _shadowMapDirectional.BindTexture();
         shader.Activate();
 
-        this->render(scene.GetQueue(Opaque), shader, true);
+        this->render(_meshCache->GetQueue(Opaque), shader, true);
         //this->render(scene.GetQueue(Blend), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -119,7 +114,7 @@ public:
             for (int face = 0; face < 6; face++) {
                 _shadowMapPoint.BindFramebufferFace(i, face);
                 shader.SetMat4("lightSpaceMatrix", shadowMatrices[face]);
-                this->render(scene.GetQueue(Opaque), shader, true);
+                this->render(_meshCache->GetQueue(Opaque), shader, true);
                 //this->render(scene.GetQueue(Blend), shader);
             }
         }
@@ -147,7 +142,7 @@ public:
             _shadowMapSpot.BindFramebufferLayer(i);
 
             shader.SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
-            this->render(scene.GetQueue(Opaque), shader, true);
+            this->render(_meshCache->GetQueue(Opaque), shader, true);
             //this->render(scene.GetQueue(Blend), shader);
         }
 
@@ -161,7 +156,7 @@ public:
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
-        this->render(scene.GetQueue(Opaque), shader);
+        this->render(_meshCache->GetQueue(Opaque), shader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
@@ -199,14 +194,14 @@ public:
 
         // Render opaque/masked meshes first
         shader.SetBool("blendPass", false);
-        this->render(scene.GetQueue(Blend), shader);
+        this->render(_meshCache->GetQueue(Masked), shader);
 
         // Render blend meshes
         shader.SetBool("blendPass", true);
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_FALSE);
-        this->render(scene.GetQueue(Blend), shader);
+        this->render(_meshCache->GetQueue(Blend), shader);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }
@@ -215,7 +210,7 @@ public:
         Stopwatch stopwatch("PassNoShadow");
         _bloom.BindHdrFramebuffer();
         unlitShader.Activate();
-        this->render(scene.GetQueue(NoShadow), unlitShader);
+        this->render(_meshCache->GetQueue(NoShadow), unlitShader);
     }
 
     void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
@@ -264,9 +259,9 @@ public:
     }
 
 private:
-    void render(Scene::RenderQueue& renderQueue, Shader& shader, bool depthOnly = false) {
-        for (auto& [handle, model] : renderQueue) {
-            Draw(model, shader, depthOnly);
+    void render(MeshQueue& meshQueue, Shader& shader, bool depthOnly = false) {
+        for (auto& [handle, mesh] : meshQueue) {
+            Draw(mesh, shader, depthOnly);
         }
     }
 
