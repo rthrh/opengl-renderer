@@ -25,26 +25,9 @@ layout(binding = 12) uniform sampler2D brdfLUT;
 #include "include/pbr_lights.glsl"
 #include "include/shadows.glsl"
 
-// Material SSBO
-struct Material {
-    vec4  baseColorFactor;
-    vec4  emissiveFactor;
-    uvec4 textureHandles; // unused here
-    float normalScale;
-    float occlusionStrength;
-    float metallicFactor;
-    float roughnessFactor;
-    int   alphaMode;
-    float alphaCutoff;
-    int   doubleSided;
-    float _pad;
-};
-
-layout(std430, binding = 0) readonly buffer MaterialBuffer {
-    Material materials[];
-};
-
+#include "include/material.glsl"
 uniform int materialIndex;
+
 uniform bool blendPass;
 
 void main() {
@@ -55,8 +38,6 @@ void main() {
 
     vec4  albedoSample = texture(albedoMap, TexCoords).rgba;
     vec3 albedo   = albedoSample.rgb * material.baseColorFactor.rgb;
-    if (material.alphaMode == 1 && albedoSample.a < material.alphaCutoff)
-        discard;
 
     float alpha = 1.0;
     if (material.alphaMode == 2) // BLEND

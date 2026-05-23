@@ -17,33 +17,20 @@ layout(binding = 1) uniform sampler2D normalMap;
 layout(binding = 2) uniform sampler2D emissiveMap;
 layout(binding = 3) uniform sampler2D ormMap;
 
-// Material SSBO
-struct Material {
-    vec4 baseColorFactor;
-    vec4 emissiveFactor;
-    uvec4 textureHandles; // unused here
-    float normalScale;
-    float occlusionStrength;
-    float metallicFactor;
-    float roughnessFactor;
-    float alphaCutoff;
-    int alphaMode;
-    int doubleSided;
-    float _pad;
-};
-
-layout(std430, binding = 0) readonly buffer MaterialBuffer {
-    Material materials[];
-};
-
+#include "include/material.glsl"
 uniform int materialIndex;
 
 void main() {
     Material material = materials[materialIndex];
+    vec4 albedoSample = texture(albedoMap, TexCoords);
+    float alpha = albedoSample.a * material.baseColorFactor.a;
+    if (alpha < material.alphaCutoff)
+        discard;
 
     // TODO double gamma correction here + SRGB texture upload?
     //vec3 albedo = texture(albedoMap, TexCoords).rgb * material.baseColorFactor.xyz;
-    vec3 albedo = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2)) * material.baseColorFactor.xyz;
+    vec3 albedo = pow(albedoSample.rgb, vec3(2.2)) * material.baseColorFactor.xyz;
+
     //vec3 emissive = texture(emissiveMap, TexCoords).rgb * material.emissiveFactor.xyz * 5.0;
     vec3 emissive = pow(texture(emissiveMap, TexCoords).rgb, vec3(2.2)) * material.emissiveFactor.xyz * 5.0; // TODO emissive is multiplied so it passes brighness check for bloom pass
     vec3 orm = texture(ormMap, TexCoords).rgb;

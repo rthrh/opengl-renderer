@@ -156,7 +156,10 @@ public:
         _gBuffer.BindFramebuffer();
         shader.Activate();
 
+        // Render opaque, then masked meshes
         this->render(_meshCache->GetQueue(Opaque), shader);
+        this->render(_meshCache->GetQueue(Masked), shader);
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
@@ -191,10 +194,6 @@ public:
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         shader.Activate();
-
-        // Render opaque/masked meshes first
-        shader.SetBool("blendPass", false);
-        this->render(_meshCache->GetQueue(Masked), shader);
 
         // Render blend meshes
         shader.SetBool("blendPass", true);

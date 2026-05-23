@@ -124,6 +124,9 @@ GLFWwindow* create_glfw_window(int width, int height, const char* name)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // fixes seams artifacts from skybox shape
 
+    glfwSwapInterval(0); // Disable vsync
+
+
     return window;
 }
 
@@ -353,8 +356,8 @@ int main()
     // Scene setup
     ModelLoader modelLoader(assetCache, meshCache);
     //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
-    auto scene = setupTestModels(assetCache, modelLoader);
-    //auto scene = setupSponza(assetCache, modelLoader);
+    //auto scene = setupTestModels(assetCache, modelLoader);
+    auto scene = setupSponza(assetCache, modelLoader);
 
     // restore viewport of screen size // TODO move it somewhere?
     int scrWidth, scrHeight;
