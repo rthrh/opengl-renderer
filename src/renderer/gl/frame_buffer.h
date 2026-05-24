@@ -2,12 +2,16 @@
 
 #include <glad/glad.h>
 #include <utility>
-#include "utils/logger.h"
 #include <algorithm>
 #include <ranges>
-#include "gl/render_buffer.h"
 #include <ranges>
 #include <vector>
+
+#include "gl/render_buffer.h"
+
+#include "utils/logger.h"
+
+#include "dsa_config.h"
 
 enum class TextureAttachment : GLenum {
     Color0 = GL_COLOR_ATTACHMENT0,
@@ -23,9 +27,17 @@ enum class TextureAttachment : GLenum {
 class FrameBuffer {
 public:
     FrameBuffer() {
-        glCreateFramebuffers(1, &_id);
-        glNamedFramebufferDrawBuffer(_id, GL_NONE);
-        glNamedFramebufferReadBuffer(_id, GL_NONE);
+        if constexpr (USE_DSA) {
+            glCreateFramebuffers(1, &_id);
+            glNamedFramebufferDrawBuffer(_id, GL_NONE);
+            glNamedFramebufferReadBuffer(_id, GL_NONE);
+        } else {
+            glGenFramebuffers(1, &_id);
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 
     ~FrameBuffer() {
@@ -54,18 +66,39 @@ public:
     }
 
     void AttachTexture(TextureAttachment attachment, GLuint tex) const {
-        glNamedFramebufferTexture(_id, (GLenum)attachment, tex, 0);
-        this->updateAttachments(attachment);
+        if constexpr (USE_DSA) {
+            glNamedFramebufferTexture(_id, (GLenum)attachment, tex, 0);
+            this->updateAttachments(attachment);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)attachment, tex, 0);
+            this->updateAttachments(attachment);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 
     void AttachTextureLayer(TextureAttachment attachment, GLuint tex, int layer, int mip = 0) const {
-        glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
-        this->updateAttachments(attachment);
+        if constexpr (USE_DSA) {
+            glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
+            this->updateAttachments(attachment);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, (GLenum)attachment, tex, mip, layer);
+            this->updateAttachments(attachment);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 
     void AttachRenderBuffer(TextureAttachment attachment, const RenderBuffer& renderBuffer) const {
-        glNamedFramebufferRenderbuffer(_id, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
-        this->updateAttachments(attachment);
+        if constexpr (USE_DSA) {
+            glNamedFramebufferRenderbuffer(_id, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
+            this->updateAttachments(attachment);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
+            this->updateAttachments(attachment);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 
     void Bind() const {
@@ -77,7 +110,15 @@ public:
     }
 
     static void Blit(GLuint srcFBO, GLuint dstFBO, int srcWidth, int srcHeight, int dstWidth, int dstHeight, GLenum mask) {
-        glBlitNamedFramebuffer(srcFBO, dstFBO, 0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
+        if constexpr (USE_DSA) {
+            glBlitNamedFramebuffer(srcFBO, dstFBO, 0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
+        } else {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, srcFBO);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFBO);
+            glBlitFramebuffer(0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        }
 
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
@@ -87,8 +128,15 @@ public:
     }
 
     void Status() const {
-        GLenum status = glCheckNamedFramebufferStatus(_id, GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
+        if constexpr (USE_DSA) {
+            GLenum status = glCheckNamedFramebufferStatus(_id, GL_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 
 private:
@@ -97,7 +145,13 @@ private:
         bool isColor = attachment != Depth && attachment != Stencil && attachment != DepthStencil;
         if (isColor && !std::ranges::contains(_colorAttachments, attachment)) {
             _colorAttachments.emplace_back(attachment);
-            glNamedFramebufferDrawBuffers(_id, _colorAttachments.size(), (GLenum*)_colorAttachments.data());
+
+            if constexpr (USE_DSA) {
+                glNamedFramebufferDrawBuffers(_id, _colorAttachments.size(), (GLenum*)_colorAttachments.data());
+            } else {
+                // Assumes the FBO is already bound
+                glDrawBuffers(_colorAttachments.size(), (GLenum*)_colorAttachments.data());
+            }
         }
     }
 

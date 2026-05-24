@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.14)
 
-project(opengl-model-viewer)
+project(opengl-renderer)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(deps/glm)
 set(ASSIMP_BUILD_TESTS OFF)
@@ -22,25 +21,26 @@ add_subdirectory(deps/assimp)
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(deps/tinyexr)
 
-# find the required packages
-#find_package(GLM REQUIRED)
-#message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
+# Find packages
 find_package(GLFW3 REQUIRED)
 message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-#find_package(ASSIMP REQUIRED)
-#message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 find_package(OpenGL REQUIRED)
 add_definitions(${OPENGL_DEFINITIONS})
 find_package(X11 REQUIRED)
 
-#add_compile_definitions(STB_IMAGE_IMPLEMENTATION)
+# DSA and version settings
+option(USE_GL_DSA "Use OpenGL Direct State Access" ON)
+set(GL_VERSION 450)
 
-# note that the order is important for setting the libs
-# use pkg-config --libs $(pkg-config --print-requires --print-requires-private glfw3) in a terminal to confirm
-set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
-set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+if (UNIX)
+    set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+elseif(EMSCRIPTEN)
+    set(USE_GL_DSA OFF)
+    set(GL_VERSION 300)
+endif()
 
 # sources
 file(GLOB GLAD_SRC ${CMAKE_SOURCE_DIR}/deps/glad/glad.*)
@@ -55,8 +55,6 @@ file(GLOB IMGUI_BACKEND
     ${CMAKE_SOURCE_DIR}/deps/imgui/backends/imgui_impl_glfw.*
     ${CMAKE_SOURCE_DIR}/deps/imgui/backends/imgui_impl_opengl*.*
 )
-#include_directories(${CMAKE_SOURCE_DIR}/deps/imgui)
-
 
 file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.cpp
@@ -69,24 +67,19 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/gui/*.h
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/src/gl)
-include_directories(${CMAKE_SOURCE_DIR}/src/gui)
-include_directories(${CMAKE_SOURCE_DIR}/src/renderer)
-include_directories(${CMAKE_SOURCE_DIR}/src/renderpass)
-include_directories(${CMAKE_SOURCE_DIR}/utils)
-include_directories(${CMAKE_SOURCE_DIR}/deps/)
-include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
-include_directories(${CMAKE_SOURCE_DIR}/deps/stb_image)
-include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr)
-include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr/deps/miniz)
-include_directories(${CMAKE_BINARY_DIR}/deps/assimp/include)
+
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-#set_target_properties(${NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/${chapter}")
+if(USE_GL_DSA)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GL_DSA)
+endif()
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLSL_VERSION=${GLSL_VERSION})
+
+
 
 file(GLOB SHADERS
     "src/shaders/*.vert"
@@ -98,6 +91,16 @@ file(GLOB SHADERS
 )
 file(GLOB DLLS "dlls/*.dll")
 
-#foreach(SHADER ${SHADERS})
-#    file(COPY ${SHADER} DESTINATION ${CMAKE_BINARY_DIR})
-#endforeach(SHADER)
+
+include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/gl)
+include_directories(${CMAKE_SOURCE_DIR}/src/gui)
+include_directories(${CMAKE_SOURCE_DIR}/src/renderer)
+include_directories(${CMAKE_SOURCE_DIR}/src/renderpass)
+include_directories(${CMAKE_SOURCE_DIR}/utils)
+include_directories(${CMAKE_SOURCE_DIR}/deps/)
+include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
+include_directories(${CMAKE_SOURCE_DIR}/deps/stb_image)
+include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr)
+include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr/deps/miniz)
+include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)

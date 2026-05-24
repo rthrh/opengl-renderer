@@ -1,5 +1,7 @@
 #pragma once
+
 #include <glad/glad.h>
+#include <utility>
 
 template<typename T, int BindSlot>
 class ShaderStorageBuffer {
@@ -15,7 +17,7 @@ public:
 
     ShaderStorageBuffer(const ShaderStorageBuffer&) = delete;
     ShaderStorageBuffer& operator=(const ShaderStorageBuffer&) = delete;
-    ShaderStorageBuffer(ShaderStorageBuffer&& o) noexcept : 
+    ShaderStorageBuffer(ShaderStorageBuffer&& o) noexcept :
         _ssbo(std::exchange(o._ssbo, 0)), _data(std::move(o._data)) {}
 
     ShaderStorageBuffer& operator=(ShaderStorageBuffer&& o) {

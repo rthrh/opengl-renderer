@@ -1,16 +1,27 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <gl/texture.h>
+#include <utility>
+
+#include "gl/texture.h"
+#include "gl/dsa_config.h"
 
 class RenderBuffer {
 public:
     RenderBuffer() = default;
 
-    RenderBuffer(int width, int height, TextureFormat format) {
-        _format = format;
-        glCreateRenderbuffers(1, &_id);
-        glNamedRenderbufferStorage(_id, (GLenum)format, width, height);
+    RenderBuffer(int width, int height, TextureFormat format) :
+        _format(format)
+    {
+        if constexpr (USE_DSA) {
+            glCreateRenderbuffers(1, &_id);
+            glNamedRenderbufferStorage(_id, (GLenum)format, width, height);
+        } else {
+            glGenRenderbuffers(1, &_id);
+            glBindRenderbuffer(GL_RENDERBUFFER, _id);
+            glRenderbufferStorage(GL_RENDERBUFFER, (GLenum)format, width, height);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        }
     }
 
     ~RenderBuffer() {
@@ -36,7 +47,13 @@ public:
     GLuint GetID() const { return _id; }
 
     void Resize(int width, int height) {
-        glNamedRenderbufferStorage(_id, (GLenum)_format, width, height);
+        if constexpr (USE_DSA) {
+            glNamedRenderbufferStorage(_id, (GLenum)_format, width, height);
+        } else {
+            glBindRenderbuffer(GL_RENDERBUFFER, _id);
+            glRenderbufferStorage(GL_RENDERBUFFER, (GLenum)_format, width, height);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        }
     }
 
 private:
