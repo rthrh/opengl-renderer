@@ -16,30 +16,40 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 add_subdirectory(deps/glm)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/deps/glm)
 set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_BUILD_ZLIB ON)
+
 add_subdirectory(deps/assimp)
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(deps/tinyexr)
+if(TARGET tinyexr)
+    target_compile_options(tinyexr PRIVATE -w)
+endif()
 
 # Find packages
-find_package(GLFW3 REQUIRED)
-message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
+if(NOT EMSCRIPTEN)
+    find_package(GLFW3 REQUIRED)
+    message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-find_package(OpenGL REQUIRED)
-add_definitions(${OPENGL_DEFINITIONS})
-find_package(X11 REQUIRED)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+    find_package(OpenGL REQUIRED)
+    add_definitions(${OPENGL_DEFINITIONS})
+    find_package(X11 REQUIRED)
+endif()
 
 # DSA and version settings
 option(USE_GL_DSA "Use OpenGL Direct State Access" ON)
 set(GL_VERSION 450)
 
-if (UNIX)
-    set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
-    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-elseif(EMSCRIPTEN)
+if (EMSCRIPTEN)
     set(USE_GL_DSA OFF)
     set(GL_VERSION 300)
+    set(LIBS glm assimp tinyexr)
+    #set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+elseif(UNIX)
+    set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 endif()
 
 # sources
@@ -79,18 +89,19 @@ if(USE_GL_DSA)
 endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLSL_VERSION=${GLSL_VERSION})
 
+if(EMSCRIPTEN)
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
+    target_link_options(${PROJECT_NAME} PRIVATE
+        #"-sUSE_GLFW=3"
+        #"-sUSE_WEBGL2=1"
+        #"-sFULL_ES3=1"
 
-file(GLOB SHADERS
-    "src/shaders/*.vert"
-    "src/shaders/*.frag"
-    "src/shaders/*.geom"
-    "src/shaders/*.comp"
-    "src/shaders/*.tcs"
-    "src/shaders/*.tes"
-)
-file(GLOB DLLS "dlls/*.dll")
-
+        "-sSTACK_SIZE=5242880"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sINITIAL_MEMORY=256MB"
+    )
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/gl)

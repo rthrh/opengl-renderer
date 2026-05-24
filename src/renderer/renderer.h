@@ -18,7 +18,7 @@
 #include "renderpass/fxaa.h"
 
 #include "texture_slots.h"
-#include "math.h"
+#include "math_matrix.h"
 #include "asset_cache.h"
 #include "mesh_cache.h"
 

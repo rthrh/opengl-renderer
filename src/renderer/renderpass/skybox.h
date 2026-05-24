@@ -99,14 +99,14 @@ private:
 
         TextureFormat storageFormat = (nrComponents == 4) ? TextureFormat::RGBA16F : TextureFormat::RGB16F;
 
-        // Flip vertically
+        // Flip vertically - swap rows from the top and bottom halves moving inward
         const int rowSize = width * nrComponents;
-        auto rows = std::span(data, height * rowSize) | std::views::chunk(rowSize);
-
-        // Zip the top half and bottom half together, then swap their contents
-        for (auto [top, bottom] : std::views::zip(rows | std::views::take(height / 2), rows | std::views::reverse)) {
-            std::ranges::swap_ranges(top, bottom);
-        }
+        std::ranges::for_each(std::views::iota(0, height / 2), [=](int i) {
+            std::ranges::swap_ranges(
+                std::span(data + i * rowSize, rowSize),
+                std::span(data + (height - 1 - i) * rowSize, rowSize)
+            );
+        });
 
         Texture2D hdrTexture(width, height, storageFormat, data);
         hdrTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);

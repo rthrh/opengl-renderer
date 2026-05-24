@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <span>
 
 #include "utils/stopwatch.h"
 
@@ -140,7 +141,7 @@ private:
         glVertexArrayAttribBinding(_VAO, 7, 1);
     }
 
-    // render data 
+    // render data
     GLuint _VAO = 0, _VBO = 0, _EBO = 0;
     GLuint _instanceVBO = 0;
     // mesh Data
