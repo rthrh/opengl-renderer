@@ -5,11 +5,12 @@
 #include <vector>
 #include <string>
 #include <array>
-#include "shader.h"
 #include <ranges>
+#include <functional>
+
+#include "shader.h"
+
 constexpr std::array<std::string_view, 4> gShaderExtensions = { ".vert", ".frag", ".geom", ".comp" };
-
-
 
 class ShaderCache {
 public:
@@ -21,8 +22,13 @@ public:
 
     ShaderCache(const ShaderCache&)            = delete;
     ShaderCache& operator=(const ShaderCache&) = delete;
-    ShaderCache(ShaderCache&& other) noexcept = default;
+    ShaderCache(ShaderCache&& other) noexcept  = default;
     ShaderCache& operator=(ShaderCache&& other) noexcept = default;
+
+    // Sets shader callback to execute after Shader creation. Used to initialize sampler uniforms in non-DSA API
+    void SetPostBuildHook(std::function<void(const Shader&)> hook) {
+        _postBuildHook = std::move(hook);
+    }
 
     // Loads all shader files from the provided directory path
     void LoadDirectory(const std::filesystem::path& dir) {
@@ -51,8 +57,9 @@ public:
         }
 
         auto shaderPtr = std::make_shared<Shader>(*vertPath, *fragPath, *geomPath, _rootPath);
+        if (_postBuildHook) _postBuildHook(*shaderPtr);
         _shaders[name] = shaderPtr;
-        //Info("Shader built: {}, {} + {}", name, vert, frag);
+
         return shaderPtr;
     }
 
@@ -68,6 +75,7 @@ public:
     void ReloadAll() {
         for (auto& [name, shader] : _shaders) {
             shader->Reload();
+            if (_postBuildHook) _postBuildHook(*shader);
         }
         Info("Shaders reloaded");
     }
@@ -85,4 +93,5 @@ private:
     std::unordered_map<FileName, std::filesystem::path> _files;
     std::unordered_map<ShaderName, std::shared_ptr<Shader>> _shaders;
     std::filesystem::path _rootPath;
+    std::function<void(const Shader&)> _postBuildHook;
 };

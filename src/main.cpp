@@ -143,6 +143,7 @@ int main()
     std::filesystem::path root = PROJECT_SOURCE_DIR;
     std::filesystem::path pathShaders = root / "src/shaders";
     ShaderCache shaderCache;
+    shaderCache.SetPostBuildHook(InitSamplers);
     shaderCache.LoadDirectory(pathShaders);
 
     auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
