@@ -43,6 +43,11 @@ public:
         _meshCache(meshCache)
     {
         glCreateVertexArrays(1, &_emptyVAO);
+
+        // Init GL state
+        glEnable(GL_CULL_FACE); // Cull back faces
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
     }
 
     ~Renderer() = default;
