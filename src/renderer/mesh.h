@@ -11,6 +11,8 @@
 
 #include "utils/stopwatch.h"
 #include "gl/vertex_array.h"
+#include "gl/vertex_buffer.h"
+#include "gl/element_buffer.h"
 
 // TODO GL_INT_2_10_10_10_REV packing
 struct Vertex {
@@ -31,43 +33,12 @@ public:
 
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
-    Mesh(Mesh&& o) noexcept:
-        _VAO(std::move(o._VAO)),
-        _VBO(std::exchange(o._VBO, 0)),
-        _EBO(std::exchange(o._EBO, 0)),
-        _instanceVBO(std::exchange(o._instanceVBO, 0)),
-        _vertices(std::move(o._vertices)),
-        _indices(std::move(o._indices)),
-        _materialIndex(o._materialIndex),
-        _instanceCount(o._instanceCount)
-    {}
+    Mesh(Mesh&& o) noexcept = default;
+    Mesh& operator=(Mesh&& o) noexcept = default;
 
-    Mesh& operator=(Mesh&& o) noexcept {
-        if (this == &o) return *this;
+    ~Mesh() = default;
 
-        glDeleteBuffers(1, &_VBO);
-        glDeleteBuffers(1, &_EBO);
-        glDeleteBuffers(1, &_instanceVBO);
-        _VAO = std::move(o._VAO);
-        _VBO = std::exchange(o._VBO, 0);
-        _EBO = std::exchange(o._EBO, 0);
-        _instanceVBO = std::exchange(o._instanceVBO, 0);
-        _vertices = std::move(o._vertices);
-        _indices  = std::move(o._indices);
-        _materialIndex  = o._materialIndex;
-        _instanceCount  = o._instanceCount;
-
-        return *this;
-    }
-
-    ~Mesh() {
-        glDeleteBuffers(1, &_VBO);
-        glDeleteBuffers(1, &_EBO);
-        glDeleteBuffers(1, &_instanceVBO);
-    }
-
-    GLuint GetVAO() const
-    {
+    GLuint GetVAO() const {
         return _VAO.GetID();
     }
 
@@ -79,51 +50,48 @@ public:
     GLuint GetIndexCount() const { return _indices.size(); }
     GLsizei GetInstanceCount() const { return _instanceCount; }
 
+    // Uploads instance matrices for this mesh
     void SetInstances(std::span<const glm::mat4> matrices) {
         _instanceCount = static_cast<GLsizei>(matrices.size());
-        glNamedBufferData(_instanceVBO, matrices.size_bytes(), matrices.data(), GL_DYNAMIC_DRAW);
+        _instanceVBO.SetData(matrices);
     }
 
 private:
-    // initializes all the buffer objects/arrays
+    // Initializes all the buffer objects/arrays
     void setupMesh()
     {
-        // create buffers/arrays
-        glCreateBuffers(1, &_VBO);
-        glCreateBuffers(1, &_EBO);
-        glCreateBuffers(1, &_instanceVBO);
+        // Load data into vertex buffers and element buffer
+        _VBO.SetStorage<Vertex>(_vertices);
+        _EBO.SetStorage<unsigned>(_indices);
+        _instanceVBO.SetData<glm::mat4>({});
+
+        // Bind EBO to VAO, set divisor for instance matrix
         _VAO.SetBindingDivisor(1, 1);
+        _VAO.BindElementBuffer(_EBO.GetID());
 
-        // load data into vertex buffers
-        glNamedBufferStorage(_VBO, _vertices.size() * sizeof(Vertex), _vertices.data(), GL_DYNAMIC_STORAGE_BIT);
-        glNamedBufferStorage(_EBO, _indices.size() * sizeof(unsigned int), _indices.data(), GL_DYNAMIC_STORAGE_BIT);
+        // Bind VBO and instanceVBO to VAO at binding index 0 and 1
+        _VAO.BindVertexBuffer(_VBO.GetID(), 0, 0, sizeof(Vertex));
+        _VAO.BindVertexBuffer(_instanceVBO.GetID(), 1, 0, sizeof(glm::mat4));
 
-        // bind EBO to VAO
-        _VAO.BindElementBuffer(_EBO);
-
-        // bind VBO to VAO at binding index 0
-        _VAO.BindVertexBuffer(_VBO, 0, 0, sizeof(Vertex));
-        _VAO.BindVertexBuffer(_instanceVBO, 1, 0, sizeof(glm::mat4));
-
-        // set the vertex attributes
+        // Set the vertex attributes
         _VAO.AddAttribute(0, 0, 3, offsetof(Vertex, Position));
         _VAO.AddAttribute(0, 1, 3, offsetof(Vertex, Normal));
         _VAO.AddAttribute(0, 2, 2, offsetof(Vertex, TexCoords));
         _VAO.AddAttribute(0, 3, 4, offsetof(Vertex, Tangent));
 
-        // instance matrix - once per instance
-        int step = sizeof(glm::vec4);
+        // Instance matrix - once per instance
+        constexpr int step = sizeof(glm::vec4);
         _VAO.AddAttribute(1, 4, 4, 0 * step);
         _VAO.AddAttribute(1, 5, 4, 1 * step);
         _VAO.AddAttribute(1, 6, 4, 2 * step);
         _VAO.AddAttribute(1, 7, 4, 3 * step);
     }
 
-    // render data
     VertexArray _VAO;
-    GLuint _VBO = 0, _EBO = 0;
-    GLuint _instanceVBO = 0;
-    // mesh Data
+    VertexBuffer _VBO;
+    ElementBuffer _EBO;
+    VertexBuffer _instanceVBO;
+
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;
     uint32_t _materialIndex = 0;

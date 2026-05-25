@@ -5,8 +5,7 @@
 
 class VertexArray {
 public:
-    VertexArray()
-    {
+    VertexArray() {
         glCreateVertexArrays(1, &_id);
     }
 
