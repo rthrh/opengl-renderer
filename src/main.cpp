@@ -24,12 +24,12 @@
 #include "gui/gui.h"
 #include "utils/file_watcher.h"
 #include "demo.h"
+#include "window.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window, const std::shared_ptr<Camera>&);
-void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
 // timing
 float deltaTime = 0.0f;
@@ -63,239 +63,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
-GLFWwindow* create_glfw_window(int width, int height, const char* name)
-{
-    // glfw: initialize and configure
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    // glfw window creation
-    //glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE); // maximize window
-    GLFWwindow* window = glfwCreateWindow(width, height, name, NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return nullptr;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // input callbacks
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSetKeyCallback(window, key_callback);
-
-    // tell GLFW to disable mouse and use raw mouse motion to avoid big delta mouse positions when in ui mode
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-    // glad: load all OpenGL function pointers
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return nullptr;
-    }
-
-    // Init debug context and callback
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-    if (glfwExtensionSupported("GL_KHR_debug")) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(glDebugOutput, nullptr);
-        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-        Info("KHR_debug enabled");
-    }
-
-    // Configure default opengl state
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // fixes seams artifacts from skybox shape
-
-    glfwSwapInterval(0); // Disable vsync
-
-
-    return window;
-}
-
-std::vector<Transform> randomTransforms(int num, unsigned int seed = 888) {
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> posDist(-10.f, 10.f);
-    std::uniform_real_distribution<float> rotDist(-180.f, 180.f);
-    std::uniform_real_distribution<float> scaleDist(0.5f, 2.f);
-    std::vector<Transform> transforms;
-    for (int i = 0; i < num; i++) {
-        transforms.push_back({
-            .translation = { posDist(rng), posDist(rng), posDist(rng) },
-            .eulerAngles = { rotDist(rng), rotDist(rng), rotDist(rng) },
-            //.scale       = { scaleDist(rng), scaleDist(rng), scaleDist(rng) }
-        });
-    }
-    return transforms;
-}
-
-
-int main()
-{
-    const unsigned int windowWidth = 1600u;
-    const unsigned int windowHeight = 1200u;
-    auto* window = create_glfw_window(windowWidth, windowHeight, "opengl-model-viewer");
-
-    // build and compile shaders
-    std::filesystem::path root = PROJECT_SOURCE_DIR;
-    std::filesystem::path pathShaders = root / "src/shaders";
-    ShaderCache shaderCache;
-    shaderCache.LoadDirectory(pathShaders);
-
-    auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
-    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
-    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
-    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
-
-    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
-    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
-
-    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
-    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
-    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
-
-    auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
-    auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
-    auto bloomFinalShader = shaderCache.Build("bloomFinal", "quad.vert", "bloom_final.frag");
-
-    auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
-    auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
-    auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
-
-    auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
-    auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
-
-    auto fxaaShader = shaderCache.Build("fxaa", "quad.vert", "fxaa.frag");
-
-    auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
-
-    // set up shader file watcher
-    FileWatcher fileWatcher;
-    auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
-    fileWatcher.WatchDirectory(pathShaders, fileCallback);
-
-    float aspectRatio = (float)windowWidth / (float)windowHeight;
-    auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
-
-    // setup skybox rogland_clear_night_4k newport_loft.hdr
-    //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
-    std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
-    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
-
-    auto assetCache = std::make_shared<AssetCache>();
-    auto meshCache = std::make_shared<MeshCache>(assetCache);
-    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache, meshCache);
-
-    UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
-    configUBO.Upload();
-
-    // App context data for callbacks
-    AppCallbackData callbackData {.cameraPtr{camera},
-                                  .rendererPtr{&renderer},
-                                  .mouseLastX = windowWidth / 2.0f,
-                                  .mouseLastY = windowHeight / 2.0f };
-    glfwSetWindowUserPointer(window, &callbackData);
-
-     // init imgui
-    std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
-    GuiLayer guiLayer(window, modelsDirectory, assetCache);
-
-    // Scene setup
-    ModelLoader modelLoader(assetCache, meshCache);
-    //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
-    //auto scene = setupTestModels(assetCache, modelLoader);
-    auto scene = setupSponza(assetCache, modelLoader);
-
-    // restore viewport of screen size // TODO move it somewhere?
-    int scrWidth, scrHeight;
-    glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
-    glViewport(0, 0, scrWidth, scrHeight);
-
-    glm::mat4 projection = glm::perspective(glm::radians(camera->GetZoom()), (float)scrWidth / (float)scrHeight, 0.1f, 100.0f);
-    //pbrShader.use();
-    //pbrShader.setMat4("projection", projection);
-    skyboxShader->Activate();
-    skyboxShader->SetMat4("projection", projection);
-
-    // render loop
-    while (!glfwWindowShouldClose(window))
-    {
-        Stopwatch stopwatch("Render loop");
-        // poll events
-        glfwPollEvents();
-        fileWatcher.Update();
-
-        // per-frame time logic
-        auto currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        // render
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		guiLayer.BeginFrame();
-
-        // handle input
-        if (!guiLayer.WantCaptureMouse()) {
-
-        }
-        if (!guiLayer.WantCaptureKeyboard()) {
-            // input
-            processInput(window, camera);
-        }
-
-        // create gui items
-        guiLayer.Build(configUBO, scene, deltaTime, modelLoader);
-
-        // Render scene
-        camera->UploadUBO();
-        assetCache->UploadMaterials();
-        scene.UploadTransforms(meshCache);
-
-        glCullFace(GL_FRONT); // TODO move
-        renderer.PassShadowDirectional(scene, *shadowDirShader, configUBO.Data());
-        renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
-        renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
-        glCullFace(GL_BACK);
-
-        renderer.PassGeometryBuffer(scene, *gBufferShader);
-        renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
-        renderer.PassDeferred(scene, *deferredLightShader);
-        renderer.PassForward(scene, *forwardShader);
-
-        glDisable(GL_CULL_FACE);
-        renderer.PassSkybox(*skybox, *skyboxShader);
-        glEnable(GL_CULL_FACE);
-
-        renderer.PassNoShadow(scene, *unlitShader);
-        renderer.PassBloom(*downsampleShader, *upsampleShader, *bloomFinalShader);
-        renderer.PassFXAA(*fxaaShader);
-        Stopwatch stopwatch1("GuiLayer::EndFrame");
-        // Renders the ImGUI elements
-		guiLayer.EndFrame();
-        stopwatch1.Stop();
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        Stopwatch stopwatch2("glfwSwapBuffers(window);");
-        glfwSwapBuffers(window);
-    }
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    glfwTerminate();
-    return 0;
-}
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 void processInput(GLFWwindow *window, const std::shared_ptr<Camera>& camera)
@@ -359,49 +126,165 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
-void APIENTRY glDebugOutput(GLenum source,
-                            GLenum type,
-                            unsigned int id,
-                            GLenum severity,
-                            GLsizei length,
-                            const char *message,
-                            const void *userParam)
+
+int main()
 {
-    // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+    const unsigned int windowWidth = 1600u;
+    const unsigned int windowHeight = 1200u;
+    auto window = Window(windowWidth, windowHeight, "opengl-model-viewer");
 
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+    // Input callbacks
+    glfwSetFramebufferSizeCallback(window.GetHandle(), framebuffer_size_callback);
+    glfwSetCursorPosCallback(window.GetHandle(), mouse_callback);
+    glfwSetScrollCallback(window.GetHandle(), scroll_callback);
+    glfwSetKeyCallback(window.GetHandle(), key_callback);
 
-    switch (source)
+    // build and compile shaders
+    std::filesystem::path root = PROJECT_SOURCE_DIR;
+    std::filesystem::path pathShaders = root / "src/shaders";
+    ShaderCache shaderCache;
+    shaderCache.LoadDirectory(pathShaders);
+
+    auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
+    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
+    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
+    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
+
+    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
+    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
+
+    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
+    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
+    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
+
+    auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
+    auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
+    auto bloomFinalShader = shaderCache.Build("bloomFinal", "quad.vert", "bloom_final.frag");
+
+    auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
+    auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
+    auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
+
+    auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
+    auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
+
+    auto fxaaShader = shaderCache.Build("fxaa", "quad.vert", "fxaa.frag");
+
+    auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
+
+    // set up shader file watcher
+    FileWatcher fileWatcher;
+    auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
+    fileWatcher.WatchDirectory(pathShaders, fileCallback);
+
+    float aspectRatio = (float)windowWidth / (float)windowHeight;
+    auto camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
+
+    // setup skybox rogland_clear_night_4k newport_loft.hdr
+    //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
+    std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
+    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
+
+    auto assetCache = std::make_shared<AssetCache>();
+    auto meshCache = std::make_shared<MeshCache>(assetCache);
+    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache, meshCache);
+
+    UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
+    configUBO.Upload();
+
+    // App context data for callbacks
+    AppCallbackData callbackData {.cameraPtr{camera},
+                                  .rendererPtr{&renderer},
+                                  .mouseLastX = windowWidth / 2.0f,
+                                  .mouseLastY = windowHeight / 2.0f };
+    glfwSetWindowUserPointer(window.GetHandle(), &callbackData);
+
+     // init imgui
+    std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
+    GuiLayer guiLayer(window.GetHandle(), modelsDirectory, assetCache);
+
+    // Scene setup
+    ModelLoader modelLoader(assetCache, meshCache);
+    //Scene scene(assetCache); setupScene(scene, assetCache, modelLoader);
+    //auto scene = setupTestModels(assetCache, modelLoader);
+    auto scene = setupSponza(assetCache, modelLoader);
+
+    // restore viewport of screen size // TODO move it somewhere?
+    int scrWidth, scrHeight;
+    glfwGetFramebufferSize(window.GetHandle(), &scrWidth, &scrHeight);
+    glViewport(0, 0, scrWidth, scrHeight);
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera->GetZoom()), (float)scrWidth / (float)scrHeight, 0.1f, 100.0f);
+    //pbrShader.use();
+    //pbrShader.setMat4("projection", projection);
+    skyboxShader->Activate();
+    skyboxShader->SetMat4("projection", projection);
+
+    // render loop
+    while (!window.ShouldClose())
     {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-    } std::cout << std::endl;
+        Stopwatch stopwatch("Render loop");
+        // poll events
+        glfwPollEvents();
+        fileWatcher.Update();
 
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-    } std::cout << std::endl;
+        // per-frame time logic
+        auto currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-    } std::cout << std::endl;
-    std::cout << std::endl;
+        // render
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		guiLayer.BeginFrame();
+
+        // handle input
+        if (!guiLayer.WantCaptureMouse()) {
+
+        }
+        if (!guiLayer.WantCaptureKeyboard()) {
+            // input
+            processInput(window.GetHandle(), camera);
+        }
+
+        // create gui items
+        guiLayer.Build(configUBO, scene, deltaTime, modelLoader);
+
+        // Render scene
+        camera->UploadUBO();
+        assetCache->UploadMaterials();
+        scene.UploadTransforms(meshCache);
+
+        glCullFace(GL_FRONT); // TODO move
+        renderer.PassShadowDirectional(scene, *shadowDirShader, configUBO.Data());
+        renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
+        renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
+        glCullFace(GL_BACK);
+
+        renderer.PassGeometryBuffer(scene, *gBufferShader);
+        renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
+        renderer.PassDeferred(scene, *deferredLightShader);
+        renderer.PassForward(scene, *forwardShader);
+
+        glDisable(GL_CULL_FACE);
+        renderer.PassSkybox(*skybox, *skyboxShader);
+        glEnable(GL_CULL_FACE);
+
+        renderer.PassNoShadow(scene, *unlitShader);
+        renderer.PassBloom(*downsampleShader, *upsampleShader, *bloomFinalShader);
+        renderer.PassFXAA(*fxaaShader);
+        Stopwatch stopwatch1("GuiLayer::EndFrame");
+        // Renders the ImGUI elements
+		guiLayer.EndFrame();
+        stopwatch1.Stop();
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        Stopwatch stopwatch2("glfwSwapBuffers(window);");
+        window.SwapBuffers();
+    }
+
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    glfwTerminate();
+    return 0;
 }

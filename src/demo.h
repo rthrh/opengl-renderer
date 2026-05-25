@@ -5,6 +5,24 @@
 #include <memory>
 #include <filesystem>
 
+
+
+std::vector<Transform> randomTransforms(int num, unsigned int seed = 888) {
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> posDist(-10.f, 10.f);
+    std::uniform_real_distribution<float> rotDist(-180.f, 180.f);
+    std::uniform_real_distribution<float> scaleDist(0.5f, 2.f);
+    std::vector<Transform> transforms;
+    for (int i = 0; i < num; i++) {
+        transforms.push_back({
+            .translation = { posDist(rng), posDist(rng), posDist(rng) },
+            .eulerAngles = { rotDist(rng), rotDist(rng), rotDist(rng) },
+            //.scale       = { scaleDist(rng), scaleDist(rng), scaleDist(rng) }
+        });
+    }
+    return transforms;
+}
+
 /*
 void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     std::filesystem::path root = PROJECT_SOURCE_DIR;
