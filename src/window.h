@@ -53,13 +53,14 @@ public:
 
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
+    Window(Window&&) noexcept = delete;
+    Window& operator=(Window&&) noexcept = delete;
 
     GLFWwindow* GetHandle() const { return _window; }
     bool ShouldClose() const { return glfwWindowShouldClose(_window); }
     void SwapBuffers() const { glfwSwapBuffers(_window); }
 
 private:
-
     void setupDebugContex() {
         // Init debug context and callback
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);

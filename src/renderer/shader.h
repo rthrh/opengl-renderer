@@ -12,6 +12,15 @@
 #include <cassert>
 #include <utility>
 
+
+std::string GetVersionHeader() {
+#ifdef __EMSCRIPTEN__
+    return "#version 300 es\nprecision highp float;\n";
+#else
+    return "#version 450 core\n";
+#endif
+}
+
 class Shader
 {
 public:
@@ -110,10 +119,9 @@ public:
     }
 
     void Reload() {
-        const std::string vertexCode   = ReadFile(_vertexPath);
-        const std::string fragmentCode = ReadFile(_fragmentPath);
-        const std::string geometryCode = !_geometryPath.empty() ? ReadFile(_geometryPath) : "";
-        //Info("Reloading {} {} {}", _vertexPath.c_str(), _fragmentPath.c_str(), _geometryPath.c_str());
+        const std::string vertexCode   = this->ReadFile(_vertexPath);
+        const std::string fragmentCode = this->ReadFile(_fragmentPath);
+        const std::string geometryCode = !_geometryPath.empty() ? this->ReadFile(_geometryPath) : "";
 
         auto vertex = Compile(GL_VERTEX_SHADER, vertexCode);
         if (!vertex)
@@ -141,50 +149,49 @@ public:
             _ID = newID;
             _uniformMap.clear();
         }
-        //Info("Shader reloaded");
     }
 
     void Activate() const
     {
         assert(_ID != 0);
-        glUseProgram(_ID); 
+        glUseProgram(_ID);
     }
 
     // Uniform setters
-    void SetBool(const std::string &name, bool value) const {         
-        glUniform1i(this->GetLocation(name), (int)value); 
+    void SetBool(const std::string &name, bool value) const {
+        glUniform1i(this->GetLocation(name), (int)value);
     }
 
-    void SetInt(const std::string &name, int value) const { 
-        glUniform1i(this->GetLocation(name), value); 
+    void SetInt(const std::string &name, int value) const {
+        glUniform1i(this->GetLocation(name), value);
     }
 
-    void SetFloat(const std::string &name, float value) const { 
-        glUniform1f(this->GetLocation(name), value); 
+    void SetFloat(const std::string &name, float value) const {
+        glUniform1f(this->GetLocation(name), value);
     }
 
-    void SetVec2(const std::string &name, const glm::vec2 &value) const { 
-        glUniform2fv(this->GetLocation(name), 1, &value[0]); 
+    void SetVec2(const std::string &name, const glm::vec2 &value) const {
+        glUniform2fv(this->GetLocation(name), 1, &value[0]);
     }
 
-    void SetVec2(const std::string &name, float x, float y) const { 
-        glUniform2f(this->GetLocation(name), x, y); 
+    void SetVec2(const std::string &name, float x, float y) const {
+        glUniform2f(this->GetLocation(name), x, y);
     }
 
-    void SetVec3(const std::string &name, const glm::vec3 &value) const { 
-        glUniform3fv(this->GetLocation(name), 1, &value[0]); 
+    void SetVec3(const std::string &name, const glm::vec3 &value) const {
+        glUniform3fv(this->GetLocation(name), 1, &value[0]);
     }
 
-    void SetVec3(const std::string &name, float x, float y, float z) const { 
-        glUniform3f(this->GetLocation(name), x, y, z); 
+    void SetVec3(const std::string &name, float x, float y, float z) const {
+        glUniform3f(this->GetLocation(name), x, y, z);
     }
 
-    void SetVec4(const std::string &name, const glm::vec4 &value) const { 
-        glUniform4fv(this->GetLocation(name), 1, &value[0]); 
+    void SetVec4(const std::string &name, const glm::vec4 &value) const {
+        glUniform4fv(this->GetLocation(name), 1, &value[0]);
     }
 
-    void SetVec4(const std::string &name, float x, float y, float z, float w) const { 
-        glUniform4f(this->GetLocation(name), x, y, z, w); 
+    void SetVec4(const std::string &name, float x, float y, float z, float w) const {
+        glUniform4f(this->GetLocation(name), x, y, z, w);
     }
 
     void SetMat2(const std::string &name, const glm::mat2 &mat) const {
@@ -218,7 +225,7 @@ private:
         return loc;
     }
 
-    // Reads shader files recursively and appends content 
+    // Reads shader files recursively and appends content
     std::string ReadFile(const std::filesystem::path& path, int depth = 0) {
         if (depth > 3) throw std::runtime_error("Include limit exceeded");
 
@@ -228,10 +235,17 @@ private:
 
         std::string line, result, tag, name;
         while (std::getline(file, line)) {
+            // Process special tags
             std::istringstream ss(line);
-            if (ss >> tag && tag == "#include" && ss >> std::quoted(name)) {
-                // Use root as parent path
-                result += ReadFile(_rootPath / name, depth + 1) + "\n";
+            tag.clear();
+            ss >> tag;
+
+            if (tag == "#version") {
+                // Insert version header
+                result += GetVersionHeader();
+            } else if (tag == "#include" && ss >> std::quoted(name)) {
+                // Insert included file content, use root as parent path
+                result += this->ReadFile(_rootPath / name, depth + 1) + "\n";
             } else {
                 result += line + "\n";
             }
