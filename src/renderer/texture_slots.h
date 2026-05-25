@@ -2,22 +2,12 @@
 
 #include <glad/glad.h>
 
-enum class SlotGeometry : GLuint {
-    Albedo = 0,
-    Normal = 1,
-    Emissive = 2,
-    ORM = 3,
-};
-
-enum class SlotDeferred : GLuint {
+enum class TextureSlot : GLuint {
     Albedo = 0,
     Normal = 1,
     ORM = 2,
     Emissive = 3,
-    Depth = 4
-};
-
-enum class SlotOther : GLuint {
+    Depth = 4,
     Skybox = 6,
     ShadowDirectional = 7,
     ShadowPoint = 8,

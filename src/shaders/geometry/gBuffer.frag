@@ -14,8 +14,8 @@ in mat3 TBN;
 // samplers
 layout(binding = 0) uniform sampler2D albedoMap;
 layout(binding = 1) uniform sampler2D normalMap;
-layout(binding = 2) uniform sampler2D emissiveMap;
-layout(binding = 3) uniform sampler2D ormMap;
+layout(binding = 2) uniform sampler2D ormMap;
+layout(binding = 3) uniform sampler2D emissiveMap;
 
 #include "include/material.glsl"
 uniform int materialIndex;

@@ -8,8 +8,8 @@ in mat3 TBN;
 
 layout(binding = 0) uniform sampler2D albedoMap;
 layout(binding = 1) uniform sampler2D normalMap;
-layout(binding = 2) uniform sampler2D emissiveMap;
-layout(binding = 3) uniform sampler2D ormMap;
+layout(binding = 2) uniform sampler2D ormMap;
+layout(binding = 3) uniform sampler2D emissiveMap;
 
 layout(binding = 7) uniform sampler2D shadowDirMap;
 layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
@@ -29,7 +29,7 @@ layout(binding = 12) uniform sampler2D brdfLUT;
 uniform int materialIndex;
 
 uniform bool blendPass;
-
+//TODO update this shader
 void main() {
     Material material = materials[materialIndex];
 

@@ -60,14 +60,14 @@ public:
         skyboxShader.SetMat4("view", view);
         skyboxShader.SetMat4("projection", projection);
 
-        _envCubemap.Bind(slot(SlotOther::Skybox));
+        _envCubemap.Bind(slot(TextureSlot::Skybox));
         renderCube();
     }
 
     void BindTexturesIBL() const {
-        _irradianceCubemap.Bind(slot(SlotOther::Irradiance));
-        _prefilteredCubemap.Bind(slot(SlotOther::PrefilterEnv));
-        _brdfLUT.Bind(slot(SlotOther::BrdfLUT));
+        _irradianceCubemap.Bind(slot(TextureSlot::Irradiance));
+        _prefilteredCubemap.Bind(slot(TextureSlot::PrefilterEnv));
+        _brdfLUT.Bind(slot(TextureSlot::BrdfLUT));
     }
 
 private:
@@ -192,7 +192,7 @@ private:
 
         irradianceShader.Activate();
         irradianceShader.SetMat4("projection", _captureProjection);
-        _envCubemap.Bind(slot(SlotOther::Skybox));
+        _envCubemap.Bind(slot(TextureSlot::Skybox));
 
         glViewport(0, 0, 32, 32);
         _captureFBO.Bind();
@@ -218,7 +218,7 @@ private:
         prefilterShader.Activate();
         prefilterShader.SetMat4("projection", _captureProjection);
 
-        _envCubemap.Bind(slot(SlotOther::Skybox));
+        _envCubemap.Bind(slot(TextureSlot::Skybox));
         _captureFBO.Bind();
 
         unsigned int maxMipLevels = 5;

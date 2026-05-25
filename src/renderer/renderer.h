@@ -273,10 +273,10 @@ private:
     {
         if (!depthOnly) {
             const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
-            glBindTextureUnit(slot(SlotGeometry::Albedo),   mat.baseColorTexture);
-            glBindTextureUnit(slot(SlotGeometry::Normal),   mat.normalTexture);
-            glBindTextureUnit(slot(SlotGeometry::Emissive), mat.emissiveTexture);
-            glBindTextureUnit(slot(SlotGeometry::ORM),      mat.ormTexture);
+            glBindTextureUnit(slot(TextureSlot::Albedo),   mat.baseColorTexture);
+            glBindTextureUnit(slot(TextureSlot::Normal),   mat.normalTexture);
+            glBindTextureUnit(slot(TextureSlot::ORM),      mat.ormTexture);
+            glBindTextureUnit(slot(TextureSlot::Emissive), mat.emissiveTexture);
             shader.SetInt("materialIndex", mesh.GetMaterialIndex());
         }
 

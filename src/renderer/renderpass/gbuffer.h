@@ -54,7 +54,7 @@ public:
     }
 
     void BindTextures() const {
-        using enum SlotDeferred;
+        using enum TextureSlot;
         _textureAlbedo.Bind(slot(Albedo));
         _textureNormal.Bind(slot(Normal));
         _textureORM.Bind(slot(ORM));

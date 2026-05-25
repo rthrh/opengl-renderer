@@ -42,7 +42,7 @@ public:
     }
 
     void BindTexture() const {
-        _depthTexture.Bind(slot(SlotOther::ShadowDirectional));
+        _depthTexture.Bind(slot(TextureSlot::ShadowDirectional));
     }
 
 private:

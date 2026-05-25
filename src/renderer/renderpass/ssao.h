@@ -41,8 +41,6 @@ public:
         _ssaoBlurFBO = FrameBuffer();
         _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
         _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
-
-
     }
 
     void Resize(int scrWidth, int scrHeight) {
@@ -60,7 +58,7 @@ public:
         for (unsigned int i = 0; i < 64; ++i)
             shaderSSAO.SetVec3("samples[" + std::to_string(i) + "]", _ssaoKernel[i]);
 
-        _noiseTexture.Bind(slot(SlotOther::SSAO));
+        _noiseTexture.Bind(slot(TextureSlot::SSAO));
 
         // render quad
         glBindVertexArray(_emptyVAO);
@@ -72,7 +70,7 @@ public:
         _ssaoBlurFBO.Bind();
         glClear(GL_COLOR_BUFFER_BIT);
         shaderBlurSSAO.Activate();
-        _ssaoColorBuffer.Bind(slot(SlotOther::SSAO));
+        _ssaoColorBuffer.Bind(slot(TextureSlot::SSAO));
 
         // render quad
         glBindVertexArray(_emptyVAO);
@@ -81,7 +79,7 @@ public:
     }
 
     void BindSSAOTexture() const {
-        _ssaoColorBufferBlur.Bind(slot(SlotOther::SSAO));
+        _ssaoColorBufferBlur.Bind(slot(TextureSlot::SSAO));
     }
 
 private:
