@@ -7,7 +7,11 @@
 class VertexBuffer {
 public:
     VertexBuffer() {
-        glCreateBuffers(1, &_id);
+        if constexpr (USE_DSA) {
+            glCreateBuffers(1, &_id);
+        } else {
+            glGenBuffers(1, &_id);
+        }
     }
 
     ~VertexBuffer() {
@@ -30,15 +34,27 @@ public:
     GLuint GetID() const { return _id; }
 
     // Creates immutable storage and uploads data once
-    template <class T>
+    template <class T> //TODO gonna need fallback tp glBufferData on EMSCRIPTEN
     void SetStorage(std::span<const T> data) {
-        glNamedBufferStorage(_id, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
+        if constexpr (USE_DSA) {
+            glNamedBufferStorage(_id, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _id);
+            glBufferStorage(GL_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
     }
 
     // Creates mutable storage. Can be called repeatedly to update data and size
     template <class T>
     void SetData(std::span<const T> data) {
-        glNamedBufferData(_id, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
+        if constexpr (USE_DSA) {
+            glNamedBufferData(_id, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _id);
+            glBufferData(GL_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
     }
 
 private:

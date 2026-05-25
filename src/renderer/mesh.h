@@ -66,20 +66,18 @@ private:
         _instanceVBO.SetData<glm::mat4>({});
 
         // Bind EBO to VAO, set divisor for instance matrix
-        _VAO.SetBindingDivisor(1, 1);
         _VAO.BindElementBuffer(_EBO.GetID());
 
-        // Bind VBO and instanceVBO to VAO at binding index 0 and 1
+        // Bind VBO to VAO at binding index 0
         _VAO.BindVertexBuffer(_VBO.GetID(), 0, 0, sizeof(Vertex));
-        _VAO.BindVertexBuffer(_instanceVBO.GetID(), 1, 0, sizeof(glm::mat4));
-
-        // Set the vertex attributes
         _VAO.AddAttribute(0, 0, 3, offsetof(Vertex, Position));
         _VAO.AddAttribute(0, 1, 3, offsetof(Vertex, Normal));
         _VAO.AddAttribute(0, 2, 2, offsetof(Vertex, TexCoords));
         _VAO.AddAttribute(0, 3, 4, offsetof(Vertex, Tangent));
 
-        // Instance matrix - once per instance
+        // Instance VBO matrix - once per instance
+        _VAO.BindVertexBuffer(_instanceVBO.GetID(), 1, 0, sizeof(glm::mat4));
+        _VAO.SetBindingDivisor(1, 1);
         constexpr int step = sizeof(glm::vec4);
         _VAO.AddAttribute(1, 4, 4, 0 * step);
         _VAO.AddAttribute(1, 5, 4, 1 * step);

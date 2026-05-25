@@ -4,10 +4,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
-#include "model.h"
-#include "mesh.h"
-#include "scene.h"
-#include "camera.h"
 #include "renderpass/gbuffer.h"
 #include "renderpass/skybox.h"
 #include "renderpass/shadow_map_directional.h"
@@ -16,7 +12,12 @@
 #include "renderpass/bloom.h"
 #include "renderpass/ssao.h"
 #include "renderpass/fxaa.h"
+#include "gl/dsa_config.h"
 
+#include "model.h"
+#include "mesh.h"
+#include "scene.h"
+#include "camera.h"
 #include "texture_slots.h"
 #include "math_matrix.h"
 #include "asset_cache.h"
@@ -42,8 +43,6 @@ public:
         _assetCache(assetCache),
         _meshCache(meshCache)
     {
-        glCreateVertexArrays(1, &_emptyVAO);
-
         // Init GL state
         glEnable(GL_CULL_FACE); // Cull back faces
         glCullFace(GL_BACK);
@@ -189,7 +188,7 @@ public:
         shader.Activate();
         // render empty fullscreen quad
         //glDepthMask(GL_FALSE);
-        glBindVertexArray(_emptyVAO);
+        _emptyVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 3);
         //glDepthMask(GL_TRUE);
     }
@@ -232,8 +231,7 @@ public:
 
     void PassBloom(Shader& downsampleShader, Shader& upsampleShader, Shader& bloomFinalShader) {
         Stopwatch stopwatch("PassBloom");
-        glBindVertexArray(_emptyVAO);
-
+        _emptyVAO.Bind();
         _bloom.RenderDownsamples(downsampleShader);
         _bloom.RenderUpsamples(upsampleShader);
         //glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -249,7 +247,7 @@ public:
 
     void PassFXAA(Shader& fxaaShader) {
         Stopwatch stopwatch("FXAA");
-        glBindVertexArray(_emptyVAO);
+        _emptyVAO.Bind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -273,10 +271,11 @@ private:
     {
         if (!depthOnly) {
             const Material& mat = _assetCache->GetMaterial(mesh.GetMaterialIndex());
-            glBindTextureUnit(slot(TextureSlot::Albedo),   mat.baseColorTexture);
-            glBindTextureUnit(slot(TextureSlot::Normal),   mat.normalTexture);
-            glBindTextureUnit(slot(TextureSlot::ORM),      mat.ormTexture);
-            glBindTextureUnit(slot(TextureSlot::Emissive), mat.emissiveTexture);
+            GL::BindTextureUnit(slot(TextureSlot::Albedo), mat.baseColorTexture);
+            GL::BindTextureUnit(slot(TextureSlot::Normal), mat.normalTexture);
+            GL::BindTextureUnit(slot(TextureSlot::ORM), mat.ormTexture);
+            GL::BindTextureUnit(slot(TextureSlot::Emissive), mat.emissiveTexture);
+
             shader.SetInt("materialIndex", mesh.GetMaterialIndex());
         }
 
@@ -286,7 +285,7 @@ private:
 
     std::shared_ptr<Camera> _cameraPtr;
     GBuffer _gBuffer;
-    GLuint _emptyVAO = 0;
+    VertexArray _emptyVAO;
     int _scrWidth, _scrHeight;
     float _aspectRatio = 0;
 

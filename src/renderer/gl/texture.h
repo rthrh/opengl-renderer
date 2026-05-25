@@ -112,8 +112,7 @@ public:
         this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
         this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         if (genMipMaps) {
-            if constexpr (USE_DSA) { glGenerateTextureMipmap(_id);
-            } else { glGenerateMipmap(T); }
+            this->GenerateMipmap();
         }
     }
 
@@ -134,8 +133,7 @@ public:
         this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
         this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         if (genMipMaps) {
-            if constexpr (USE_DSA) { glGenerateTextureMipmap(_id);
-            } else { glGenerateMipmap(T); } // TODO might need rebind
+            this->GenerateMipmap();
         }
     }
 
@@ -157,8 +155,7 @@ public:
         this->SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         if (genMipMaps) {
-            if constexpr (USE_DSA) { glGenerateTextureMipmap(_id);
-            } else { glGenerateMipmap(T); }
+            this->GenerateMipmap();
         }
     }
 
@@ -180,8 +177,7 @@ public:
         SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         if (genMipMaps) {
-            if constexpr (USE_DSA) { glGenerateTextureMipmap(_id);
-            } else { glGenerateMipmap(T); }
+            this->GenerateMipmap();
         }
     }
 

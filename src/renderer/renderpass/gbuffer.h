@@ -11,7 +11,11 @@
 
 class GBuffer {
 public:
-    explicit GBuffer(int scrWidth, int scrHeight) : _scrWidth(scrWidth), _scrHeight(scrHeight) {
+    explicit GBuffer(int scrWidth, int scrHeight) :
+        _scrWidth(scrWidth),
+        _scrHeight(scrHeight),
+        _framebuffer()
+    {
         Init(scrWidth, scrHeight);
     }
 
@@ -24,8 +28,6 @@ public:
 
     void Init(int scrWidth, int scrHeight) {
         using enum TextureAttachment;
-        _framebuffer = FrameBuffer();
-
         _textureAlbedo = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
         _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
         _textureORM = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);

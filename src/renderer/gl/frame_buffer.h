@@ -4,7 +4,6 @@
 #include <utility>
 #include <algorithm>
 #include <ranges>
-#include <ranges>
 #include <vector>
 
 #include "gl/render_buffer.h"
@@ -36,7 +35,6 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
@@ -73,7 +71,6 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)attachment, tex, 0);
             this->updateAttachments(attachment);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
@@ -85,7 +82,6 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, (GLenum)attachment, tex, mip, layer);
             this->updateAttachments(attachment);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
@@ -97,7 +93,6 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
             this->updateAttachments(attachment);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
@@ -116,8 +111,6 @@ public:
             glBindFramebuffer(GL_READ_FRAMEBUFFER, srcFBO);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFBO);
             glBlitFramebuffer(0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         }
 
         GLenum err = glGetError();
@@ -135,7 +128,6 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
 
