@@ -38,6 +38,10 @@ public:
         glVertexArrayAttribBinding(_id, attribIndex, bindingIndex);
     }
 
+    void Bind() {
+        glBindVertexArray(_id);
+    }
+
     void BindVertexBuffer(GLuint vbo, GLuint bindingIndex, GLint offset, GLsizei stride) {
         glVertexArrayVertexBuffer(_id, bindingIndex, vbo, offset, stride);
     }

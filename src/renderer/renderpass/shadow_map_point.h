@@ -32,7 +32,7 @@ public:
 
     void BindFramebufferFace(int lightIndex, int face) const {
         _framebuffer.Bind();
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _depthTexture.GetID(), 0, lightIndex * 6 + face);
+        _framebuffer.AttachTextureLayer(TextureAttachment::Depth, _depthTexture.GetID(), lightIndex * 6 + face);
         glViewport(0, 0, _size, _size);
         glClear(GL_DEPTH_BUFFER_BIT);
     }

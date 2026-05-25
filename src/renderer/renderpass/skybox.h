@@ -20,18 +20,24 @@
 #include "gl/texture.h"
 #include "gl/render_buffer.h"
 #include "gl/frame_buffer.h"
+#include "gl/vertex_array.h"
+#include "gl/vertex_buffer.h"
 
 class Skybox {
 public:
     Skybox(std::filesystem::path path, Shader& equirectShader, Shader& irradianceShader, Shader& prefilterShader, Shader& brdfShader, GLsizei cubeSize = 2048) :
         _cubeSize(cubeSize),
+        _captureFBO(),
+        _captureRBO(cubeSize, cubeSize, TextureFormat::Depth32F),
+        _cubeVBO(),
         _envCubemap(cubeSize, TextureFormat::RGB16F, true),
         _hdrTexture(initTextureHDR(std::move(path))),
         _irradianceCubemap(initIrradianceMap()),
         _prefilteredCubemap(initPrefilteredMap()),
         _brdfLUT(initBrdfLUT())
     {
-        initBuffers();
+        _captureFBO.AttachRenderBuffer(TextureAttachment::Depth, _captureRBO);
+
         _envCubemap.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
         _envCubemap.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
@@ -45,15 +51,13 @@ public:
         bakeBrdfLUT(brdfShader);
     }
 
-    ~Skybox() {
-        //TODO FBO, RBO, HDR texture can be removed after init
-        glDeleteVertexArrays(1, &_cubeVAO);
-        glDeleteBuffers(1, &_cubeVBO);
-        glDeleteVertexArrays(1, &_emptyVAO);
-    }
+    //TODO FBO, RBO, HDR texture can be removed after init
+    ~Skybox() = default;
 
     Skybox(const Skybox&) = delete;
     Skybox& operator=(const Skybox&) = delete;
+    Skybox(Skybox&&) noexcept = default;
+    Skybox& operator=(Skybox&&) noexcept = default;
 
     void Draw(Shader& skyboxShader, glm::mat4 view, glm::mat4 projection) {
         skyboxShader.Activate();
@@ -71,13 +75,6 @@ public:
     }
 
 private:
-    // Initializes capture FBO and RBO
-    void initBuffers() {
-        _captureFBO = FrameBuffer();
-        _captureRBO = RenderBuffer(_cubeSize, _cubeSize, TextureFormat::Depth32F);
-        _captureFBO.AttachRenderBuffer(TextureAttachment::Depth, _captureRBO);
-    }
-
     Texture2D initTextureHDR(const std::filesystem::path& path) {
         int width, height, nrComponents;
         float *data = nullptr;
@@ -123,24 +120,13 @@ private:
 
     // Init cube geometry
     void initCube() {
-        glCreateVertexArrays(1, &_emptyVAO);
-        glCreateVertexArrays(1, &_cubeVAO);
-        glCreateBuffers(1, &_cubeVBO);
-        glNamedBufferStorage(_cubeVBO, sizeof(cube_map_vertices), cube_map_vertices, 0);
+        _cubeVBO.SetStorage(std::span<const float>(cube_map_vertices));
 
-        glVertexArrayVertexBuffer(_cubeVAO, 0, _cubeVBO, 0, 8 * sizeof(float));
-
-        glVertexArrayAttribFormat(_cubeVAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
-        glVertexArrayAttribFormat(_cubeVAO, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
-        glVertexArrayAttribFormat(_cubeVAO, 2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
-
-        glVertexArrayAttribBinding(_cubeVAO, 0, 0);
-        glVertexArrayAttribBinding(_cubeVAO, 1, 0);
-        glVertexArrayAttribBinding(_cubeVAO, 2, 0);
-
-        glEnableVertexArrayAttrib(_cubeVAO, 0);
-        glEnableVertexArrayAttrib(_cubeVAO, 1);
-        glEnableVertexArrayAttrib(_cubeVAO, 2);
+        constexpr int bindingIndex = 0;
+        _cubeVAO.BindVertexBuffer(_cubeVBO.GetID(), bindingIndex, 0, 8 * sizeof(float));
+        _cubeVAO.AddAttribute(bindingIndex, 0, 3, 0);
+        _cubeVAO.AddAttribute(bindingIndex, 1, 3, 3 * sizeof(float));
+        _cubeVAO.AddAttribute(bindingIndex, 2, 2, 6 * sizeof(float));
     }
 
     // Converts equirectangular map to cube map
@@ -163,7 +149,7 @@ private:
 
         glViewport(0, 0, _cubeSize, _cubeSize);
         _captureFBO.Bind();
-        for (unsigned int i = 0; i < 6; ++i)
+        for (unsigned i = 0; i < 6; ++i)
         {
             equirectShader.SetMat4("view", _captureViews[i]);
             _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _envCubemap.GetID(), i);
@@ -174,7 +160,7 @@ private:
     }
 
     void renderCube() {
-        glBindVertexArray(_cubeVAO);
+        _cubeVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 36); // 36 cubemap triangles
     }
 
@@ -187,7 +173,7 @@ private:
     }
 
     void bakeIrradianceMap(Shader& irradianceShader) {
-        // resize capture RBO to 32x32
+        // Resize capture RBO to 32x32
         _captureRBO.Resize(32, 32);
 
         irradianceShader.Activate();
@@ -196,7 +182,7 @@ private:
 
         glViewport(0, 0, 32, 32);
         _captureFBO.Bind();
-        for (unsigned int i = 0; i < 6; i++) {
+        for (unsigned i = 0; i < 6; i++) {
             irradianceShader.SetMat4("view", _captureViews[i]);
             _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _irradianceCubemap.GetID(), i);
 
@@ -221,19 +207,19 @@ private:
         _envCubemap.Bind(slot(TextureSlot::Skybox));
         _captureFBO.Bind();
 
-        unsigned int maxMipLevels = 5;
-        for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+        unsigned maxMipLevels = 5;
+        for (unsigned mip = 0; mip < maxMipLevels; ++mip)
         {
-            // reisze framebuffer according to mip-level size.
-            unsigned int mipWidth  = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-            unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+            // Resize framebuffer according to mip-level size.
+            unsigned mipWidth  = static_cast<unsigned>(128 * std::pow(0.5, mip));
+            unsigned mipHeight = static_cast<unsigned>(128 * std::pow(0.5, mip));
             _captureRBO.Resize(mipWidth, mipHeight);
 
             glViewport(0, 0, mipWidth, mipHeight);
 
             float roughness = (float)mip / (float)(maxMipLevels - 1);
             prefilterShader.SetFloat("roughness", roughness);
-            for (unsigned int i = 0; i < 6; ++i)
+            for (unsigned i = 0; i < 6; ++i)
             {
                 prefilterShader.SetMat4("view", _captureViews[i]);
                 _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _prefilteredCubemap.GetID(), i, mip);
@@ -264,7 +250,8 @@ private:
         glViewport(0, 0, size, size);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         brdfShader.Activate();
-        glBindVertexArray(_emptyVAO);
+        _emptyVAO.Bind();
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -272,10 +259,11 @@ private:
     GLsizei _cubeSize = 0;
     FrameBuffer _captureFBO;
     RenderBuffer _captureRBO;
-    GLuint _cubeVAO = 0;
-    GLuint _cubeVBO = 0;
+    VertexBuffer _cubeVBO;
 
-    GLuint _emptyVAO = 0;
+    VertexArray _cubeVAO;
+    VertexArray _emptyVAO;
+
     TextureCube _envCubemap;
     Texture2D _hdrTexture;
     TextureCube _irradianceCubemap;

@@ -10,24 +10,27 @@
 #include "texture_slots.h"
 #include "gl/texture.h"
 #include "gl/frame_buffer.h"
+#include "gl/vertex_array.h"
 
 class SSAO {
 public:
     SSAO(int scrWidth, int scrHeight) :
         _scrWidth(scrWidth), _scrHeight(scrHeight),
         _noiseTexture(generateNoiseTexture()),
-        _ssaoKernel(generateSampleKernel())
+        _ssaoKernel(generateSampleKernel()),
+        _ssaoFBO(),
+        _ssaoBlurFBO()
     {
-        glCreateVertexArrays(1, &_emptyVAO);
         this->Init(scrWidth, scrHeight);
     }
 
     ~SSAO() {
-        glDeleteVertexArrays(1, &_emptyVAO);
     }
 
     SSAO(const SSAO&) = delete;
     SSAO& operator=(const SSAO&) = delete;
+    SSAO(SSAO&&) noexcept = default;
+    SSAO& operator=(SSAO&&) noexcept = default;
 
     void Init(int scrWidth, int scrHeight) {
         //TODO check wrap
@@ -37,8 +40,6 @@ public:
         _ssaoColorBuffer.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         _ssaoColorBufferBlur.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
 
-        _ssaoFBO = FrameBuffer();
-        _ssaoBlurFBO = FrameBuffer();
         _ssaoFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBuffer.GetID());
         _ssaoBlurFBO.AttachTexture(TextureAttachment::Color0, _ssaoColorBufferBlur.GetID());
     }
@@ -54,6 +55,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT);
         shaderSSAO.Activate();
         // Send kernel + rotation
+        //TODO this can be UBO
         shaderSSAO.SetVec2("noiseScale", glm::vec2(_scrWidth / 4.0f, _scrHeight / 4.0f));
         for (unsigned int i = 0; i < 64; ++i)
             shaderSSAO.SetVec3("samples[" + std::to_string(i) + "]", _ssaoKernel[i]);
@@ -61,7 +63,7 @@ public:
         _noiseTexture.Bind(slot(TextureSlot::SSAO));
 
         // render quad
-        glBindVertexArray(_emptyVAO);
+        _emptyVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 3);
         _ssaoFBO.Unbind();
     }
@@ -73,7 +75,7 @@ public:
         _ssaoColorBuffer.Bind(slot(TextureSlot::SSAO));
 
         // render quad
-        glBindVertexArray(_emptyVAO);
+        _emptyVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 3);
         _ssaoBlurFBO.Unbind();
     }
@@ -123,7 +125,7 @@ private:
     }
 
     int _scrWidth = 0, _scrHeight = 0;
-    GLuint _emptyVAO = 0;
+    VertexArray _emptyVAO;
     Texture2D _ssaoColorBuffer;
     Texture2D _ssaoColorBufferBlur;
     Texture2D _noiseTexture;
