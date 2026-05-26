@@ -146,27 +146,6 @@ int main()
     shaderCache.SetPostBuildHook(InitSamplers);
     shaderCache.LoadDirectory(pathShaders);
 
-    auto deferredLightShader = shaderCache.Build("deferred", "quad.vert", "deferred_pbr.frag");
-    auto gBufferShader = shaderCache.Build("gBuffer", "gBuffer.vert", "gBuffer.frag");
-    auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
-    auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
-
-
-    auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
-    auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
-    auto shadowSpotShader = shaderCache.Build("shadow_spot", "shadow_spot.vert", "depth.frag");
-
-    auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
-    auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
-    auto bloomFinalShader = shaderCache.Build("bloomFinal", "quad.vert", "bloom_final.frag");
-
-    auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
-    auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
-
-    auto fxaaShader = shaderCache.Build("fxaa", "quad.vert", "fxaa.frag");
-
-    auto unlitShader = shaderCache.Build("unlit", "unlit.vert", "unlit.frag"); // debug light cubes
-
     // set up shader file watcher
     FileWatcher fileWatcher;
     auto fileCallback = [&shaderCache](const std::filesystem::path&) { shaderCache.ReloadAll();};
@@ -184,8 +163,6 @@ int main()
     Renderer renderer(windowWidth, windowHeight, camera, assetCache, meshCache, shaderCache);
     renderer.LoadSkybox(skyboxPath);
 
-    UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
-    configUBO.Upload();
 
     // App context data for callbacks
     AppCallbackData callbackData {.cameraPtr{camera},
@@ -208,12 +185,6 @@ int main()
     int scrWidth, scrHeight;
     glfwGetFramebufferSize(window.GetHandle(), &scrWidth, &scrHeight);
     glViewport(0, 0, scrWidth, scrHeight);
-
-    glm::mat4 projection = glm::perspective(glm::radians(camera->GetZoom()), (float)scrWidth / (float)scrHeight, 0.1f, 100.0f);
-    //pbrShader.use();
-    //pbrShader.setMat4("projection", projection);
-    //skyboxShader->Activate();
-    //skyboxShader->SetMat4("projection", projection);
 
     // render loop
     while (!window.ShouldClose())
@@ -244,7 +215,7 @@ int main()
         }
 
         // create gui items
-        guiLayer.Build(configUBO, scene, deltaTime, modelLoader);
+        guiLayer.Build(renderer.GetConfig(), scene, deltaTime, modelLoader);
 
         // Render scene
         camera->UploadUBO();
@@ -252,23 +223,23 @@ int main()
         scene.UploadTransforms(meshCache);
 
         glCullFace(GL_FRONT); // TODO move
-        renderer.PassShadowDirectional(scene, *shadowDirShader, configUBO.Data());
-        renderer.PassShadowPoint(scene, *shadowPointShader, configUBO.Data());
-        renderer.PassShadowSpot(scene, *shadowSpotShader, configUBO.Data());
+        renderer.PassShadowDirectional(scene);
+        renderer.PassShadowPoint(scene);
+        renderer.PassShadowSpot(scene);
         glCullFace(GL_BACK);
 
-        renderer.PassGeometryBuffer(scene, *gBufferShader);
-        renderer.PassSSAO(scene, *ssaoShader, *ssaoBlurShader);
-        renderer.PassDeferred(scene, *deferredLightShader);
-        renderer.PassForward(scene, *forwardShader);
+        renderer.PassGeometryBuffer(scene);
+        renderer.PassSSAO(scene);
+        renderer.PassDeferred(scene);
+        renderer.PassForward(scene);
 
         glDisable(GL_CULL_FACE);
         renderer.PassSkybox();
         glEnable(GL_CULL_FACE);
 
-        renderer.PassNoShadow(scene, *unlitShader);
-        renderer.PassBloom(*downsampleShader, *upsampleShader, *bloomFinalShader);
-        renderer.PassFXAA(*fxaaShader);
+        renderer.PassNoShadow(scene);
+        renderer.PassBloom();
+        renderer.PassFXAA();
         Stopwatch stopwatch1("GuiLayer::EndFrame");
         // Renders the ImGUI elements
 		guiLayer.EndFrame();
