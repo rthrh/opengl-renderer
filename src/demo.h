@@ -52,9 +52,10 @@ Scene setupScene(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     scene.AddModel(std::move(*floorModel));
 
     DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
-    auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(50);
+    auto light1 = PointLightBlockGPU({10,10,0}).SetColor(0, 125, 255).SetRange(50);
     auto light2 = PointLightBlockGPU({0,10,-10}).SetColor(0, 255, 125).SetRange(50);
-    auto light3 = PointLightBlockGPU({0,2,10}).SetColor(255, 125, 0).SetRange(50);
+    auto light3 = PointLightBlockGPU({0,10,10}).SetColor(255, 125, 0).SetRange(50);
+    auto light4 = PointLightBlockGPU({-10,10,0}).SetColor(0, 125, 0).SetRange(50);
 
     auto spotLight1 = SpotLightBlockGPU({0, 3, 6}, {0, -0.5, -1}).SetColor(0, 0, 255).SetRange(25.0).SetIntensity(10);
     auto spotLight2 = SpotLightBlockGPU({0, 10, 0}, {0, -1.0, 0}).SetColor(125, 0, 0).SetRange(25.0).SetIntensity(10);
@@ -63,6 +64,7 @@ Scene setupScene(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     scene.AddPointLight(std::move(light1));
     scene.AddPointLight(std::move(light2));
     scene.AddPointLight(std::move(light3));
+    scene.AddPointLight(std::move(light4));
     scene.AddSpotLight(std::move(spotLight1));
     scene.AddSpotLight(std::move(spotLight2));
 
@@ -153,6 +155,9 @@ Scene setupSponza(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mo
     //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
     //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
     scene.AddDirectionalLight(std::move(dirLight));
+
+    auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(50);
+    scene.AddPointLight(std::move(light1));
 
     return scene;
 }

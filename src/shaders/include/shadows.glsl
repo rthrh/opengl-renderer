@@ -33,6 +33,14 @@ vec3 gridSamplingDisk[20] = vec3[]
 );
 
 
+float SamplePointShadowDepth(vec3 dir, int lightIdx) {
+    if (lightIdx == 0) return texture(shadowPointMap0, dir).r;
+    if (lightIdx == 1) return texture(shadowPointMap1, dir).r;
+    if (lightIdx == 2) return texture(shadowPointMap2, dir).r;
+    return texture(shadowPointMap3, dir).r;
+}
+
+
 float ShadowPointLight(vec3 fragPos, vec3 lightPos, float farPlane, float bias, int lightIndex)
 {
     vec3 fragToLight = fragPos - lightPos;
@@ -45,7 +53,7 @@ float ShadowPointLight(vec3 fragPos, vec3 lightPos, float farPlane, float bias, 
     float diskRadius = (1.0 + (viewDistance / farPlane)) / 25.0;
     for(int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(shadowPointMaps, vec4(fragToLight + gridSamplingDisk[i] * diskRadius, float(lightIndex))).r;
+        float closestDepth = SamplePointShadowDepth(fragToLight + gridSamplingDisk[i] * diskRadius, lightIndex);
         closestDepth *= farPlane; // undo mapping [0;1]
         if(currentDepth - bias > closestDepth)
             shadow += 1.0;

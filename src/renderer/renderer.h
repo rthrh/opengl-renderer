@@ -154,10 +154,10 @@ private:
         if (!_configUBO.Data().pointShadowsEnabled) return;
 
         const auto& pointLights = scene.GetPointLights();
-        _shadowMapPoint.BindTexture();
+        _shadowMapPoint.BindTextures();
         _shaders.shadowPoint->Activate();
 
-        const int count = std::min(pointLights.Count(), _configUBO.Data().maxPointShadowCasters);
+        const int count = std::min({pointLights.Count(), _configUBO.Data().maxPointShadowCasters, _shadowMapPoint.maxShadowCasters});
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
             float farPlane = pointLights.At(i).GetRange();

@@ -40,7 +40,11 @@ public:
             glNamedBufferStorage(_id, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
         #else
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
-            glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
+            #ifdef __EMSCRIPTEN__
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
+            #else
+                glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
+            #endif
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         #endif
     }

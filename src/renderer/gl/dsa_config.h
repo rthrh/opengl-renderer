@@ -10,4 +10,10 @@ inline void BindTextureUnit(GLuint unit, GLuint texture) {
         glBindTexture(GL_TEXTURE_2D, texture);
     #endif
 }
+
+#ifndef GL_TEXTURE_CUBE_MAP_ARRAY
+    #define GL_TEXTURE_CUBE_MAP_ARRAY 0
+#endif
+
+
 } // GL

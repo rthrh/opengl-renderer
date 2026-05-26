@@ -33,7 +33,9 @@ public:
         #else
             glGenFramebuffers(1, &_id);
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
-            glDrawBuffer(GL_NONE);
+            //glDrawBuffers(GL_NONE);
+            const GLenum none = GL_NONE;
+            glDrawBuffers(1, &none);
             glReadBuffer(GL_NONE);
         #endif
     }
@@ -69,7 +71,8 @@ public:
             this->updateAttachments(attachment);
         #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
-            glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)attachment, tex, 0);
+            //glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)attachment, tex, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, (GLenum)attachment, GL_TEXTURE_2D, tex, 0);
             this->updateAttachments(attachment);
         #endif
     }
@@ -81,6 +84,19 @@ public:
         #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, (GLenum)attachment, tex, mip, layer);
+            this->updateAttachments(attachment);
+        #endif
+    }
+
+    //TODO verify
+    void AttachTextureCubeFace(TextureAttachment attachment, GLuint tex, int face, int mip = 0) const {
+        #ifdef USE_GL_DSA
+            // DSA path: glNamedFramebufferTextureLayer treats cubemap faces as layers 0..5
+            glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, face);
+            this->updateAttachments(attachment);
+        #else
+            glBindFramebuffer(GL_FRAMEBUFFER, _id);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, (GLenum)attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, tex, mip);
             this->updateAttachments(attachment);
         #endif
     }
