@@ -19,6 +19,11 @@ layout(binding = 11) uniform samplerCube prefilteredMap;
 layout(binding = 12) uniform sampler2D brdfLUT;
 layout(binding = 13) uniform sampler2D ssaoMap;
 
+layout(binding = 14) uniform sampler2D shadowPointMap0;
+layout(binding = 15) uniform sampler2D shadowPointMap1;
+layout(binding = 16) uniform sampler2D shadowPointMap2;
+layout(binding = 17) uniform sampler2D shadowPointMap3;
+
 #include "include/ubo.glsl"
 #include "include/brdf.glsl"
 #include "include/pbr_lights.glsl"

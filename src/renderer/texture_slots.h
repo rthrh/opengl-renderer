@@ -18,6 +18,10 @@ enum class TextureSlot : GLuint {
     PrefilterEnv = 11,
     BrdfLUT = 12,
     SSAO = 13,
+    ShadowPoint0 = 14,
+    ShadowPoint1 = 15,
+    ShadowPoint2 = 16,
+    ShadowPoint3 = 17,
 };
 
 // Helper to get GLuint from slot enum

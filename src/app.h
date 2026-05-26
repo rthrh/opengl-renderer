@@ -87,8 +87,9 @@ public:
         _guiLayer = std::make_unique<GuiLayer>(_window.GetHandle(), modelsDirectory, _assetCache);
 
         // Scene setup
-        //auto scene = setupTestModels(assetCache, modelLoader);
+        //_scene = std::make_unique<Scene>(setupTestModels(_assetCache, _modelLoader));
         _scene = std::make_unique<Scene>(setupSponza(_assetCache, _modelLoader));
+        //_scene = std::make_unique<Scene>(setupScene(_assetCache, _modelLoader));
     }
 
     void Run() {

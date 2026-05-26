@@ -23,39 +23,33 @@ std::vector<Transform> randomTransforms(int num, unsigned int seed = 888) {
     return transforms;
 }
 
-/*
-void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
-    std::filesystem::path root = PROJECT_SOURCE_DIR;
-    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
+
+Scene setupScene(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
+    Scene scene(assetCache);
+    std::filesystem::path root = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "glTF-Sample-Models/2.0";
+
+    auto loadModel = [&modelLoader, &root](const char* filename, glm::vec3 translation) {
+        auto path = root / filename;
+        auto testModel = *modelLoader.Load(path);
+        testModel.SetTranslation(translation);
+        return testModel;
+    };
+
     std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "EnvironmentTest/glTF-IBL/EnvironmentTest.gltf";
     std::filesystem::path modelPath2 = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
-    std::filesystem::path modelPath3 = root / ".." / "glTF-Sample-Models/2.0" / "AlphaBlendModeTest//glTF/AlphaBlendModeTest.gltf";
 
-    //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
-
-    auto absPath = std::filesystem::absolute(modelPath);
-    auto ourModel = modelLoader.Load(absPath);
-    scene.AddModel(std::move(*ourModel), Opaque);
-
-    auto absPath2 = std::filesystem::absolute(modelPath2);
-    auto ourModel2 = modelLoader.Load(absPath2);
-    (*ourModel2).SetTranslation({0.0f, -2.0f, 0.0f});
-    (*ourModel2).SetInstances(randomTransforms(2));
-    scene.AddModel(std::move(*ourModel2), Opaque);
-
-    auto absPath3 = std::filesystem::absolute(modelPath3);
-    auto ourModel3 = modelLoader.Load(absPath3);
-    scene.AddModel(std::move(*ourModel3), Blend);
+    scene.AddModel(loadModel("EnvironmentTest/glTF/EnvironmentTest.gltf", {0, 0, 0}));
+    scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, -2, 0}));
 
     // floor model
     uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
     Mesh floorMesh(floor_vertices, floor_indices, defaultMatIndex);
     auto floorModel = modelLoader.Load((std::move(floorMesh)));
-    floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
-    floorModel.SetScale({50.0f, 1.0f, 50.0f});
 
-    scene.AddModel(std::move(floorModel));
+    floorModel->SetTranslation({0.0f, -2.0f, 0.0f});
+    floorModel->SetScale({50.0f, 1.0f, 50.0f});
 
+    scene.AddModel(std::move(*floorModel));
 
     DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
     auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(50);
@@ -71,8 +65,11 @@ void setupScene(Scene& scene, const std::shared_ptr<AssetCache>& assetCache, Mod
     scene.AddPointLight(std::move(light3));
     scene.AddSpotLight(std::move(spotLight1));
     scene.AddSpotLight(std::move(spotLight2));
+
+    return scene;
 }
 
+/*
 void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoader& modelLoader) {
     std::mt19937 rng(888);
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);

@@ -133,15 +133,18 @@ public:
             return;
         }
 
+        // Ignore geometry shaders on WASM target
         GLuint geometry = 0;
-        if (!geometryCode.empty()) {
-            geometry = Compile(GL_GEOMETRY_SHADER, geometryCode);
-            if (!geometry) {
-                glDeleteShader(fragment); // clean up previous shaders
-                glDeleteShader(vertex);
-                return;
+        #ifndef __EMSCRIPTEN__
+            if (!geometryCode.empty()) {
+                geometry = Compile(GL_GEOMETRY_SHADER, geometryCode);
+                if (!geometry) {
+                    glDeleteShader(fragment); // clean up previous shaders
+                    glDeleteShader(vertex);
+                    return;
+                }
             }
-        }
+        #endif
 
         auto newID = this->Link(vertex, fragment, geometry);
         if (newID != 0) {

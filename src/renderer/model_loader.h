@@ -42,6 +42,13 @@ public:
         return Model(std::move(meshHandles));
     }
 
+    std::optional<Model> Load(Mesh mesh) {
+        std::vector<Mesh> meshes;
+        meshes.emplace_back(std::move(mesh));
+        auto meshHandles = _meshCache->AddMeshes(std::move(meshes));
+        return Model(std::move(meshHandles));
+    }
+
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(std::string const &path, std::vector<Mesh>& meshes) {

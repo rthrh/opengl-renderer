@@ -18,7 +18,12 @@ enum class TextureWrap {
     Repeat = GL_REPEAT,
     MirroredRepeated = GL_MIRRORED_REPEAT,
     ClampToEdge = GL_CLAMP_TO_EDGE,
-    ClampToBorder = GL_CLAMP_TO_BORDER
+
+#ifdef __EMSCRIPTEN__
+    ClampToBorder  = GL_CLAMP_TO_BORDER_EXT, //TODO enough to work?
+#else
+    ClampToBorder  = GL_CLAMP_TO_BORDER,
+#endif
 };
 
 enum class TextureFormat {
