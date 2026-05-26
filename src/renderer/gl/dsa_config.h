@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include <gl/headers.h>
 
 #ifdef USE_GL_DSA
     inline constexpr bool USE_DSA = true;

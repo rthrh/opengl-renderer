@@ -1,8 +1,8 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
 #include <utility>
-
+//TODO no nondsa path
 template<typename T, int BindSlot>
 class ShaderStorageBuffer {
 public:

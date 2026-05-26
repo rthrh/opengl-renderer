@@ -1,8 +1,10 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "gl/uniform_buffer.h"
 
 #include "utils/stopwatch.h"
 
@@ -38,11 +40,9 @@ public:
         _zoom(45.0f)
     {
         this->updateCameraVectors();
-        this->initUBO();
     }
 
     ~Camera() {
-        if (_ubo) glDeleteBuffers(1, &_ubo);
     }
 
     Camera(const Camera&) = delete;
@@ -58,7 +58,9 @@ public:
             .projection = GetProjectionMatrix(),
             .position = glm::vec4(_position, 0.0f)
         };
-        glNamedBufferSubData(_ubo, 0, sizeof(CameraUBO), &data);
+
+        _cameraUBO.SetData(data);
+        _cameraUBO.Upload();
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
@@ -128,12 +130,6 @@ public:
     }
 
 private:
-    void initUBO() {
-        glCreateBuffers(1, &_ubo);
-        glNamedBufferData(_ubo, sizeof(CameraUBO), nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 3, _ubo); // binding point 3
-    }
-
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
     {
@@ -162,5 +158,5 @@ private:
     float _movementSpeed;
     float _mouseSensitivity;
     float _zoom;
-    GLuint _ubo;
+    UniformBuffer<CameraUBO, 3> _cameraUBO;
 };

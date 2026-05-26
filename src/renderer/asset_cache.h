@@ -1,5 +1,6 @@
 #pragma once
-#include <glad/glad.h>
+
+#include <gl/headers.h>
 #include <string>
 #include <unordered_map>
 #include <iostream>

@@ -1,4 +1,6 @@
-#include <glad/glad.h>
+#pragma once
+
+#include "gl/headers.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -50,6 +52,8 @@ public:
         this->UploadConfig();
 
         // Init GL state
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // Fixes skybox seams
         glEnable(GL_CULL_FACE); // Cull back faces
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);

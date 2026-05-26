@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -12,10 +12,8 @@
 #include <random>
 
 #include "renderer/camera.h"
-#include "renderer/model.h"
 #include "renderer/shader.h"
 #include "renderer/renderer.h"
-#include "renderer/shapes.h"
 #include "renderer/scene.h"
 #include "renderer/asset_cache.h"
 #include "renderer/shader_cache.h"

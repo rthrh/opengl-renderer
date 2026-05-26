@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
 #include <utility>
 
 #include "dsa_config.h"
@@ -52,6 +52,10 @@ public:
 
     T& Data() { return _data; }
     const T& Data() const { return _data; }
+
+    void SetData(T data) {
+        _data = std::move(data);
+    }
 
 private:
     GLuint _ubo = 0;

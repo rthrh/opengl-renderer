@@ -1,6 +1,7 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
+#include "gl/dsa_config.h"
 
 // Should match sampler bindings in shader files
 enum class TextureSlot : GLuint {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <gl/headers.h>
 #include <utility>
 #include <algorithm>
 #include <ranges>

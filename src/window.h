@@ -1,8 +1,8 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <gl/headers.h>
 
+#include <GLFW/glfw3.h>
 #include <stdexcept>
 
 #include "utils/logger.h"
@@ -14,10 +14,16 @@ public:
     Window(int width, int height, const char* name) {
         // Initialize and configure
         glfwInit();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+        #ifdef __EMSCRIPTEN__
+            // WebGL2 uses OpenGL ES 3.0
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        #else
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        #endif
         // Window creation
         //glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE); // maximize _window
         _window = glfwCreateWindow(width, height, name, NULL, NULL);
@@ -38,12 +44,8 @@ public:
 
         this->setupDebugContex();
 
-        // Configure default opengl state
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // Fixes seams artifacts from skybox shape
-
         glfwSwapInterval(1);
-        glfwSwapInterval(0); // Disable vsync
+        //glfwSwapInterval(0); // Disable vsync
     }
 
     ~Window() {
