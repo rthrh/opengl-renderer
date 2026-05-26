@@ -22,13 +22,14 @@
 #include "math_matrix.h"
 #include "asset_cache.h"
 #include "mesh_cache.h"
+#include "shader_cache.h"
 
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
 
 class Renderer {
 public:
-    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, const std::shared_ptr<Skybox> skybox, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache) :
+    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache, ShaderCache& shaderCache) :
         _cameraPtr(std::move(camera)),
         _gBuffer(scrWidth, scrHeight),
         _scrWidth(scrWidth),
@@ -39,10 +40,16 @@ public:
         _bloom(scrWidth, scrHeight),
         _ssao(scrWidth, scrHeight),
         _fxaa(scrWidth, scrHeight),
-        _skybox(skybox),
+        _skybox(2048),
         _assetCache(assetCache),
         _meshCache(meshCache)
     {
+        _equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
+        _skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
+        _irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
+        _prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
+        _brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
+
         // Init GL state
         glEnable(GL_CULL_FACE); // Cull back faces
         glCullFace(GL_BACK);
@@ -56,6 +63,12 @@ public:
 
     Renderer(Renderer&&) noexcept = default;
     Renderer& operator=(Renderer&&) noexcept = default;
+
+    void LoadSkybox(const std::filesystem::path& skyboxPath) {
+        glDisable(GL_CULL_FACE);
+        _skybox.LoadTexture(skyboxPath, *_equirectShader, *_irradianceShader, *_prefilterShader, *_brdfShader);
+        glEnable(GL_CULL_FACE);
+    }
 
     void Draw(Mesh& mesh, Shader& shader, bool depthOnly = false) const {
         this->drawMesh(mesh, shader, depthOnly);
@@ -181,7 +194,7 @@ public:
         Stopwatch stopwatch("PassDeferred");
         _gBuffer.BindTextures();
         _ssao.BindSSAOTexture();
-        _skybox->BindTexturesIBL();
+        _skybox.BindTexturesIBL();
         _bloom.BindHdrFramebuffer();
         glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
 
@@ -216,7 +229,7 @@ public:
         this->render(_meshCache->GetQueue(NoShadow), unlitShader);
     }
 
-    void PassSkybox(Skybox& skybox, Shader& skyboxShader) {
+    void PassSkybox() {
         Stopwatch stopwatch("PassSkybox");
         _bloom.BindHdrFramebuffer();
 
@@ -224,7 +237,7 @@ public:
         glDepthMask(GL_FALSE);   // disable depth buffer writes
         auto view = _cameraPtr->GetViewMatrix();
         auto projection = _cameraPtr->GetProjectionMatrix();
-        skybox.Draw(skyboxShader, view, projection);
+        _skybox.Draw(*_skyboxShader, view, projection);
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS); // restore default
     }
@@ -296,7 +309,13 @@ private:
     Bloom _bloom;
     SSAO _ssao;
     FXAA _fxaa;
-    std::shared_ptr<Skybox> _skybox; //TODO should not be shared
+    Skybox _skybox;
     std::shared_ptr<AssetCache> _assetCache;
     std::shared_ptr<MeshCache> _meshCache;
+
+    std::shared_ptr<Shader> _equirectShader;
+    std::shared_ptr<Shader> _skyboxShader;
+    std::shared_ptr<Shader> _irradianceShader;
+    std::shared_ptr<Shader> _prefilterShader;
+    std::shared_ptr<Shader> _brdfShader;
 };

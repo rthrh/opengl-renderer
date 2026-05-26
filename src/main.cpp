@@ -151,8 +151,6 @@ int main()
     auto forwardShader = shaderCache.Build("forward", "forward.vert", "forward_pbr.frag");
     auto phongShader = shaderCache.Build("phong_forward", "forward.vert", "forward_phong.frag");
 
-    auto equirectShader = shaderCache.Build("equirect", "equirect_to_cubemap.vert", "equirect_to_cubemap.frag");
-    auto skyboxShader = shaderCache.Build("skybox", "skybox.vert", "skybox.frag");
 
     auto shadowDirShader = shaderCache.Build("shadow_directional", "shadow_directional.vert", "depth.frag");
     auto shadowPointShader = shaderCache.Build("shadow_point", "shadow_point.vert", "shadow_point.frag");
@@ -161,10 +159,6 @@ int main()
     auto downsampleShader = shaderCache.Build("downsample", "quad.vert", "downsample.frag");
     auto upsampleShader = shaderCache.Build("upsample", "quad.vert", "upsample.frag");
     auto bloomFinalShader = shaderCache.Build("bloomFinal", "quad.vert", "bloom_final.frag");
-
-    auto irradianceShader = shaderCache.Build("irradiance", "irradiance.vert", "irradiance.frag");
-    auto prefilterShader = shaderCache.Build("prefilter", "irradiance.vert", "prefilter.frag");
-    auto brdfShader = shaderCache.Build("brdf", "brdf.vert", "brdf.frag");
 
     auto ssaoShader = shaderCache.Build("ssao", "quad.vert", "ssao.frag");
     auto ssaoBlurShader = shaderCache.Build("ssao_blur", "quad.vert", "ssao_blur.frag");
@@ -184,11 +178,11 @@ int main()
     // setup skybox rogland_clear_night_4k newport_loft.hdr
     //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
     std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
-    auto skybox = std::make_shared<Skybox>(skyboxPath, *equirectShader, *irradianceShader, *prefilterShader, *brdfShader);
 
     auto assetCache = std::make_shared<AssetCache>();
     auto meshCache = std::make_shared<MeshCache>(assetCache);
-    Renderer renderer(windowWidth, windowHeight, camera, skybox, assetCache, meshCache);
+    Renderer renderer(windowWidth, windowHeight, camera, assetCache, meshCache, shaderCache);
+    renderer.LoadSkybox(skyboxPath);
 
     UniformBuffer<ConfigUBO, 5> configUBO; // TODO who should own?
     configUBO.Upload();
@@ -218,8 +212,8 @@ int main()
     glm::mat4 projection = glm::perspective(glm::radians(camera->GetZoom()), (float)scrWidth / (float)scrHeight, 0.1f, 100.0f);
     //pbrShader.use();
     //pbrShader.setMat4("projection", projection);
-    skyboxShader->Activate();
-    skyboxShader->SetMat4("projection", projection);
+    //skyboxShader->Activate();
+    //skyboxShader->SetMat4("projection", projection);
 
     // render loop
     while (!window.ShouldClose())
@@ -269,7 +263,7 @@ int main()
         renderer.PassForward(scene, *forwardShader);
 
         glDisable(GL_CULL_FACE);
-        renderer.PassSkybox(*skybox, *skyboxShader);
+        renderer.PassSkybox();
         glEnable(GL_CULL_FACE);
 
         renderer.PassNoShadow(scene, *unlitShader);

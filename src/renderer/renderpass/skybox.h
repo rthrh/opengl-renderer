@@ -25,13 +25,12 @@
 
 class Skybox {
 public:
-    Skybox(std::filesystem::path path, Shader& equirectShader, Shader& irradianceShader, Shader& prefilterShader, Shader& brdfShader, GLsizei cubeSize = 2048) :
+    Skybox(GLsizei cubeSize = 2048) :
         _cubeSize(cubeSize),
         _captureFBO(),
         _captureRBO(cubeSize, cubeSize, TextureFormat::Depth32F),
         _cubeVBO(),
         _envCubemap(cubeSize, TextureFormat::RGB16F, true),
-        _hdrTexture(initTextureHDR(std::move(path))),
         _irradianceCubemap(initIrradianceMap()),
         _prefilteredCubemap(initPrefilteredMap()),
         _brdfLUT(initBrdfLUT())
@@ -41,14 +40,8 @@ public:
         _envCubemap.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
         _envCubemap.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
-        initCube();
-
-        equirectToEnvMap(equirectShader);
-        _envCubemap.GenerateMipmap();
-
-        bakeIrradianceMap(irradianceShader);
-        bakePrefilteredMap(prefilterShader);
-        bakeBrdfLUT(brdfShader);
+        this->initCube();
+        this->setupCaptureViews();
     }
 
     //TODO FBO, RBO, HDR texture can be removed after init
@@ -58,6 +51,16 @@ public:
     Skybox& operator=(const Skybox&) = delete;
     Skybox(Skybox&&) noexcept = default;
     Skybox& operator=(Skybox&&) noexcept = default;
+
+    void LoadTexture(const std::filesystem::path& path, Shader& equirectShader, Shader& irradianceShader, Shader& prefilterShader, Shader& brdfShader) {
+        _hdrTexture = initTextureHDR(path);
+        this->equirectToEnvMap(equirectShader);
+        _envCubemap.GenerateMipmap();
+
+        this->bakeIrradianceMap(irradianceShader);
+        this->bakePrefilteredMap(prefilterShader);
+        this->bakeBrdfLUT(brdfShader);
+    }
 
     void Draw(Shader& skyboxShader, glm::mat4 view, glm::mat4 projection) {
         skyboxShader.Activate();
@@ -75,6 +78,20 @@ public:
     }
 
 private:
+    void setupCaptureViews() {
+        // TODO these are only used once
+        _captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        _captureViews =
+        {
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+        };
+    }
+
     Texture2D initTextureHDR(const std::filesystem::path& path) {
         int width, height, nrComponents;
         float *data = nullptr;
@@ -131,18 +148,6 @@ private:
 
     // Converts equirectangular map to cube map
     void equirectToEnvMap(Shader& equirectShader) {
-        // TODO these are only used once
-        _captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-        _captureViews =
-        {
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-        };
-
         equirectShader.Activate();
         equirectShader.SetMat4("projection", _captureProjection);
         _hdrTexture.Bind(0);
