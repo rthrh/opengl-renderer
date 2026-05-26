@@ -93,6 +93,37 @@ public:
         _fxaa.Resize(scrWidth, scrHeight);
     }
 
+    // Call in main loop to render frame
+    void RenderFrame(Scene& scene) {
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        _cameraPtr->UploadUBO();
+        _assetCache->UploadMaterials();
+        scene.UploadTransforms(_meshCache);
+
+        glCullFace(GL_FRONT);
+        this->PassShadowDirectional(scene);
+        this->PassShadowPoint(scene);
+        this->PassShadowSpot(scene);
+        glCullFace(GL_BACK);
+
+        this->PassGeometryBuffer(scene);
+        this->PassSSAO(scene);
+        this->PassDeferred(scene);
+        this->PassForward(scene);
+
+        glDisable(GL_CULL_FACE);
+        this->PassSkybox();
+        glEnable(GL_CULL_FACE);
+
+        this->PassNoShadow(scene);
+        this->PassBloom();
+        this->PassFXAA();
+    }
+
+private:
+
     void PassShadowDirectional(Scene& scene) {
         Stopwatch stopwatch("PassShadowDirectional");
         if (!_configUBO.Data().dirShadowsEnabled) return;
@@ -198,7 +229,7 @@ public:
         _ssao.BindSSAOTexture();
         _skybox.BindTexturesIBL();
         _bloom.BindHdrFramebuffer();
-        glClear(GL_COLOR_BUFFER_BIT); // clear color (removes artifacts when rendering closer than z-near)
+        glClear(GL_COLOR_BUFFER_BIT);
 
         _shaders.deferredLight->Activate();
         // render empty fullscreen quad
@@ -275,7 +306,6 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-private:
     void render(MeshQueue& meshQueue, Shader& shader, bool depthOnly = false) {
         for (auto& [handle, mesh] : meshQueue) {
             Draw(mesh, shader, depthOnly);
