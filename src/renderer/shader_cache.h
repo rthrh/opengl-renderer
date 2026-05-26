@@ -46,6 +46,7 @@ public:
 
     // Builds a shader with a shaderName from the provided shader file names
     std::shared_ptr<Shader> Build(const ShaderName& name, const FileName& vert, const FileName& frag, const FileName& geom = "") {
+        std::cout << "=== Compiling shader: " << name << "\n=== end ===\n";
         auto vertPath = getFile(vert);
         auto fragPath = getFile(frag);
         if (!vertPath || !fragPath) throw std::runtime_error("No vert or frag shader found");

@@ -1,9 +1,15 @@
 #version 420 core
+
 out vec4 FragColor;
 in vec2 TexCoords;
 
-layout (binding = 0) uniform sampler2D scene;
-layout (binding = 1) uniform sampler2D bloomBlur;
+#ifndef GLES
+    layout (binding = 0) uniform sampler2D scene;
+    layout (binding = 1) uniform sampler2D bloomBlur;
+#else
+    uniform sampler2D scene;
+    uniform sampler2D bloomBlur;
+#endif
 
 #include "include/ubo.glsl"
 

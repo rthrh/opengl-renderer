@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 in vec3 WorldPos;
 
-layout(binding = 6) uniform samplerCube environmentMap;
+#include "include/samplers.glsl"
 
 void main()
 {

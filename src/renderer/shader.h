@@ -15,7 +15,11 @@
 
 std::string GetVersionHeader() {
 #ifdef __EMSCRIPTEN__
-    return "#version 300 es\nprecision highp float;\n";
+return "#version 300 es\n"
+       "precision highp float;\n"
+       "precision highp int;\n"
+       "precision highp sampler2DArray;\n"
+       "#define GLES 1\n";
 #else
     return "#version 450 core\n";
 #endif

@@ -1,5 +1,12 @@
 
-layout(std140, binding = 0) uniform DirectionalLightBlock {
+#ifdef GLES
+    #define UBO_BINDING(slot) layout(std140)
+#else
+    #define UBO_BINDING(slot) layout(std140, binding = slot)
+#endif
+
+
+UBO_BINDING(0) uniform DirectionalLightBlock {
     vec4 direction;
     vec4 colorAndIntensity; // rgb = color, a = intensity
 } dirLight;
@@ -9,7 +16,7 @@ struct PointLight {
     vec4 colorAndIntensity; // rgb = color, a = intensity
 };
 
-layout(std140, binding = 1) uniform PointLightBlock {
+UBO_BINDING(1) uniform PointLightBlock {
     ivec4      count;       // x = count
     PointLight lights[16];
 } pointLights;
@@ -24,23 +31,23 @@ struct SpotLight {
     float _pad;
 };
 
-layout(std140, binding = 2) uniform SpotLightBlock {
+UBO_BINDING(2) uniform SpotLightBlock {
     ivec4     count;         // x = count
     SpotLight lights[16];
 } spotLights;
 
-layout(std140, binding = 3) uniform CameraBlock {
+UBO_BINDING(3) uniform CameraBlock {
     mat4 view;
     mat4 projection;
     vec4 position;   // xyz = camera world pos, w = unused
 } camera;
 
-layout(std140, binding = 4) uniform ShadowBlock {
+UBO_BINDING(4) uniform ShadowBlock {
     mat4 dirLightSpaceMatrix;
     mat4 spotLightSpaceMatrices[4]; // TODO 4 MAX move it
 } Shadow;
 
-layout(std140, binding = 5) uniform ConfigBlock {
+UBO_BINDING(5) uniform ConfigBlock {
     bool  bloomEnabled;
     float exposure;
     float gamma;

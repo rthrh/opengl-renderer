@@ -6,7 +6,12 @@
 // Remember to add bilinear minification filter for this texture!
 // Remember to use a floating-point texture format (for HDR)!
 // Remember to use edge clamping for this texture!
-layout (binding = 0) uniform sampler2D srcTexture;
+#ifndef GLES
+	layout (binding = 0) uniform sampler2D srcTexture;
+#else
+	uniform sampler2D srcTexture;
+#endif
+
 uniform float filterRadius;
 
 in vec2 TexCoords;

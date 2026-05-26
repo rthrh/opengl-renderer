@@ -44,8 +44,8 @@ void FindBlocker_Spot(out float avgBlockerDepth, out float numBlockers, vec2 uv,
     //This uses similar triangles to compute what
     //area of the shadow map we should search
     float searchWidth = LIGHT_SIZE_UV_SPOT * (zReceiver - NEAR_PLANE) / zReceiver;
-    float blockerSum = 0;
-    numBlockers = 0;
+    float blockerSum = 0.0;
+    numBlockers = 0.0;
     for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
     {
         vec2 offset = poissonDisk[i] * searchWidth;
@@ -70,7 +70,7 @@ float PCF_Filter_Spot(vec2 uv, float zReceiver, float filterRadiusUV, int lightI
         float depth = texture(shadowSpotMap, vec3(uv + offset, float(lightIndex))).r;
         sum += zReceiver > depth ? 0.0 : 1.0;
     }
-    return sum / PCF_NUM_SAMPLES;
+    return sum / float(PCF_NUM_SAMPLES);
 }
 
 float PCSS_Spot(vec3 coords, int lightIndex)
@@ -101,8 +101,8 @@ void FindBlocker_Dir(out float avgBlockerDepth, out float numBlockers, vec2 uv, 
     //area of the shadow map we should search
     //float searchWidth = LIGHT_SIZE_UV_DIR * (zReceiver - NEAR_PLANE) / zReceiver;
     float searchWidth = LIGHT_SIZE_UV_DIR;
-    float blockerSum = 0;
-    numBlockers = 0;
+    float blockerSum = 0.0;
+    numBlockers = 0.0;
     for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
     {
         vec2 offset = poissonDisk[i] * searchWidth;
@@ -127,7 +127,7 @@ float PCF_Filter_Dir(vec2 uv, float zReceiver, float filterRadiusUV)
         float depth = texture(shadowDirMap, uv + offset).r;
         sum += zReceiver > depth ? 0.0 : 1.0;
     }
-    return sum / PCF_NUM_SAMPLES;
+    return sum / float(PCF_NUM_SAMPLES);
 }
 
 float PCSS_Dir(vec3 coords)

@@ -24,6 +24,9 @@
 #include "demo.h"
 #include "window.h"
 
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+#endif
 
 struct AppCallbackData {
     std::shared_ptr<Camera> cameraPtr;
@@ -59,7 +62,7 @@ public:
         // build and compile shaders
         std::filesystem::path root = PROJECT_SOURCE_DIR;
         std::filesystem::path pathShaders = root / "src/shaders";
-        _shaderCache.SetPostBuildHook(InitSamplers);
+        _shaderCache.SetPostBuildHook(InitBindings);
         _shaderCache.LoadDirectory(pathShaders);
 
         // Set up shader file watcher
@@ -89,17 +92,35 @@ public:
         // Scene setup
         //_scene = std::make_unique<Scene>(setupTestModels(_assetCache, _modelLoader));
         //_scene = std::make_unique<Scene>(setupSponza(_assetCache, _modelLoader));
-        _scene = std::make_unique<Scene>(setupScene(_assetCache, _modelLoader));
+        _scene = std::make_unique<Scene>(setupLocal(_assetCache, _modelLoader));
     }
 
     void Run() {
+        #ifdef __EMSCRIPTEN__
+            emscripten_set_main_loop_arg(
+                [](void* self) { static_cast<App*>(self)->Frame(); },
+                this,
+                0,   // 0 = use requestAnimationFrame
+                1    // simulate infinite loop
+            );
+        #else
+            while (!_window.ShouldClose()) {
+                Frame();
+            }
+        #endif
+    }
+
+    void Frame() {
         // Render loop
         while (!_window.ShouldClose())
         {
             Stopwatch stopwatch("Render loop");
             // poll events
             glfwPollEvents();
-            _fileWatcher.Update();
+
+            #ifndef __EMSCRIPTEN__
+                _fileWatcher.Update();
+            #endif
 
             // per-frame time logic
             auto currentFrame = static_cast<float>(glfwGetTime());

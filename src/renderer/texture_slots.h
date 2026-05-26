@@ -30,6 +30,9 @@ GLuint slot(T t) {
     return static_cast<GLuint>(t);
 }
 
+
+
+
 // Initialize samplers for non-DSA opengl path
 void InitSamplers(const Shader& shader) {
     #ifdef USE_GL_DSA
@@ -49,4 +52,23 @@ void InitSamplers(const Shader& shader) {
         shader.SetInt("brdfLUT",         slot(BrdfLUT));
         shader.SetInt("ssaoMap",         slot(SSAO));
     #endif
+}
+
+// Initialize UBO bindings for non-DSA opengl path
+void InitUboBindings(const Shader& shader) {
+    #ifdef USE_GL_DSA
+        using enum TextureSlot;
+        shader.Activate();
+        shader.SetInt("DirectionalLightBlock", 0);
+        shader.SetInt("PointLightBlock", 1);
+        shader.SetInt("SpotLightBlock", 2);
+        shader.SetInt("CameraBlock", 3);
+        shader.SetInt("ShadowBlock", 4);
+        shader.SetInt("ConfigBlock", 5);
+    #endif
+}
+
+void InitBindings(const Shader& shader) {
+    InitSamplers(shader);
+    InitUboBindings(shader);
 }

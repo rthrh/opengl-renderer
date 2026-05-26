@@ -82,7 +82,11 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+if(EMSCRIPTEN)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="/")
+else()
+    target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+endif()
 
 if(USE_GL_DSA)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GL_DSA)
@@ -94,6 +98,7 @@ if(EMSCRIPTEN)
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
     target_link_options(${PROJECT_NAME} PRIVATE
+        "-sDISABLE_EXCEPTION_CATCHING=0"
         "-sUSE_GLFW=3"
         "-sUSE_WEBGL2=1"
         "-sFULL_ES3=1"
@@ -101,6 +106,9 @@ if(EMSCRIPTEN)
         "-sSTACK_SIZE=5242880"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=256MB"
+        # shaders and scene models need to be compiled into binary for WASM
+        "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/src/shaders@/src/shaders"
+        "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/resources@/resources"
     )
 else()
 

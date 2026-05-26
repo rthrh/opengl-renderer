@@ -1,29 +1,9 @@
 #version 450 core
 
 out vec4 FragColor;
-
 in vec2 TexCoords;
 
-// From gbuffer
-layout(binding = 0) uniform sampler2D albedoMap;    // RGB8
-layout(binding = 1) uniform sampler2D normalMap;    // RGB16F
-layout(binding = 2) uniform sampler2D ormMap;       // RGB8  r=ao g=roughness b=metallic
-layout(binding = 3) uniform sampler2D emissiveMap;  // RGB16F
-layout(binding = 4) uniform sampler2D depthMap;     // DEPTH24_STENCIL8
-
-layout(binding = 7) uniform sampler2D shadowDirMap;
-layout(binding = 8) uniform samplerCubeArray shadowPointMaps;
-layout(binding = 9) uniform sampler2DArray shadowSpotMap;
-layout(binding = 10) uniform samplerCube irradianceMap;
-layout(binding = 11) uniform samplerCube prefilteredMap;
-layout(binding = 12) uniform sampler2D brdfLUT;
-layout(binding = 13) uniform sampler2D ssaoMap;
-
-layout(binding = 14) uniform samplerCube shadowPointMap0;
-layout(binding = 15) uniform samplerCube shadowPointMap1;
-layout(binding = 16) uniform samplerCube shadowPointMap2;
-layout(binding = 17) uniform samplerCube shadowPointMap3;
-
+#include "include/samplers.glsl"
 #include "include/ubo.glsl"
 #include "include/brdf.glsl"
 #include "include/pbr_lights.glsl"

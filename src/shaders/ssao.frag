@@ -1,18 +1,15 @@
 #version 420 core
-out float FragColor;
 
+out float FragColor;
 in vec2 TexCoords;
 
-layout(binding = 1) uniform sampler2D gNormal;
-layout(binding = 4) uniform sampler2D depthMap;
-
-layout(binding = 13) uniform sampler2D texNoise;
-
+// ssaoMap = texNoise
 uniform vec3 samples[64];
 
 // tile noise texture over screen based on screen dimensions divided by noise size
 uniform vec2 noiseScale;
 
+#include "include/samplers.glsl"
 #include "include/ubo.glsl"
 
 
@@ -40,10 +37,10 @@ void main()
     float fragDepth = texture(depthMap, TexCoords).r;
     vec3 fragPos = ReconstructViewPos(TexCoords, fragDepth);
 
-    //vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
-    vec3 normal = normalize(mat3(camera.view) * texture(gNormal, TexCoords).rgb); // normal to view space
+    //vec3 normal = normalize(texture(normalMap, TexCoords).rgb);
+    vec3 normal = normalize(mat3(camera.view) * texture(normalMap, TexCoords).rgb); // normal to view space
 
-    vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
+    vec3 randomVec = normalize(texture(ssaoMap, TexCoords * noiseScale).xyz);
     // create TBN change-of-basis matrix: from tangent-space to view-space
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
