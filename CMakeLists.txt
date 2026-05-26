@@ -94,9 +94,9 @@ if(EMSCRIPTEN)
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
     target_link_options(${PROJECT_NAME} PRIVATE
-        #"-sUSE_GLFW=3"
-        #"-sUSE_WEBGL2=1"
-        #"-sFULL_ES3=1"
+        "-sUSE_GLFW=3"
+        "-sUSE_WEBGL2=1"
+        "-sFULL_ES3=1"
 
         "-sSTACK_SIZE=5242880"
         "-sALLOW_MEMORY_GROWTH=1"

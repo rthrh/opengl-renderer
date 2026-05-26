@@ -2,13 +2,24 @@
 
 #include <gl/headers.h>
 #include <utility>
-//TODO no nondsa path
+
 template<typename T, int BindSlot>
 class ShaderStorageBuffer {
 public:
+    // Treat SSBO as UBO in WASM
+    #ifdef __EMSCRIPTEN__
+        static constexpr GLenum BufferTarget = GL_UNIFORM_BUFFER;
+    #else
+        static constexpr GLenum BufferTarget = GL_SHADER_STORAGE_BUFFER;
+    #endif
+
     ShaderStorageBuffer() {
-        glCreateBuffers(1, &_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BindSlot, _ssbo);
+        #ifdef USE_GL_DSA
+            glCreateBuffers(1, &_ssbo);
+        #else
+            glGenBuffers(1, &_ssbo);
+        #endif
+        glBindBufferBase(BufferTarget, BindSlot, _ssbo);
     }
 
     ~ShaderStorageBuffer() {
@@ -32,8 +43,7 @@ public:
     uint32_t Pushback(T item ) {
         uint32_t index = _data.size();
         _data.emplace_back(std::move(item));
-        glNamedBufferData(_ssbo, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BindSlot, _ssbo);
+        this->Upload();
         return index;
     }
 
@@ -41,8 +51,14 @@ public:
 
     // Call manually to update SSBO after editing items via Get()
     void Upload() {
-        glNamedBufferData(_ssbo, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BindSlot, _ssbo);
+        #ifdef USE_GL_DSA
+            glNamedBufferData(_ssbo, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
+        #else
+            glBindBuffer(BufferTarget, _ssbo);
+            glBufferData(BufferTarget, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(BufferTarget, 0);
+        #endif
+        glBindBufferBase(BufferTarget, BindSlot, _ssbo);
     }
 
 private:

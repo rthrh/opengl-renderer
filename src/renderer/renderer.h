@@ -52,8 +52,10 @@ public:
         this->UploadConfig();
 
         // Init GL state
+        #ifndef __EMSCRIPTEN__
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // Fixes skybox seams
+        #endif
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // Fixes skybox seams
         glEnable(GL_CULL_FACE); // Cull back faces
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
