@@ -8,11 +8,11 @@
 class ElementBuffer {
 public:
     ElementBuffer() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateBuffers(1, &_id);
-        } else {
+        #else
             glGenBuffers(1, &_id);
-        }
+        #endif
     }
 
     ~ElementBuffer() {
@@ -36,25 +36,25 @@ public:
     // Creates immutable storage and uploads data once.
     template <class T>
     void SetStorage(std::span<const T> data) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedBufferStorage(_id, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
-        } else {
+        #else
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
             glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_STORAGE_BIT);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        }
+        #endif
     }
 
     // Creates mutable storage. Can be called repeatedly to update data and size
     template <class T>
     void SetData(std::span<const T> data) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedBufferData(_id, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
-        } else {
+        #else
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        }
+        #endif
     }
 
 private:

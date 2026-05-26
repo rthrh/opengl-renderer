@@ -26,9 +26,9 @@ GLuint slot(T t) {
     return static_cast<GLuint>(t);
 }
 
-//Initialized samplers for non-DSA opengl path
+// Initialize samplers for non-DSA opengl path
 void InitSamplers(const Shader& shader) {
-    if constexpr (! USE_DSA) {
+    #ifdef USE_GL_DSA
         using enum TextureSlot;
         shader.Activate();
         shader.SetInt("albedoMap",       slot(Albedo));
@@ -44,5 +44,5 @@ void InitSamplers(const Shader& shader) {
         shader.SetInt("prefilteredMap",  slot(PrefilterEnv));
         shader.SetInt("brdfLUT",         slot(BrdfLUT));
         shader.SetInt("ssaoMap",         slot(SSAO));
-    }
+    #endif
 }

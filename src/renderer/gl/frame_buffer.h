@@ -26,16 +26,16 @@ enum class TextureAttachment : GLenum {
 class FrameBuffer {
 public:
     FrameBuffer() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateFramebuffers(1, &_id);
             glNamedFramebufferDrawBuffer(_id, GL_NONE);
             glNamedFramebufferReadBuffer(_id, GL_NONE);
-        } else {
+        #else
             glGenFramebuffers(1, &_id);
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
-        }
+        #endif
     }
 
     ~FrameBuffer() {
@@ -64,36 +64,36 @@ public:
     }
 
     void AttachTexture(TextureAttachment attachment, GLuint tex) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedFramebufferTexture(_id, (GLenum)attachment, tex, 0);
             this->updateAttachments(attachment);
-        } else {
+        #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)attachment, tex, 0);
             this->updateAttachments(attachment);
-        }
+        #endif
     }
 
     void AttachTextureLayer(TextureAttachment attachment, GLuint tex, int layer, int mip = 0) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedFramebufferTextureLayer(_id, (GLenum)attachment, tex, mip, layer);
             this->updateAttachments(attachment);
-        } else {
+        #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, (GLenum)attachment, tex, mip, layer);
             this->updateAttachments(attachment);
-        }
+        #endif
     }
 
     void AttachRenderBuffer(TextureAttachment attachment, const RenderBuffer& renderBuffer) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedFramebufferRenderbuffer(_id, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
             this->updateAttachments(attachment);
-        } else {
+        #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, (GLenum)attachment, GL_RENDERBUFFER, renderBuffer.GetID());
             this->updateAttachments(attachment);
-        }
+        #endif
     }
 
     void Bind() const {
@@ -105,13 +105,13 @@ public:
     }
 
     static void Blit(GLuint srcFBO, GLuint dstFBO, int srcWidth, int srcHeight, int dstWidth, int dstHeight, GLenum mask) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glBlitNamedFramebuffer(srcFBO, dstFBO, 0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
-        } else {
+        #else
             glBindFramebuffer(GL_READ_FRAMEBUFFER, srcFBO);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFBO);
             glBlitFramebuffer(0, 0, srcWidth, srcHeight, 0, 0, dstWidth, dstHeight, mask, GL_NEAREST);
-        }
+        #endif
 
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
@@ -121,14 +121,14 @@ public:
     }
 
     void Status() const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             GLenum status = glCheckNamedFramebufferStatus(_id, GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
-        } else {
+        #else
             glBindFramebuffer(GL_FRAMEBUFFER, _id);
             GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) Error("Framebuffer error: {}", status);
-        }
+        #endif
     }
 
 private:
@@ -138,12 +138,12 @@ private:
         if (isColor && !std::ranges::contains(_colorAttachments, attachment)) {
             _colorAttachments.emplace_back(attachment);
 
-            if constexpr (USE_DSA) {
+            #ifdef USE_GL_DSA
                 glNamedFramebufferDrawBuffers(_id, _colorAttachments.size(), (GLenum*)_colorAttachments.data());
-            } else {
+            #else
                 // Assumes the FBO is already bound
                 glDrawBuffers(_colorAttachments.size(), (GLenum*)_colorAttachments.data());
-            }
+            #endif
         }
     }
 

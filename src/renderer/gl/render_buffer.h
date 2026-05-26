@@ -13,15 +13,15 @@ public:
     RenderBuffer(int width, int height, TextureFormat format) :
         _format(format)
     {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateRenderbuffers(1, &_id);
             glNamedRenderbufferStorage(_id, (GLenum)format, width, height);
-        } else {
+        #else
             glGenRenderbuffers(1, &_id);
             glBindRenderbuffer(GL_RENDERBUFFER, _id);
             glRenderbufferStorage(GL_RENDERBUFFER, (GLenum)format, width, height);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        }
+        #endif
     }
 
     ~RenderBuffer() {
@@ -47,13 +47,13 @@ public:
     GLuint GetID() const { return _id; }
 
     void Resize(int width, int height) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedRenderbufferStorage(_id, (GLenum)_format, width, height);
-        } else {
+        #else
             glBindRenderbuffer(GL_RENDERBUFFER, _id);
             glRenderbufferStorage(GL_RENDERBUFFER, (GLenum)_format, width, height);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        }
+        #endif
     }
 
 private:

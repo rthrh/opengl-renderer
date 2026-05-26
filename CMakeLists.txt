@@ -39,12 +39,12 @@ if(NOT EMSCRIPTEN)
 endif()
 
 # DSA and version settings
-option(USE_GL_DSA "Use OpenGL Direct State Access" ON)
-set(GL_VERSION 450)
+option(USE_GL_DSA "Use OpenGL Direct State Access" OFF)
+set(GLSL_VERSION 450)
 
 if (EMSCRIPTEN)
     set(USE_GL_DSA OFF)
-    set(GL_VERSION 300)
+    set(GLSL_VERSION 300)
     set(LIBS glm assimp tinyexr)
     #set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 elseif(UNIX)
@@ -87,6 +87,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_S
 if(USE_GL_DSA)
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_GL_DSA)
 endif()
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLSL_VERSION=${GLSL_VERSION})
 
 if(EMSCRIPTEN)
@@ -101,6 +102,8 @@ if(EMSCRIPTEN)
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=256MB"
     )
+else()
+
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/src)

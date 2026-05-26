@@ -99,14 +99,14 @@ public:
         requires (!Array<T> && !Cube<T>) : _width(width), _height(height), _format(internalFormat)
     {
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_2D, 1, &_id);
             glTextureStorage2D(_id, mipLevels, (GLuint)internalFormat, width, height);
-        } else {
+        #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_2D, _id);
             glTexStorage2D(GL_TEXTURE_2D, mipLevels, (GLuint)internalFormat, width, height);
-        }
+        #endif
 
         this->Upload(data);
         this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
@@ -121,14 +121,14 @@ public:
         requires (Array<T> && !Cube<T>) : _width(width), _height(height), _layers(layers), _format(internalFormat)
     {
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &_id);
             glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, width, height, layers);
-        } else {
+        #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_2D_ARRAY, _id);
             glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, (GLuint)internalFormat, width, height, layers);
-        }
+        #endif
 
         this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
         this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
@@ -142,15 +142,14 @@ public:
         requires (!Array<T> && Cube<T>) : _width(size), _height(size), _format(internalFormat)
     {
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
-
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_id);
             glTextureStorage2D(_id, mipLevels, (GLuint)internalFormat, size, size);
-        } else {
+        #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_CUBE_MAP, _id);
             glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipLevels, (GLuint)internalFormat, size, size);
-        }
+        #endif
 
         this->SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         this->SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
@@ -165,14 +164,14 @@ public:
     {
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
 
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_id);
             glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, size, size, layers * 6);
-        } else {
+        #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, _id);
             glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, mipLevels, (GLuint)internalFormat, size, size, layers * 6);
-        }
+        #endif
 
         SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
@@ -209,50 +208,52 @@ public:
 
     // Sets all wraps to the same value at once
     void SetWrap(TextureWrap wraps) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)wraps);
             glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)wraps);
-        } else {
+        #else
             glBindTexture(T, _id);
             glTexParameteri(T, GL_TEXTURE_WRAP_S, (GLint)wraps);
             glTexParameteri(T, GL_TEXTURE_WRAP_T, (GLint)wraps);
-        }
+        #endif
 
         if constexpr (Cube<T>) {
-            if constexpr (USE_DSA) {
+            #ifdef USE_GL_DSA
                 glTextureParameteri(_id, GL_TEXTURE_WRAP_R, (GLint)wraps);
-            } else {
+            #else
                 glTexParameteri(T, GL_TEXTURE_WRAP_R, (GLint)wraps);
-            }
+            #endif
         }
 
-        if constexpr (!USE_DSA) { glBindTexture(T, 0); }
+        #ifndef USE_GL_DSA
+            glBindTexture(T, 0);
+        #endif
     }
 
     void SetWrap(TextureWrap s, TextureWrap t) const requires (!Cube<T>) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)s);
             glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)t);
-        } else {
+        #else
             glBindTexture(T, _id);
             glTexParameteri(T, GL_TEXTURE_WRAP_S, (GLint)s);
             glTexParameteri(T, GL_TEXTURE_WRAP_T, (GLint)t);
             glBindTexture(T, 0);
-        }
+        #endif
     }
 
     void SetWrap(TextureWrap s, TextureWrap t, TextureWrap r) const requires (Cube<T>) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glTextureParameteri(_id, GL_TEXTURE_WRAP_S, (GLint)s);
             glTextureParameteri(_id, GL_TEXTURE_WRAP_T, (GLint)t);
             glTextureParameteri(_id, GL_TEXTURE_WRAP_R, (GLint)r);
-        } else {
+        #else
             glBindTexture(T, _id);
             glTexParameteri(T, GL_TEXTURE_WRAP_S, (GLint)s);
             glTexParameteri(T, GL_TEXTURE_WRAP_T, (GLint)t);
             glTexParameteri(T, GL_TEXTURE_WRAP_R, (GLint)r);
             glBindTexture(T, 0);
-        }
+        #endif
     }
 
     // Sets all filters to the same value at once
@@ -261,36 +262,36 @@ public:
     }
 
     void SetFilter(TextureFilter min, TextureFilter mag) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glTextureParameteri(_id, GL_TEXTURE_MIN_FILTER, (GLint)min);
             glTextureParameteri(_id, GL_TEXTURE_MAG_FILTER, (GLint)mag);
-        } else {
+        #else
             glBindTexture(T, _id);
             glTexParameteri(T, GL_TEXTURE_MIN_FILTER, (GLint)min);
             glTexParameteri(T, GL_TEXTURE_MAG_FILTER, (GLint)mag);
             glBindTexture(T, 0);
-        }
+        #endif
     }
 
     void SetBorderColor(float r, float g, float b, float a) const {
         float color[] = {r, g, b, a};
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glTextureParameterfv(_id, GL_TEXTURE_BORDER_COLOR, color);
-        } else {
+        #else
             glBindTexture(T, _id);
             glTexParameterfv(T, GL_TEXTURE_BORDER_COLOR, color);
             glBindTexture(T, 0);
-        }
+        #endif
     }
 
     void GenerateMipmap() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glGenerateTextureMipmap(_id);
-        } else {
+        #else
             glBindTexture(T, _id);
             glGenerateMipmap(T);
             glBindTexture(T, 0);
-        }
+        #endif
     }
 
     void Upload(const void* data) const requires (!Array<T> && !Cube<T>) {
@@ -298,37 +299,37 @@ public:
             auto channels = FormatToChannels(_format);
             auto dataType = FormatToDataType(_format);
 
-            if constexpr (USE_DSA) {
+            #ifdef USE_GL_DSA
                 glTextureSubImage2D(_id, 0, 0, 0, _width, _height, (GLuint)channels, (GLuint)dataType, data);
-            } else {
+            #else
                 glBindTexture(GL_TEXTURE_2D, _id);
                 glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _width, _height, (GLuint)channels, (GLuint)dataType, data);
                 glBindTexture(GL_TEXTURE_2D, 0);
-            }
+            #endif
         }
     }
 
     void UploadLayer(const void* data, int layer) const requires (Array<T>) {
         if (data) {
-            if constexpr (USE_DSA) {
+            #ifdef USE_GL_DSA
                 glTextureSubImage3D(_id, 0, 0, 0, layer, _width, _height, 1,
                     FormatToChannels(_format), FormatToDataType(_format), data);
-            } else {
+            #else
                 glBindTexture(T, _id);
                 glTexSubImage3D(T, 0, 0, 0, layer, _width, _height, 1,
                     FormatToChannels(_format), FormatToDataType(_format), data);
                 glBindTexture(T, 0);
-            }
+            #endif
         }
     }
 
     void Bind(GLuint slot) const {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glBindTextureUnit(slot, _id);
-        } else {
+        #else
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(T, _id);
-        }
+        #endif
     }
 
     GLuint GetID() const { return _id; }

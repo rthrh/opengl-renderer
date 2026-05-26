@@ -9,17 +9,17 @@ template<typename T, int BindSlot>
 class UniformBuffer {
 public:
     UniformBuffer() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateBuffers(1, &_ubo);
             glNamedBufferData(_ubo, sizeof(T), nullptr, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, BindSlot, _ubo);
-        } else {
+        #else
             glGenBuffers(1, &_ubo);
             glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
             glBufferData(GL_UNIFORM_BUFFER, sizeof(T), nullptr, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, BindSlot, _ubo);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        }
+        #endif
     }
 
     ~UniformBuffer() {
@@ -41,13 +41,13 @@ public:
     }
 
     void Upload() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glNamedBufferSubData(_ubo, 0, sizeof(T), &_data);
-        } else {
+        #else
             glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
             glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(T), &_data);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        }
+        #endif
     }
 
     T& Data() { return _data; }

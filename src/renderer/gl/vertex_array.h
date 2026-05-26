@@ -8,11 +8,11 @@
 class VertexArray {
 public:
     VertexArray() {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glCreateVertexArrays(1, &_id);
-        } else {
+        #else
             glGenVertexArrays(1, &_id);
-        }
+        #endif
     }
 
     ~VertexArray() {
@@ -42,19 +42,19 @@ public:
     GLuint GetID() const { return _id; }
 
     void SetBindingDivisor(GLuint bindingIndex, GLuint divisor) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glVertexArrayBindingDivisor(_id, bindingIndex, divisor);
-        } else {
+        #else
             _divisor = divisor;
-        }
+        #endif
     }
 
     void AddAttribute(GLuint bindingIndex, GLuint attribIndex, GLint numValues, GLuint offsetBytes, GLenum type = GL_FLOAT, GLboolean normalized = GL_FALSE) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glEnableVertexArrayAttrib(_id, attribIndex);
             glVertexArrayAttribFormat(_id, attribIndex, numValues, type, normalized, offsetBytes);
             glVertexArrayAttribBinding(_id, attribIndex, bindingIndex);
-        } else {
+        #else
             if (_vbo == 0) throw std::runtime_error("AddAttribute called before BindVertexBuffer");
             glBindVertexArray(_id);
             glBindBuffer(GL_ARRAY_BUFFER, _vbo);
@@ -65,7 +65,7 @@ public:
                 glVertexAttribDivisor(attribIndex, _divisor);
             }
             glBindVertexArray(0);
-        }
+        #endif
     }
 
     void Bind() {
@@ -73,23 +73,23 @@ public:
     }
 
     void BindVertexBuffer(GLuint vbo, GLuint bindingIndex, GLint offset, GLsizei stride) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glVertexArrayVertexBuffer(_id, bindingIndex, vbo, offset, stride);
-        } else {
+        #else
             _vbo = vbo;
             _stride = stride;
             _divisor = 0; // reset divisor after bind //TODO needed?
-        }
+        #endif
     }
 
     void BindElementBuffer(GLuint ebo) {
-        if constexpr (USE_DSA) {
+        #ifdef USE_GL_DSA
             glVertexArrayElementBuffer(_id, ebo);
-        } else {
+        #else
             glBindVertexArray(_id);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             glBindVertexArray(0);
-        }
+        #endif
     }
 
 private:
