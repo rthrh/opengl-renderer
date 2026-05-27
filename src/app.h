@@ -75,7 +75,7 @@ public:
         _renderer = std::make_unique<Renderer>(windowWidth, windowHeight, _camera, _assetCache, _meshCache, _shaderCache);
 
         //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
-        std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_4k.exr";
+        std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_1k.exr";
         _renderer->LoadSkybox(skyboxPath);
 
         // App context data for callbacks

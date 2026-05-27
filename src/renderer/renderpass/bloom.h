@@ -10,10 +10,10 @@
 
 class Bloom {
 public:
-    Bloom(int scrWidth, int scrHeight) :
+    Bloom(int scrWidth, int scrHeight, GLuint depthTextureID) :
         _scrWidth(scrWidth), _scrHeight(scrHeight)
     {
-        this->Init(scrWidth, scrHeight);
+        this->Init(scrWidth, scrHeight, depthTextureID);
     }
 
     ~Bloom() = default;
@@ -21,26 +21,24 @@ public:
     Bloom(const Bloom&) = delete;
     Bloom& operator=(const Bloom&) = delete;
 
-    void Init(int scrWidth, int scrHeight) {
+    void Init(int scrWidth, int scrHeight, GLuint depthTextureID) {
         _hdrColor = Texture2D(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _hdrColor.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         _hdrColor.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
-        _depthRBO = RenderBuffer(scrWidth, scrHeight, TextureFormat::Depth32F);
-
         _bloomFBO = FrameBuffer();
         _hdrFBO = FrameBuffer();
         _hdrFBO.AttachTexture(TextureAttachment::Color0, _hdrColor.GetID());
-        _hdrFBO.AttachRenderBuffer(TextureAttachment::Depth, _depthRBO);
+        _hdrFBO.AttachTexture(TextureAttachment::Depth, depthTextureID);
         _hdrFBO.Status();
         this->initMipmaps(_scrWidth, _scrHeight);
     }
 
-    void Resize(int scrWidth, int scrHeight) {
+    void Resize(int scrWidth, int scrHeight, GLuint depthTextureID) {
         _scrWidth = scrWidth;
         _scrHeight = scrHeight;
         _mipChain.clear();
-        this->Init(scrWidth, scrHeight);
+        this->Init(scrWidth, scrHeight, depthTextureID);
     }
 
     void BindHdrFramebuffer() {
@@ -150,6 +148,5 @@ private:
 	FrameBuffer _bloomFBO;
     Texture2D _hdrColor;
     std::vector<Texture2D> _mipChain;
-    RenderBuffer _depthRBO;
 	bool _karisAverage = true;
 };

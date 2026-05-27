@@ -32,7 +32,10 @@ public:
         _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _textureORM = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
         _textureEmissive = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA16F);
+
         _textureDepth = Texture2D(scrWidth, scrHeight, TextureFormat::Depth32F);
+        _textureDepth.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        _textureDepth.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
         _framebuffer.AttachTexture(Color0, _textureAlbedo.GetID());
         _framebuffer.AttachTexture(Color1, _textureNormal.GetID());
@@ -67,6 +70,8 @@ public:
     void BlitFramebuffer(GLuint targetFBO, int targetWidth, int targetHeight) const {
         FrameBuffer::Blit(_framebuffer.GetId(), targetFBO, _scrWidth, _scrHeight, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT);
     }
+
+    GLuint GetDepthTextureID() const { return _textureDepth.GetID(); }
 
 private:
     Texture2D createTexture(int scrWidth, int scrHeight, TextureFormat format = TextureFormat::RGB32F) {

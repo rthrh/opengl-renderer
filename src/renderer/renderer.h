@@ -42,7 +42,7 @@ public:
         _shadowMapDirectional(),
         _shadowMapPoint(),
         _shadowMapSpot(),
-        _bloom(scrWidth, scrHeight),
+        _bloom(scrWidth, scrHeight, _gBuffer.GetDepthTextureID()),
         _ssao(scrWidth, scrHeight),
         _fxaa(scrWidth, scrHeight),
         _skybox(2048),
@@ -94,7 +94,7 @@ public:
         _scrWidth = scrWidth;
         _scrHeight = scrHeight;
         _gBuffer.Resize(scrWidth, scrHeight);
-        _bloom.Resize(scrWidth, scrHeight);
+        _bloom.Resize(scrWidth, scrHeight, _gBuffer.GetDepthTextureID());
         _ssao.Resize(scrWidth, scrHeight);
         _fxaa.Resize(scrWidth, scrHeight);
     }
@@ -218,7 +218,6 @@ private:
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
-        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
     }
 
     void PassSSAO(Scene& scene) {
@@ -239,15 +238,14 @@ private:
 
         _shaders.deferredLight->Activate();
         // render empty fullscreen quad
-        //glDepthMask(GL_FALSE);
+        glDepthMask(GL_FALSE); // depth is shared via texture, not blit, so depth writes are disabled
         _emptyVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        //glDepthMask(GL_TRUE);
+        glDepthMask(GL_TRUE);
     }
 
     void PassForward(Scene& scene) {
         Stopwatch stopwatch("PassForward");
-        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         _shaders.forward->Activate();
 

@@ -6,11 +6,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -31,8 +29,9 @@ endif()
 if(NOT EMSCRIPTEN)
     find_package(GLFW3 REQUIRED)
     message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(-Wall)
+    endif()
     find_package(OpenGL REQUIRED)
     add_definitions(${OPENGL_DEFINITIONS})
     find_package(X11 REQUIRED)
