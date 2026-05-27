@@ -29,9 +29,9 @@ public:
     void Init(int scrWidth, int scrHeight) {
         using enum TextureAttachment;
         _textureAlbedo = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
-        _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
+        _textureNormal = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _textureORM = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA8);
-        _textureEmissive = this->createTexture(scrWidth, scrHeight, TextureFormat::RGB16F);
+        _textureEmissive = this->createTexture(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _textureDepth = Texture2D(scrWidth, scrHeight, TextureFormat::Depth32F);
 
         _framebuffer.AttachTexture(Color0, _textureAlbedo.GetID());

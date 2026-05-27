@@ -7,6 +7,10 @@
 
 #include "utils/logger.h"
 
+#ifdef __EMSCRIPTEN__
+    #include <emscripten/html5_webgl.h>
+#endif
+
 void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
 class Window {
@@ -38,11 +42,15 @@ public:
         glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // glad: load all OpenGL function pointers
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            throw std::runtime_error("Failed to initialize GLAD");
-        }
-
-        this->setupDebugContex();
+        #ifndef __EMSCRIPTEN__
+            if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+                throw std::runtime_error("Failed to initialize GLAD");
+            }
+            this->setupDebugContex();
+        #else
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
+            emscripten_webgl_enable_extension(ctx, "EXT_color_buffer_float");
+        #endif
 
         glfwSwapInterval(1);
         //glfwSwapInterval(0); // Disable vsync
@@ -64,15 +72,17 @@ public:
 
 private:
     void setupDebugContex() {
-        // Init debug context and callback
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-        if (glfwExtensionSupported("GL_KHR_debug")) {
-            glEnable(GL_DEBUG_OUTPUT);
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(glDebugOutput, nullptr);
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-            Info("KHR_debug enabled");
-        }
+        #ifndef __EMSCRIPTEN__
+            // Init debug context and callback
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+            if (glfwExtensionSupported("GL_KHR_debug")) {
+                glEnable(GL_DEBUG_OUTPUT);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+                glDebugMessageCallback(glDebugOutput, nullptr);
+                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+                Info("KHR_debug enabled");
+            }
+        #endif
     }
 
     GLFWwindow* _window = nullptr;
@@ -87,6 +97,7 @@ void APIENTRY glDebugOutput(GLenum source,
                             const char *message,
                             const void *userParam)
 {
+#ifndef __EMSCRIPTEN__
     // ignore non-significant error/warning codes
     if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
@@ -124,4 +135,5 @@ void APIENTRY glDebugOutput(GLenum source,
         case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
     } std::cout << std::endl;
     std::cout << std::endl;
+#endif
 }

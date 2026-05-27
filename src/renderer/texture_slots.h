@@ -34,6 +34,7 @@ GLuint slot(T t) {
 
 
 // Initialize samplers for non-DSA opengl path
+//TODO would be nice if it was set only for shaders that need it, not for every of them
 void InitSamplers(const Shader& shader) {
     #ifdef USE_GL_DSA
         using enum TextureSlot;
@@ -51,6 +52,9 @@ void InitSamplers(const Shader& shader) {
         shader.SetInt("prefilteredMap",  slot(PrefilterEnv));
         shader.SetInt("brdfLUT",         slot(BrdfLUT));
         shader.SetInt("ssaoMap",         slot(SSAO));
+
+        shader.SetInt("screenTexture", 0); //fxaa
+
     #endif
 }
 
@@ -65,6 +69,8 @@ void InitUboBindings(const Shader& shader) {
         shader.SetInt("CameraBlock", 3);
         shader.SetInt("ShadowBlock", 4);
         shader.SetInt("ConfigBlock", 5);
+        shader.SetInt("MaterialBuffer", 10);
+
     #endif
 }
 

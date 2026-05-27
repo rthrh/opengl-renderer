@@ -140,7 +140,7 @@ private:
 
     std::unordered_map<std::string, GLuint> _pathToId;
     std::vector<Texture2D> _textures;
-    ShaderStorageBuffer<Material, 0> _materialSSBO;
+    ShaderStorageBuffer<Material, 10> _materialSSBO;
 
     std::vector<GLuint> _dummyTextures;
 };

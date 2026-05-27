@@ -1,10 +1,11 @@
+#version 450 core
+
 /*
 Original: https://github.com/kosua20/Rendu/blob/master/resources/common/shaders/screens/fxaa.frag
 */
 
-#version 450 core
-
-layout(binding = 0) uniform sampler2D screenTexture; ///< Image to filter.
+#include "include/samplers.glsl"
+SAMPLER_BINDING(0) uniform sampler2D screenTexture; ///< Image to filter.
 
 
 // Settings for FXAA.

@@ -8,13 +8,20 @@ struct Material {
     float occlusionStrength;
     float metallicFactor;
     float roughnessFactor;
-    int  alphaMode;
+    int   alphaMode;
     float alphaCutoff;
-    int  doubleSided;
+    int   doubleSided;
     float _pad;
 };
 
-layout(std430, binding = 0) readonly buffer MaterialBuffer {
-    Material materials[];
-};
-
+// GLES treats Material SSBO as UBO
+#ifdef GLES
+    const int MAX_MATERIALS = 256;
+    layout(std140) uniform MaterialBuffer {
+        Material materials[MAX_MATERIALS];
+    };
+#else
+    layout(std140, binding = 10) readonly buffer MaterialBuffer {
+        Material materials[];
+    };
+#endif

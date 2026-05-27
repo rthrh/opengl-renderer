@@ -98,6 +98,7 @@ public:
         _bloomFBO.Bind();
 
         downsampleShader.Activate();
+        downsampleShader.SetInt("mipLevel", 1); // default
         downsampleShader.SetVec2("srcResolution", {_scrWidth, _scrHeight});
         downsampleShader.SetInt("srcTexture", 0);
         if (_karisAverage) {

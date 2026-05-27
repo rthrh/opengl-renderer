@@ -17,7 +17,7 @@
 uniform vec2 srcResolution;
 
 // which mip we are writing to, used for Karis average
-uniform int mipLevel = 1;
+uniform int mipLevel;
 
 in vec2 TexCoords;
 layout (location = 0) out vec3 downsample;
@@ -57,17 +57,17 @@ void main()
 	// - l - m -
 	// g - h - i
 	// === ('e' is the current texel) ===
-	vec3 a = texture(srcTexture, vec2(TexCoords.x - 2*x, TexCoords.y + 2*y)).rgb;
-	vec3 b = texture(srcTexture, vec2(TexCoords.x,       TexCoords.y + 2*y)).rgb;
-	vec3 c = texture(srcTexture, vec2(TexCoords.x + 2*x, TexCoords.y + 2*y)).rgb;
+	vec3 a = texture(srcTexture, vec2(TexCoords.x - 2.0*x, TexCoords.y + 2.0*y)).rgb;
+	vec3 b = texture(srcTexture, vec2(TexCoords.x,       TexCoords.y + 2.0*y)).rgb;
+	vec3 c = texture(srcTexture, vec2(TexCoords.x + 2.0*x, TexCoords.y + 2.0*y)).rgb;
 
-	vec3 d = texture(srcTexture, vec2(TexCoords.x - 2*x, TexCoords.y)).rgb;
+	vec3 d = texture(srcTexture, vec2(TexCoords.x - 2.0*x, TexCoords.y)).rgb;
 	vec3 e = texture(srcTexture, vec2(TexCoords.x,       TexCoords.y)).rgb;
-	vec3 f = texture(srcTexture, vec2(TexCoords.x + 2*x, TexCoords.y)).rgb;
+	vec3 f = texture(srcTexture, vec2(TexCoords.x + 2.0*x, TexCoords.y)).rgb;
 
-	vec3 g = texture(srcTexture, vec2(TexCoords.x - 2*x, TexCoords.y - 2*y)).rgb;
-	vec3 h = texture(srcTexture, vec2(TexCoords.x,       TexCoords.y - 2*y)).rgb;
-	vec3 i = texture(srcTexture, vec2(TexCoords.x + 2*x, TexCoords.y - 2*y)).rgb;
+	vec3 g = texture(srcTexture, vec2(TexCoords.x - 2.0*x, TexCoords.y - 2.0*y)).rgb;
+	vec3 h = texture(srcTexture, vec2(TexCoords.x,       TexCoords.y - 2.0*y)).rgb;
+	vec3 i = texture(srcTexture, vec2(TexCoords.x + 2.0*x, TexCoords.y - 2.0*y)).rgb;
 
 	vec3 j = texture(srcTexture, vec2(TexCoords.x - x, TexCoords.y + y)).rgb;
 	vec3 k = texture(srcTexture, vec2(TexCoords.x + x, TexCoords.y + y)).rgb;
@@ -96,10 +96,10 @@ void main()
 	  // We are writing to mip 0, so we need to apply Karis average to each block
 	  // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
 	  // artifacts).
-	  groups[0] = (a+b+d+e) * (0.125f/4.0f);
-	  groups[1] = (b+c+e+f) * (0.125f/4.0f);
-	  groups[2] = (d+e+g+h) * (0.125f/4.0f);
-	  groups[3] = (e+f+h+i) * (0.125f/4.0f);
+	  groups[0] = (a+b+d+e) * (0.125/4.0f);
+	  groups[1] = (b+c+e+f) * (0.125/4.0f);
+	  groups[2] = (d+e+g+h) * (0.125/4.0f);
+	  groups[3] = (e+f+h+i) * (0.125/4.0f);
 	  groups[4] = (j+k+l+m) * (0.5f/4.0f);
 	  groups[0] *= KarisAverage(groups[0]);
 	  groups[1] *= KarisAverage(groups[1]);
@@ -107,7 +107,7 @@ void main()
 	  groups[3] *= KarisAverage(groups[3]);
 	  groups[4] *= KarisAverage(groups[4]);
 	  downsample = groups[0]+groups[1]+groups[2]+groups[3]+groups[4];
-	  downsample = max(downsample, 0.0001f);
+	  downsample = max(downsample, 0.0001);
 	  break;
 	default:
 	  downsample = e*0.125;                // ok

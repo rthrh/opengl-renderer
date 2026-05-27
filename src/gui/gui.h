@@ -2,8 +2,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
-#include <glad/glad.h>
-//#include <gl/headers.h>
+#include <gl/headers.h>
 
 #include <GLFW/glfw3.h>
 
@@ -24,8 +23,12 @@ public:
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init("#version 450");
         io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        #ifdef __EMSCRIPTEN__
+            ImGui_ImplOpenGL3_Init("#version 300 es");
+        #else
+            ImGui_ImplOpenGL3_Init("#version 450");
+        #endif
     }
 
     ~GuiLayer() {

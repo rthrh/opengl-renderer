@@ -40,7 +40,6 @@ public:
     MeshCache(std::shared_ptr<AssetCache> assetCache) :
         _assetCache(std::move(assetCache))
     {
-
     }
 
     ~MeshCache() = default;
@@ -55,7 +54,7 @@ public:
         handles.reserve(meshes.size());
         for (auto& mesh : meshes) {
             auto& material = _assetCache->GetMaterial(mesh.GetMaterialIndex());
-            auto queueType = this->getQueueTypeFromAlpha(material.alphaMode);
+            auto queueType = this->getQueueType(material.alphaMode);
             auto& meshQueue = this->GetQueue(queueType);
 
             MeshHandle meshHandle = {.queue = queueType, .id = _nextId++};
@@ -82,7 +81,7 @@ public:
         return (it == queue.end()) ? nullptr : &it->second;
     }
 private:
-    RenderQueueType getQueueTypeFromAlpha(AlphaMode alphaMode) {
+    RenderQueueType getQueueType(AlphaMode alphaMode) {
         switch(alphaMode) {
             case AlphaMode::Opaque: return RenderQueueType::Opaque;
             case AlphaMode::Mask: return RenderQueueType::Masked;
