@@ -10,10 +10,10 @@
 
 class Bloom {
 public:
-    Bloom(int scrWidth, int scrHeight, GLuint depthTextureID) :
+    Bloom(int scrWidth, int scrHeight) :
         _scrWidth(scrWidth), _scrHeight(scrHeight)
     {
-        this->Init(scrWidth, scrHeight, depthTextureID);
+        this->Init(scrWidth, scrHeight);
     }
 
     ~Bloom() = default;
@@ -21,24 +21,28 @@ public:
     Bloom(const Bloom&) = delete;
     Bloom& operator=(const Bloom&) = delete;
 
-    void Init(int scrWidth, int scrHeight, GLuint depthTextureID) {
+    void Init(int scrWidth, int scrHeight) {
         _hdrColor = Texture2D(scrWidth, scrHeight, TextureFormat::RGBA16F);
         _hdrColor.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         _hdrColor.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
 
+        _depthTexture = Texture2D(scrWidth, scrHeight, TextureFormat::Depth32F);
+        _depthTexture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
+        _depthTexture.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
+
         _bloomFBO = FrameBuffer();
         _hdrFBO = FrameBuffer();
         _hdrFBO.AttachTexture(TextureAttachment::Color0, _hdrColor.GetID());
-        _hdrFBO.AttachTexture(TextureAttachment::Depth, depthTextureID);
+        _hdrFBO.AttachTexture(TextureAttachment::Depth, _depthTexture.GetID());
         _hdrFBO.Status();
         this->initMipmaps(_scrWidth, _scrHeight);
     }
 
-    void Resize(int scrWidth, int scrHeight, GLuint depthTextureID) {
+    void Resize(int scrWidth, int scrHeight) {
         _scrWidth = scrWidth;
         _scrHeight = scrHeight;
         _mipChain.clear();
-        this->Init(scrWidth, scrHeight, depthTextureID);
+        this->Init(scrWidth, scrHeight);
     }
 
     void BindHdrFramebuffer() {
@@ -147,6 +151,7 @@ private:
     FrameBuffer _hdrFBO;
 	FrameBuffer _bloomFBO;
     Texture2D _hdrColor;
+    Texture2D _depthTexture;
     std::vector<Texture2D> _mipChain;
 	bool _karisAverage = true;
 };

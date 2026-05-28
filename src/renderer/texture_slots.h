@@ -12,7 +12,7 @@ enum class TextureSlot : GLuint {
     Depth = 4,
     Skybox = 6,
     ShadowDirectional = 7,
-    ShadowPoint = 8,
+    //ShadowPoint = 8,
     ShadowSpot = 9,
     Irradiance = 10,
     PrefilterEnv = 11,
@@ -31,12 +31,10 @@ GLuint slot(T t) {
 }
 
 
-
-
 // Initialize samplers for non-DSA opengl path
 //TODO would be nice if it was set only for shaders that need it, not for every of them
 void InitSamplers(const Shader& shader) {
-    #ifdef USE_GL_DSA
+    #ifndef USE_GL_DSA
         using enum TextureSlot;
         shader.Activate();
         shader.SetInt("albedoMap",       slot(Albedo));
@@ -46,14 +44,24 @@ void InitSamplers(const Shader& shader) {
         shader.SetInt("depthMap",        slot(Depth));
         shader.SetInt("environmentMap",  slot(Skybox));
         shader.SetInt("shadowDirMap",    slot(ShadowDirectional));
-        shader.SetInt("shadowPointMaps", slot(ShadowPoint));
+        //shader.SetInt("shadowPointMaps", slot(ShadowPoint));
         shader.SetInt("shadowSpotMap",   slot(ShadowSpot));
         shader.SetInt("irradianceMap",   slot(Irradiance));
         shader.SetInt("prefilteredMap",  slot(PrefilterEnv));
         shader.SetInt("brdfLUT",         slot(BrdfLUT));
         shader.SetInt("ssaoMap",         slot(SSAO));
+        shader.SetInt("shadowPointMap0", slot(ShadowPoint0));
+        shader.SetInt("shadowPointMap1", slot(ShadowPoint1));
+        shader.SetInt("shadowPointMap2", slot(ShadowPoint2));
+        shader.SetInt("shadowPointMap3", slot(ShadowPoint3));
 
         shader.SetInt("screenTexture", 0); //fxaa
+
+        shader.SetInt("scene", 0); // bloom final
+        shader.SetInt("bloomBlur", 1);
+        shader.SetInt("srcTexture", 0); // bloom downsample/upsample
+
+        shader.SetInt("equirectangularMap", 0); // skybox equirect_to_cubemap
 
     #endif
 }

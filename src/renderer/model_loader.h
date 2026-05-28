@@ -215,16 +215,17 @@ private:
         }
 
         // Combine ao and metal-roughness textures
-        std::vector<unsigned char> orm(width * height * 3);
+        std::vector<unsigned char> orm(width * height * 4);
         for (int i = 0; i < width * height; i++) {
-            orm[i * 3 + 0] = ao ? ao[i * channels] : 255;
-            orm[i * 3 + 1] = mr ? mr[i * channels + 1] : 255;
-            orm[i * 3 + 2] = mr ? mr[i * channels + 2] : 0;
+            orm[i * 4 + 0] = ao ? ao[i * channels] : 255;
+            orm[i * 4 + 1] = mr ? mr[i * channels + 1] : 255;
+            orm[i * 4 + 2] = mr ? mr[i * channels + 2] : 0;
+            orm[i * 4 + 3] = 255; // alpha
         }
 
         // Use metallic-roughness path as key
         std::string fullPath = (std::filesystem::path(_directory) / mrPath.C_Str()).string();
-        auto id = _assetCache->Load(fullPath, width, height, TextureFormat::RGB8, orm.data());
+        auto id = _assetCache->Load(fullPath, width, height, TextureFormat::RGBA8, orm.data());
 
         if (mr) stbi_image_free(mr);
         if (ao) stbi_image_free(ao);

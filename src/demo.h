@@ -173,15 +173,15 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
         return testModel;
     };
 
-    //scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, 0, 0}));
+    scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, 0, 0}));
 
     //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
-    DirectionalLightUBO dirLight({0.0, -1.0, 0.0});
-    //dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
+    DirectionalLightUBO dirLight({0.0, -0.9, 0.0});
+    dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
     //dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
     //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
     //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
-    //scene.AddDirectionalLight(std::move(dirLight));
+    scene.AddDirectionalLight(std::move(dirLight));
 
     auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(50);
     //scene.AddPointLight(std::move(light1));

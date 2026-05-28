@@ -114,21 +114,14 @@ private:
     static std::optional<Texture2D> upload(const std::string& path, bool gammaCorrect) {
         int width, height, channels;
         //stbi_set_flip_vertically_on_load(true);
-        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-
+        //unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);
         if (!data) {
             Error("AssetCache: failed to load {}", path);
             return std::nullopt;
         }
 
-        TextureFormat dataFormat;
-        if (channels == 1) {
-            dataFormat = TextureFormat::R8;
-        } else if (channels == 3) {
-            dataFormat = gammaCorrect ? TextureFormat::SRGB8 : TextureFormat::RGB8;
-        } else {
-            dataFormat = gammaCorrect ? TextureFormat::SRGB8_A8 : TextureFormat::RGBA8;
-        }
+        TextureFormat dataFormat = gammaCorrect ? TextureFormat::SRGB8_A8 : TextureFormat::RGBA8;
 
         auto texture = Texture2D(width, height, dataFormat, data, true);
         texture.SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);

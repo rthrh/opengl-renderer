@@ -57,6 +57,7 @@ public:
         glfwSetCursorPosCallback(_window.GetHandle(), mouse_callback);
         glfwSetScrollCallback(_window.GetHandle(), scroll_callback);
         glfwSetKeyCallback(_window.GetHandle(), key_callback);
+
         // build and compile shaders
         std::filesystem::path root = PROJECT_SOURCE_DIR;
         std::filesystem::path pathShaders = root / "src/shaders";
@@ -71,10 +72,10 @@ public:
         _camera = std::make_shared<Camera>(aspectRatio, glm::vec3(0.0f, 0.0f, 3.0f));
 
         _renderer = std::make_unique<Renderer>(windowWidth, windowHeight, _camera, _assetCache, _meshCache, _shaderCache);
-
         //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
         std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_1k.exr";
         _renderer->LoadSkybox(skyboxPath);
+
         // App context data for callbacks
         _callbackData = {.cameraPtr{_camera},
                          .rendererPtr{_renderer.get()},
@@ -85,11 +86,11 @@ public:
         // Init imgui
         std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
         _guiLayer = std::make_unique<GuiLayer>(_window.GetHandle(), modelsDirectory, _assetCache);
+
         // Scene setup
         //_scene = std::make_unique<Scene>(setupTestModels(_assetCache, _modelLoader));
         //_scene = std::make_unique<Scene>(setupSponza(_assetCache, _modelLoader));
         _scene = std::make_unique<Scene>(setupLocal(_assetCache, _modelLoader));
-
     }
 
     // Render loop
@@ -98,7 +99,7 @@ public:
             emscripten_set_main_loop_arg(
                 [](void* self) { static_cast<App*>(self)->Frame(); },
                 this,
-                10,   // 0 = use requestAnimationFrame
+                0,   // 0 = use requestAnimationFrame
                 1    // simulate infinite loop
             );
         #else

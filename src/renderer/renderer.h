@@ -42,7 +42,7 @@ public:
         _shadowMapDirectional(),
         _shadowMapPoint(),
         _shadowMapSpot(),
-        _bloom(scrWidth, scrHeight, _gBuffer.GetDepthTextureID()),
+        _bloom(scrWidth, scrHeight),
         _ssao(scrWidth, scrHeight),
         _fxaa(scrWidth, scrHeight),
         _skybox(2048),
@@ -94,7 +94,7 @@ public:
         _scrWidth = scrWidth;
         _scrHeight = scrHeight;
         _gBuffer.Resize(scrWidth, scrHeight);
-        _bloom.Resize(scrWidth, scrHeight, _gBuffer.GetDepthTextureID());
+        _bloom.Resize(scrWidth, scrHeight);
         _ssao.Resize(scrWidth, scrHeight);
         _fxaa.Resize(scrWidth, scrHeight);
     }
@@ -234,6 +234,7 @@ private:
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
+        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
     }
 
     void PassSSAO(Scene& scene) {
@@ -262,6 +263,7 @@ private:
 
     void PassForward(Scene& scene) {
         Stopwatch stopwatch("PassForward");
+        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         _shaders.forward->Activate();
 

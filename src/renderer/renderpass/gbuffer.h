@@ -71,10 +71,8 @@ public:
         FrameBuffer::Blit(_framebuffer.GetId(), targetFBO, _scrWidth, _scrHeight, targetWidth, targetHeight, GL_DEPTH_BUFFER_BIT);
     }
 
-    GLuint GetDepthTextureID() const { return _textureDepth.GetID(); }
-
 private:
-    Texture2D createTexture(int scrWidth, int scrHeight, TextureFormat format = TextureFormat::RGB32F) {
+    Texture2D createTexture(int scrWidth, int scrHeight, TextureFormat format) {
         auto texture = Texture2D(scrWidth, scrHeight, format);
         texture.SetFilter(TextureFilter::Nearest, TextureFilter::Nearest);
         return texture;

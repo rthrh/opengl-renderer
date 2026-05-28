@@ -45,6 +45,16 @@ enum class TextureFormat {
     Depth24Stencil8 = GL_DEPTH24_STENCIL8,
 };
 
+static GLenum ToInternalFormat(TextureFormat fmt) {
+#ifdef __EMSCRIPTEN__ // workaround for GLES
+    if (fmt == TextureFormat::RGB8)   return GL_RGBA8;
+    if (fmt == TextureFormat::SRGB8)  return GL_SRGB8_ALPHA8;
+    if (fmt == TextureFormat::RGB16F) return GL_RGBA16F;
+    if (fmt == TextureFormat::RGB32F) return GL_RGBA32F;
+#endif
+    return static_cast<GLenum>(fmt);
+}
+
 static GLenum FormatToChannels(TextureFormat fmt) {
     switch (fmt) {
         case TextureFormat::R8:
@@ -106,11 +116,11 @@ public:
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_2D, 1, &_id);
-            glTextureStorage2D(_id, mipLevels, (GLuint)internalFormat, width, height);
+            glTextureStorage2D(_id, mipLevels, ToInternalFormat(internalFormat), width, height);
         #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_2D, _id);
-            glTexStorage2D(GL_TEXTURE_2D, mipLevels, (GLuint)internalFormat, width, height);
+            glTexStorage2D(GL_TEXTURE_2D, mipLevels, ToInternalFormat(internalFormat), width, height);
         #endif
 
         this->Upload(data);
@@ -128,11 +138,11 @@ public:
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &_id);
-            glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, width, height, layers);
+            glTextureStorage3D(_id, mipLevels, ToInternalFormat(internalFormat), width, height, layers);
         #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_2D_ARRAY, _id);
-            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, (GLuint)internalFormat, width, height, layers);
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, ToInternalFormat(internalFormat), width, height, layers);
         #endif
 
         this->SetWrap(TextureWrap::Repeat, TextureWrap::Repeat);
@@ -149,11 +159,11 @@ public:
         const GLsizei mipLevels = genMipMaps ? std::bit_width(static_cast<unsigned>(std::max(_width, _height))) : 1;
         #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &_id);
-            glTextureStorage2D(_id, mipLevels, (GLuint)internalFormat, size, size);
+            glTextureStorage2D(_id, mipLevels, ToInternalFormat(internalFormat), size, size);
         #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_CUBE_MAP, _id);
-            glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipLevels, (GLuint)internalFormat, size, size);
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, mipLevels, ToInternalFormat(internalFormat), size, size);
         #endif
 
         this->SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
@@ -171,11 +181,11 @@ public:
 
         #ifdef USE_GL_DSA
             glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &_id);
-            glTextureStorage3D(_id, mipLevels, (GLuint)internalFormat, size, size, layers * 6);
+            glTextureStorage3D(_id, mipLevels, ToInternalFormat(internalFormat), size, size, layers * 6);
         #else
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, _id);
-            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, mipLevels, (GLuint)internalFormat, size, size, layers * 6);
+            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, mipLevels, ToInternalFormat(internalFormat), size, size, layers * 6);
         #endif
 
         SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
