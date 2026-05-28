@@ -110,22 +110,38 @@ public:
 
         glCullFace(GL_FRONT);
         this->PassShadowDirectional(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowDirectional: {:x}", e);
         this->PassShadowPoint(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowPoint: {:x}", e);
+
         this->PassShadowSpot(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowSpot: {:x}", e);
+
         glCullFace(GL_BACK);
 
         this->PassGeometryBuffer(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassGeometryBuffer: {:x}", e);
+
         this->PassSSAO(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassSSAO: {:x}", e);
         this->PassDeferred(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassDeferred: {:x}", e);
+
         this->PassForward(scene);
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassForward: {:x}", e);
 
         glDisable(GL_CULL_FACE);
         this->PassSkybox();
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassSkybox: {:x}", e);
+
         glEnable(GL_CULL_FACE);
 
         this->PassNoShadow(scene);
         this->PassBloom();
+        //if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassBloom: {:x}", e);
+
         this->PassFXAA();
+        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassFXAA: {:x}", e);
     }
 
 private:

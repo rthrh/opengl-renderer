@@ -48,7 +48,7 @@ private:
 };
 
 
-constexpr int MAX_POINT_LIGHTS = 1024;
+constexpr int MAX_POINT_LIGHTS = 16;
 struct PointLightUBO {
     glm::ivec4 count{0}; // x = count, yzw = padding
     PointLightBlockGPU lights[MAX_POINT_LIGHTS];
@@ -110,7 +110,7 @@ private:
     float _padding{0.0f};
 };
 
-constexpr int MAX_SPOT_LIGHTS = 1024;
+constexpr int MAX_SPOT_LIGHTS = 16;
 struct SpotLightUBO {
     glm::ivec4 count{0}; // x = count, yzw = padding
     SpotLightBlockGPU lights[MAX_SPOT_LIGHTS];
@@ -180,5 +180,7 @@ struct ConfigUBO {
 
     // IBL
     float maxReflectionLOD = 4.0f;
-    //float _pad0;
+    float _pad0;
+    float _pad1;
+    float _pad2;
 };

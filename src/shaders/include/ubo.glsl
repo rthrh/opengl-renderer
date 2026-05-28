@@ -82,4 +82,5 @@ UBO_BINDING(5) uniform ConfigBlock {
     float maxReflectionLOD;
     float _pad0;
     float _pad1;
+    float _pad2;
 } Config;

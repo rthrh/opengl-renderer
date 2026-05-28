@@ -20,7 +20,7 @@ enum class TextureWrap {
     ClampToEdge = GL_CLAMP_TO_EDGE,
 
 #ifdef __EMSCRIPTEN__
-    ClampToBorder  = GL_CLAMP_TO_BORDER_EXT, //TODO enough to work?
+    ClampToBorder  = GL_CLAMP_TO_EDGE, //TODO enough to work?
 #else
     ClampToBorder  = GL_CLAMP_TO_BORDER,
 #endif
@@ -279,13 +279,15 @@ public:
     }
 
     void SetBorderColor(float r, float g, float b, float a) const {
-        float color[] = {r, g, b, a};
-        #ifdef USE_GL_DSA
-            glTextureParameterfv(_id, GL_TEXTURE_BORDER_COLOR, color);
-        #else
-            glBindTexture(T, _id);
-            glTexParameterfv(T, GL_TEXTURE_BORDER_COLOR, color);
-            glBindTexture(T, 0);
+        #ifndef __EMSCRIPTEN__
+            float color[] = {r, g, b, a};
+            #ifdef USE_GL_DSA
+                glTextureParameterfv(_id, GL_TEXTURE_BORDER_COLOR, color);
+            #else
+                glBindTexture(T, _id);
+                glTexParameterfv(T, GL_TEXTURE_BORDER_COLOR, color);
+                glBindTexture(T, 0);
+            #endif
         #endif
     }
 

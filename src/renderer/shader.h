@@ -213,6 +213,13 @@ public:
         glUniformMatrix4fv(this->GetLocation(name), 1, GL_FALSE, &mat[0][0]);
     }
 
+    void SetUboBinding(const std::string& name, GLuint binding) const {
+        GLuint index = glGetUniformBlockIndex(_ID, name.c_str());
+        if (index != GL_INVALID_INDEX) {
+            glUniformBlockBinding(_ID, index, binding);
+        }
+    }
+
 private:
     GLuint _ID{0};
     mutable std::unordered_map<std::string, GLint> _uniformMap;

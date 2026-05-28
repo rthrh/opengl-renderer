@@ -50,8 +50,18 @@ public:
         #else
             EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
             emscripten_webgl_enable_extension(ctx, "EXT_color_buffer_float");
+            emscripten_webgl_enable_extension(ctx, "OES_texture_float_linear");
+            emscripten_set_canvas_element_size("#canvas", width, height);
+            /*EM_ASM({
+                var canvas = document.getElementById('canvas');
+                canvas.style.width = '1280px';
+                canvas.style.height = '720px';
+                canvas.style.display = 'block';
+            });*/
         #endif
-
+GLint maxBlockSize = 0;
+glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBlockSize);
+Info("GL_MAX_UNIFORM_BLOCK_SIZE = {}", maxBlockSize);
         glfwSwapInterval(1);
         //glfwSwapInterval(0); // Disable vsync
     }

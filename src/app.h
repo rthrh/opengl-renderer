@@ -52,13 +52,11 @@ public:
         _meshCache(std::make_shared<MeshCache>(_assetCache)),
         _modelLoader(_assetCache, _meshCache)
     {
-
         // Input callbacks
         glfwSetFramebufferSizeCallback(_window.GetHandle(), framebuffer_size_callback);
         glfwSetCursorPosCallback(_window.GetHandle(), mouse_callback);
         glfwSetScrollCallback(_window.GetHandle(), scroll_callback);
         glfwSetKeyCallback(_window.GetHandle(), key_callback);
-
         // build and compile shaders
         std::filesystem::path root = PROJECT_SOURCE_DIR;
         std::filesystem::path pathShaders = root / "src/shaders";
@@ -77,7 +75,6 @@ public:
         //std::filesystem::path skyboxPath = root / "resources" / "newport_loft.hdr";
         std::filesystem::path skyboxPath = root / "resources" / "rogland_clear_night_1k.exr";
         _renderer->LoadSkybox(skyboxPath);
-
         // App context data for callbacks
         _callbackData = {.cameraPtr{_camera},
                          .rendererPtr{_renderer.get()},
@@ -88,19 +85,20 @@ public:
         // Init imgui
         std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
         _guiLayer = std::make_unique<GuiLayer>(_window.GetHandle(), modelsDirectory, _assetCache);
-
         // Scene setup
         //_scene = std::make_unique<Scene>(setupTestModels(_assetCache, _modelLoader));
         //_scene = std::make_unique<Scene>(setupSponza(_assetCache, _modelLoader));
         _scene = std::make_unique<Scene>(setupLocal(_assetCache, _modelLoader));
+
     }
 
+    // Render loop
     void Run() {
         #ifdef __EMSCRIPTEN__
             emscripten_set_main_loop_arg(
                 [](void* self) { static_cast<App*>(self)->Frame(); },
                 this,
-                0,   // 0 = use requestAnimationFrame
+                10,   // 0 = use requestAnimationFrame
                 1    // simulate infinite loop
             );
         #else
@@ -111,44 +109,41 @@ public:
     }
 
     void Frame() {
-        // Render loop
-        while (!_window.ShouldClose())
-        {
-            Stopwatch stopwatch("Render loop");
-            // poll events
-            glfwPollEvents();
+        Stopwatch stopwatch("Render loop");
 
-            #ifndef __EMSCRIPTEN__
-                _fileWatcher.Update();
-            #endif
+        // poll events
+        glfwPollEvents();
 
-            // per-frame time logic
-            auto currentFrame = static_cast<float>(glfwGetTime());
-            _deltaTime = currentFrame - _lastFrame;
-            _lastFrame = currentFrame;
+        #ifndef __EMSCRIPTEN__
+            _fileWatcher.Update();
+        #endif
 
-            // Begin frame
-            _guiLayer->BeginFrame();
+        // per-frame time logic
+        auto currentFrame = static_cast<float>(glfwGetTime());
+        _deltaTime = currentFrame - _lastFrame;
+        _lastFrame = currentFrame;
 
-            // Handle input
-            if (!_guiLayer->WantCaptureMouse()) { }
-            if (!_guiLayer->WantCaptureKeyboard()) {
-                processInput(_window.GetHandle(), _camera);
-            }
+        // Begin frame
+        _guiLayer->BeginFrame();
 
-            // Create GUI
-            _guiLayer->Build(_renderer->GetConfig(), *_scene, _deltaTime, _modelLoader);
-
-            // Render scene
-            _renderer->RenderFrame(*_scene);
-
-            // Renders the ImGUI elements
-            _guiLayer->EndFrame();
-
-            // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-            Stopwatch stopwatch2("glfwSwapBuffers(_window);");
-            _window.SwapBuffers();
+        // Handle input
+        if (!_guiLayer->WantCaptureMouse()) { }
+        if (!_guiLayer->WantCaptureKeyboard()) {
+            processInput(_window.GetHandle(), _camera);
         }
+
+        // Create GUI
+        _guiLayer->Build(_renderer->GetConfig(), *_scene, _deltaTime, _modelLoader);
+
+        // Render scene
+        _renderer->RenderFrame(*_scene);
+
+        // Renders the ImGUI elements
+        _guiLayer->EndFrame();
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        Stopwatch stopwatch2("glfwSwapBuffers(_window);");
+        _window.SwapBuffers();
 
     }
 

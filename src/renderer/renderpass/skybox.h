@@ -30,7 +30,7 @@ public:
         _captureFBO(),
         _captureRBO(cubeSize, cubeSize, TextureFormat::Depth32F),
         _cubeVBO(),
-        _envCubemap(cubeSize, TextureFormat::RGB16F, true),
+        _envCubemap(cubeSize, TextureFormat::RGBA16F, true),
         _irradianceCubemap(initIrradianceMap()),
         _prefilteredCubemap(initPrefilteredMap()),
         _brdfLUT(initBrdfLUT())
@@ -157,7 +157,7 @@ private:
         for (unsigned i = 0; i < 6; ++i)
         {
             equirectShader.SetMat4("view", _captureViews[i]);
-            _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _envCubemap.GetID(), i);
+            _captureFBO.AttachTextureCubeFace(TextureAttachment::Color0, _envCubemap.GetID(), i);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             this->renderCube();
         }
@@ -171,7 +171,7 @@ private:
 
     TextureCube initIrradianceMap() {
         constexpr int size = 32; // scaled down
-        TextureCube irradiance(size, TextureFormat::RGB16F);
+        TextureCube irradiance(size, TextureFormat::RGBA16F);
         irradiance.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         irradiance.SetFilter(TextureFilter::Linear, TextureFilter::Linear);
         return irradiance;
@@ -189,7 +189,7 @@ private:
         _captureFBO.Bind();
         for (unsigned i = 0; i < 6; i++) {
             irradianceShader.SetMat4("view", _captureViews[i]);
-            _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _irradianceCubemap.GetID(), i);
+            _captureFBO.AttachTextureCubeFace(TextureAttachment::Color0, _irradianceCubemap.GetID(), i);
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             renderCube();
@@ -199,7 +199,7 @@ private:
 
     TextureCube initPrefilteredMap() {
         constexpr int size = 128;
-        TextureCube prefiltered(size, TextureFormat::RGB16F, true);
+        TextureCube prefiltered(size, TextureFormat::RGBA16F, true);
         prefiltered.SetWrap(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge, TextureWrap::ClampToEdge);
         prefiltered.SetFilter(TextureFilter::LinearMipMapLinear, TextureFilter::Linear);
         return prefiltered;
@@ -227,7 +227,7 @@ private:
             for (unsigned i = 0; i < 6; ++i)
             {
                 prefilterShader.SetMat4("view", _captureViews[i]);
-                _captureFBO.AttachTextureLayer(TextureAttachment::Color0, _prefilteredCubemap.GetID(), i, mip);
+                _captureFBO.AttachTextureCubeFace(TextureAttachment::Color0, _prefilteredCubemap.GetID(), i, mip);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 renderCube();
             }

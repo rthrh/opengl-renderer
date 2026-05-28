@@ -9,8 +9,12 @@ public:
     // Treat SSBO as UBO in WASM
     #ifdef __EMSCRIPTEN__
         static constexpr GLenum BufferTarget = GL_UNIFORM_BUFFER;
+        static constexpr bool AddPadding = true; // UBO needs to have full size always allocated though
+        static constexpr int MaxCount = 256; // should match material.glsl GLES path
     #else
         static constexpr GLenum BufferTarget = GL_SHADER_STORAGE_BUFFER;
+        static constexpr bool AddPadding = false;
+        static constexpr int MaxCount = 0; // unused
     #endif
 
     ShaderStorageBuffer() {
@@ -20,6 +24,7 @@ public:
             glGenBuffers(1, &_ssbo);
         #endif
         glBindBufferBase(BufferTarget, BindSlot, _ssbo);
+        this->Upload();
     }
 
     ~ShaderStorageBuffer() {
@@ -54,9 +59,18 @@ public:
         #ifdef USE_GL_DSA
             glNamedBufferData(_ssbo, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
         #else
+        if constexpr (AddPadding) {
+            // UBO path needs padding to MaxCount
+            std::vector<T> padded(MaxCount);
+            std::copy(_data.begin(), _data.begin() + std::min<size_t>(_data.size(), MaxCount), padded.begin());
+            glBindBuffer(BufferTarget, _ssbo);
+            glBufferData(BufferTarget, MaxCount * sizeof(T), padded.data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(BufferTarget, 0);
+        } else {
             glBindBuffer(BufferTarget, _ssbo);
             glBufferData(BufferTarget, _data.size() * sizeof(T), _data.data(), GL_DYNAMIC_DRAW);
             glBindBuffer(BufferTarget, 0);
+        }
         #endif
         glBindBufferBase(BufferTarget, BindSlot, _ssbo);
     }

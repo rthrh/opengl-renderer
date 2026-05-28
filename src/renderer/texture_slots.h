@@ -58,18 +58,19 @@ void InitSamplers(const Shader& shader) {
     #endif
 }
 
+
 // Initialize UBO bindings for non-DSA opengl path
 void InitUboBindings(const Shader& shader) {
-    #ifdef USE_GL_DSA
+    #ifndef USE_GL_DSA
         using enum TextureSlot;
         shader.Activate();
-        shader.SetInt("DirectionalLightBlock", 0);
-        shader.SetInt("PointLightBlock", 1);
-        shader.SetInt("SpotLightBlock", 2);
-        shader.SetInt("CameraBlock", 3);
-        shader.SetInt("ShadowBlock", 4);
-        shader.SetInt("ConfigBlock", 5);
-        shader.SetInt("MaterialBuffer", 10);
+        shader.SetUboBinding("DirectionalLightBlock", 0);
+        shader.SetUboBinding("PointLightBlock", 1);
+        shader.SetUboBinding("SpotLightBlock", 2);
+        shader.SetUboBinding("CameraBlock", 3);
+        shader.SetUboBinding("ShadowBlock", 4);
+        shader.SetUboBinding("ConfigBlock", 5);
+        shader.SetUboBinding("MaterialBuffer", 10);
 
     #endif
 }
