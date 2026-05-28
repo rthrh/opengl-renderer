@@ -77,3 +77,28 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+  # wasm build + deploy
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Setup Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: 5.0.7
+    - name: Configure CMake
+      run: emcmake cmake -B build-wasm -DCMAKE_BUILD_TYPE=Release
+    - name: Build
+      run: cmake --build build-wasm -j$(nproc)
+    - name: Upload build (for inspection)
+      uses: actions/upload-artifact@v4
+      with:
+        name: wasm-build
+        path: |
+          build-wasm/opengl-renderer.html
+          build-wasm/opengl-renderer.js
+          build-wasm/opengl-renderer.wasm
+          build-wasm/opengl-renderer.data
