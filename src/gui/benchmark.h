@@ -20,7 +20,9 @@ public:
                 name.c_str(),
                 entry.ms    * 1000.0,
                 entry.msAvg * 1000.0);
-            ImGui::ProgressBar(static_cast<float>(entry.ms / 8.33), ImVec2(-1, 0), "");
+
+            constexpr int height = 4;
+            ImGui::ProgressBar(static_cast<float>(entry.ms / 8.33), ImVec2(-1, height), "");
         }
 
         ImGui::Separator();

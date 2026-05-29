@@ -25,10 +25,10 @@ void main() {
 
     // TODO double gamma correction here + SRGB texture upload?
     //vec3 albedo = texture(albedoMap, TexCoords).rgb * material.baseColorFactor.xyz;
-    vec3 albedo = pow(albedoSample.rgb, vec3(2.2)) * material.baseColorFactor.xyz;
+    vec3 albedo = albedoSample.rgb * material.baseColorFactor.xyz;
 
     //vec3 emissive = texture(emissiveMap, TexCoords).rgb * material.emissiveFactor.xyz * 5.0;
-    vec3 emissive = pow(texture(emissiveMap, TexCoords).rgb, vec3(2.2)) * material.emissiveFactor.xyz * 5.0; // TODO emissive is multiplied so it passes brighness check for bloom pass
+    vec3 emissive = texture(emissiveMap, TexCoords).rgb * material.emissiveFactor.xyz * 5.0; // TODO emissive is multiplied so it passes brighness check for bloom pass
     vec3 orm = texture(ormMap, TexCoords).rgb;
     float ao = orm.r * material.occlusionStrength;
     float roughness = orm.g * material.roughnessFactor;

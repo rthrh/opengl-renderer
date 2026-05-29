@@ -46,6 +46,8 @@ public:
         _dirty = true;
     }
 
+    unsigned GetInstanceCount() { return _instances.size(); }
+
     void SetTranslation(glm::vec3 position, unsigned instanceID = 0) {
         _instances[instanceID].translation = position;
         _dirty = true;

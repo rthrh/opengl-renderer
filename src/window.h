@@ -59,9 +59,7 @@ public:
                 canvas.style.display = 'block';
             });*/
         #endif
-GLint maxBlockSize = 0;
-glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBlockSize);
-Info("GL_MAX_UNIFORM_BLOCK_SIZE = {}", maxBlockSize);
+
         glfwSwapInterval(1);
         //glfwSwapInterval(0); // Disable vsync
     }

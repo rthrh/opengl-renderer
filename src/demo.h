@@ -173,7 +173,8 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
         return testModel;
     };
 
-    scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, 0, 0}));
+    //scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, 0, 0}));
+    scene.AddModel(loadModel("Sponza-downscaled/glTF/Sponza.gltf", {0, 0, 0}));
 
     //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
     DirectionalLightUBO dirLight({0.0, -0.9, 0.0});

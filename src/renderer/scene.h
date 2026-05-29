@@ -105,6 +105,8 @@ public:
         return handle;
     }
 
+    std::unordered_map<ModelHandle, Model>& GetModels() { return _modelMap; }
+
     // Call at start of each frame to update
     void UploadTransforms(const std::shared_ptr<MeshCache>& meshCache) {
         for (auto& [handle, model] : _modelMap) model.UploadTransforms(meshCache);
