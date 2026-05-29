@@ -79,7 +79,7 @@ UBO_BINDING(5) uniform ConfigBlock {
     float fxaaSubpixelQuality;
     int   fxaaIterations;
 
-    float maxReflectionLOD;
+    bool  lightCubesEnabled;
     float _pad0;
     float _pad1;
     float _pad2;

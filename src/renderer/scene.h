@@ -62,14 +62,6 @@ public:
         _pointLightUBO.Data().Pushback(light);
         _pointLightUBO.Upload();
 
-        // Add debug light marker
-        uint32_t defaultMatIndex = _assetCache->AddMaterial(_assetCache->GetDefaultMaterial());
-        //Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
-        //Model markerModel(std::move(markerMesh));
-        //markerModel.SetTranslation(light.GetPosition());
-        //markerModel.SetScale({0.1f, 0.1f, 0.1f});
-        //AddModel(std::move(markerModel), NoShadow);
-
         return index;
     }
 
@@ -84,19 +76,17 @@ public:
         _spotLightUBO.Data().Pushback(light);
         _spotLightUBO.Upload();
 
-        // Add debug light marker
-        uint32_t defaultMatIndex = _assetCache->AddMaterial(_assetCache->GetDefaultMaterial());
-        //Mesh markerMesh(cube_vertices, cube_indices, defaultMatIndex);
-        //Model markerModel(std::move(markerMesh));
-        //markerModel.SetTranslation(light.GetPosition());
-        //markerModel.SetScale({0.1f, 0.1f, 0.1f});
-        //AddModel(std::move(markerModel), NoShadow);
-
         return index;
     }
 
     SpotLightUBO& GetSpotLights() {
         return _spotLightUBO.Data();
+    }
+
+    void UploadLights() {
+        _directionalLightUBO.Upload();
+        _pointLightUBO.Upload();
+        _spotLightUBO.Upload();
     }
 
     ModelHandle AddModel(Model model) {

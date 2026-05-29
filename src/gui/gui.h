@@ -10,6 +10,7 @@
 #include "renderer/ubo.h"
 #include "gui/settings.h"
 #include "gui/model_list.h"
+#include "gui/light_list.h"
 //#include "gui/model_loader_gui.h"
 #include "gui/benchmark.h"
 
@@ -52,6 +53,7 @@ public:
         Stopwatch stopwatch("GuiLayer::Build");
         _settings.Build(configUBO);
         _modelList.Build(scene);
+        _lightList.Build(scene);
         //_modelLoader.Build(scene, modelLoader);
         _benchmark.Build(deltaTime);
     }
@@ -70,6 +72,7 @@ public:
 private:
     Settings _settings;
     ModelList _modelList;
+    LightList _lightList;
     //ModelLoaderGUI _modelLoader;
     Benchmark _benchmark;
 };

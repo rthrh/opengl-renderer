@@ -66,8 +66,8 @@ public:
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
 
-    Renderer(Renderer&&) noexcept = default;
-    Renderer& operator=(Renderer&&) noexcept = default;
+    Renderer(Renderer&&) noexcept = delete;
+    Renderer& operator=(Renderer&&) noexcept = delete;
 
     // Loads skybox HDR texture from skyboxPath
     void LoadSkybox(const std::filesystem::path& skyboxPath) {
@@ -136,7 +136,7 @@ public:
 
         glEnable(GL_CULL_FACE);
 
-        this->PassNoShadow(scene);
+        this->PassDebug(scene);
         this->PassBloom();
         //if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassBloom: {:x}", e);
 
@@ -145,14 +145,13 @@ public:
     }
 
 private:
-
     void PassShadowDirectional(Scene& scene) {
         Stopwatch stopwatch("PassShadowDirectional");
         if (!_configUBO.Data().dirShadowsEnabled) return;
 
         auto directionalLight = scene.GetDirectionalLight();
         auto lightDir = directionalLight.GetDirection(); // TODO no fallback if no dir light present
-        auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir);
+        auto lightSpaceMatrix = math::GetDirLightSpaceMatrix(lightDir); //TODO calculate default params dynamically
 
         _shadowMapUBO.Data().dirLightProjMatrix = lightSpaceMatrix;
         _shadowMapUBO.Upload();
@@ -277,11 +276,25 @@ private:
         glDisable(GL_BLEND);
     }
 
-    void PassNoShadow(Scene& scene) {
-        Stopwatch stopwatch("PassNoShadow");
+    void PassDebug(Scene& scene) {
+        Stopwatch stopwatch("PassDebug");
+        if (!_configUBO.Data().lightCubesEnabled) return;
+
         _bloom.BindHdrFramebuffer();
+        _emptyVAO.Bind();
         _shaders.unlit->Activate();
-        this->render(_meshCache->GetQueue(NoShadow), *_shaders.unlit);
+
+        int pointCount = scene.GetPointLights().Count();
+        if (pointCount > 0) {
+            _shaders.unlit->SetInt("lightType", 0);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, 36, pointCount);
+        }
+
+        int spotCount = scene.GetSpotLights().Count();
+        if (spotCount > 0) {
+            _shaders.unlit->SetInt("lightType", 1);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, 36, spotCount);
+        }
     }
 
     void PassSkybox() {

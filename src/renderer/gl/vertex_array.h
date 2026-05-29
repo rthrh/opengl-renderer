@@ -59,7 +59,7 @@ public:
             glBindVertexArray(_id);
             glBindBuffer(GL_ARRAY_BUFFER, _vbo);
             glEnableVertexAttribArray(attribIndex);
-            glVertexAttribPointer(attribIndex, numValues, type, normalized, _stride, (void*)offsetBytes);
+            glVertexAttribPointer(attribIndex, numValues, type, normalized, _stride, reinterpret_cast<const void*>(offsetBytes));
 
             if (_divisor) {
                 glVertexAttribDivisor(attribIndex, _divisor);

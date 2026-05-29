@@ -184,8 +184,15 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
     scene.AddDirectionalLight(std::move(dirLight));
 
-    auto light1 = PointLightBlockGPU({0,10,0}).SetColor(0, 125, 255).SetRange(50);
-    //scene.AddPointLight(std::move(light1));
+
+    auto light1 = PointLightBlockGPU({3.9, 1.15, 1.15}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
+    auto light2 = PointLightBlockGPU({-4.95, 1.15, 1.15}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
+    auto light3 = PointLightBlockGPU({3.9, 1.15, -1.75}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
+    auto light4 = PointLightBlockGPU({-4.95, 1.15, -1.75}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
+    scene.AddPointLight(std::move(light1));
+    scene.AddPointLight(std::move(light2));
+    scene.AddPointLight(std::move(light3));
+    scene.AddPointLight(std::move(light4));
 
     return scene;
 }

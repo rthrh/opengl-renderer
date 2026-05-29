@@ -65,10 +65,8 @@ public:
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("IBL")) {
-            int lod = static_cast<int>(config.maxReflectionLOD);
-            dirty |= ImGui::SliderInt("Max Reflection LOD", &lod, 0, 4);
-            config.maxReflectionLOD = static_cast<float>(lod);
+        if (ImGui::CollapsingHeader("Debug")) {
+            dirty |= ImGui::Checkbox("Light Cubes on/off",   (bool*)&config.lightCubesEnabled);
         }
 
         ImGui::End();

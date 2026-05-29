@@ -1,8 +1,11 @@
-#version 420 core
+#version 450
+
+flat in vec3 vColor;
+flat in float vIntensity;
+
 out vec4 FragColor;
 
-uniform vec3 color;
-
 void main() {
-    FragColor = vec4(color, 1.0);
+    //FragColor = vec4(min(vColor * vIntensity, vec3(1.0)), 1.0);
+    FragColor = vec4(vColor, 1.0);
 }
