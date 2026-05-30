@@ -12,32 +12,48 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
+### Build dependencies
 add_subdirectory(deps/glm)
-#target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/deps/glm)
+
+set(ASSIMP_INSTALL OFF)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF)
 set(ASSIMP_BUILD_TESTS OFF)
 set(ASSIMP_BUILD_ZLIB ON)
-
 add_subdirectory(deps/assimp)
+
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(deps/tinyexr)
 if(TARGET tinyexr)
     target_compile_options(tinyexr PRIVATE -w)
 endif()
 
-# Find packages
+# Emscripten uses built in glfw port
 if(NOT EMSCRIPTEN)
-    find_package(GLFW3 REQUIRED)
-    message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_compile_options(-Wall)
-    endif()
-    find_package(OpenGL REQUIRED)
-    add_definitions(${OPENGL_DEFINITIONS})
-    find_package(X11 REQUIRED)
+    set(GLFW_BUILD_DOCS OFF)
+    set(GLFW_BUILD_TESTS OFF)
+    set(GLFW_BUILD_EXAMPLES OFF)
+    add_subdirectory(deps/glfw)
 endif()
 
-# DSA and version settings
+### Find packages
+if(NOT EMSCRIPTEN)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        if(MSVC)
+            add_compile_options(/W4)
+        else()
+            add_compile_options(-Wall)
+        endif()
+    endif()
+
+    find_package(OpenGL REQUIRED)
+    add_definitions(${OPENGL_DEFINITIONS})
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+    endif()
+endif()
+
+### DSA and GLSL version settings
 option(USE_GL_DSA "Use OpenGL Direct State Access" OFF)
 set(GLSL_VERSION 450)
 
@@ -45,13 +61,14 @@ if (EMSCRIPTEN)
     set(USE_GL_DSA OFF)
     set(GLSL_VERSION 300)
     set(LIBS glm assimp tinyexr)
-    #set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+elseif(WIN32)
+    set(LIBS glfw ${OPENGL_LIBRARIES} assimp glm tinyexr)
 elseif(UNIX)
-    set(LIBS ${GLFW3_LIBRARY} X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype assimp glm tinyexr)
+    set(LIBS glfw GL dl pthread assimp glm tinyexr)
     set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 endif()
 
-# sources
+### Sources
 file(GLOB GLAD_SRC ${CMAKE_SOURCE_DIR}/deps/glad/glad.*)
 file(GLOB STB_IMAGE_SRC ${CMAKE_SOURCE_DIR}/deps/stb_image/*.*)
 file(GLOB IMGUI_SRC
@@ -76,7 +93,7 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/gui/*.h
 )
 
-
+### Create exe
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 link_directories(${CMAKE_SOURCE_DIR}/lib)
@@ -85,6 +102,10 @@ if(EMSCRIPTEN)
     target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="/")
 else()
     target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+endif()
+
+if(MSVC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS NOMINMAX)
 endif()
 
 if(USE_GL_DSA)
