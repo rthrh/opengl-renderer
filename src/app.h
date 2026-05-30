@@ -171,10 +171,12 @@ private:
         auto& uiMode = data->uiMode;
         if (key == GLFW_KEY_G && action == GLFW_PRESS) {
             uiMode = !uiMode;
-            auto cursor_mode = uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
-            glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
-
             GuiLayer::SetMouseEnabled(uiMode);
+
+            #ifndef __EMSCRIPTEN__
+                auto cursor_mode = uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
+                glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
+            #endif
         }
     }
 

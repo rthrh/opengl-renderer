@@ -38,11 +38,12 @@ public:
 
         glfwMakeContextCurrent(_window);
 
-        // Disable mouse cursor
-        glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
         // glad: load all OpenGL function pointers
         #ifndef __EMSCRIPTEN__
+            // Disable mouse cursor
+            glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
                 throw std::runtime_error("Failed to initialize GLAD");
             }
@@ -51,13 +52,6 @@ public:
             EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
             emscripten_webgl_enable_extension(ctx, "EXT_color_buffer_float");
             emscripten_webgl_enable_extension(ctx, "OES_texture_float_linear");
-            emscripten_set_canvas_element_size("#canvas", width, height);
-            /*EM_ASM({
-                var canvas = document.getElementById('canvas');
-                canvas.style.width = '1280px';
-                canvas.style.height = '720px';
-                canvas.style.display = 'block';
-            });*/
         #endif
 
         glfwSwapInterval(1);

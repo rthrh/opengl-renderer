@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Renderer Demo</title>
+<style>
+    body {
+        margin: 0;
+        background: #1a1a1a;
+        color: #ccc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    header { padding: 20px; text-align: center; }
+    h1 { margin: 0; font-size: 24px; }
+    .subtitle { color: #888; font-size: 14px; margin-top: 4px; }
+    #canvas-container { position: relative; }
+    #canvas { display: block; background: black; outline: none; }
+    #loading {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 18px;
+        pointer-events: none;
+    }
+    footer { margin-top: 20px; font-size: 12px; color: #666; }
+    footer a { color: #aaa; text-decoration: none; }
+    footer a:hover { color: white; }
+</style>
+</head>
+<body>
+<header>
+    <h1>OpenGL Renderer</h1>
+    <div class="subtitle">Press escape to get cursor</div>
+</header>
+
+<div id="canvas-container">
+    <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+    <div id="loading">Loading…</div>
+</div>
+
+<footer>
+    <a href="https://github.com/yourusername/opengl-renderer" target="_blank">View on GitHub</a>
+</footer>
+
+<script>
+    // Compute available canvas size, accounting for header/footer
+    function getCanvasSize() {
+        var headerH = 80;   // TODO adjust
+        var footerH = 40;
+        var w = window.innerWidth;
+        var h = window.innerHeight - headerH - footerH;
+        return [w, h];
+    }
+
+    var screenSize = getCanvasSize();
+
+    var Module = {
+        canvas: document.getElementById('canvas'),
+        arguments: [String(screenSize[0]), String(screenSize[1])], // pass width and height to main.cpp
+        print: function(text) { console.log(text); },
+        printErr: function(text) { console.error(text); },
+        setStatus: function(text) {
+            var el = document.getElementById('loading');
+            if (el) el.textContent = text || '';
+            if (!text && el) el.style.display = 'none';
+        },
+    };
+</script>
+
+{{{ SCRIPT }}}
+
+</body>
+</html>

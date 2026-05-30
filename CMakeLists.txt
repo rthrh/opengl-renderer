@@ -108,6 +108,7 @@ if(EMSCRIPTEN)
         # shaders and scene models need to be compiled into binary for WASM
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/src/shaders@/src/shaders"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/resources@/resources"
+        "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/wasm-build.html"
     )
 else()
 

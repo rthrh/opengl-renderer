@@ -1,10 +1,14 @@
 #include "app.h"
 
-int main()
+int main(int argc, char** argv)
 {
-    static App app(1600, 1200);
-    //static App app(1280, 720);
+    int width = 1600, height = 1200;
+    if (argc >= 3) {
+        width = std::atoi(argv[1]);
+        height = std::atoi(argv[2]);
+    }
 
+    static App app(width, height);
     app.Run();
 
     return 0;
