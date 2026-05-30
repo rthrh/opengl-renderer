@@ -31,7 +31,12 @@
 struct AppCallbackData {
     std::shared_ptr<Camera> cameraPtr;
     Renderer* rendererPtr;
-    bool uiMode = false;
+
+    #ifdef __EMSCRIPTEN__
+        bool uiMode = true;
+    #else
+        bool uiMode = false;
+    #endif
 
     // Mouse callback
     float mouseLastX; //{ SCR_WIDTH / 2.0f };
@@ -57,6 +62,7 @@ public:
         glfwSetCursorPosCallback(_window.GetHandle(), mouse_callback);
         glfwSetScrollCallback(_window.GetHandle(), scroll_callback);
         glfwSetKeyCallback(_window.GetHandle(), key_callback);
+        glfwSetMouseButtonCallback(_window.GetHandle(), mouse_button_callback);
 
         // build and compile shaders
         std::filesystem::path root = PROJECT_SOURCE_DIR;
@@ -82,6 +88,12 @@ public:
                          .mouseLastX = windowWidth / 2.0f,
                          .mouseLastY = windowHeight / 2.0f };
         glfwSetWindowUserPointer(_window.GetHandle(), &_callbackData);
+
+        #ifdef __EMSCRIPTEN__
+            emscripten_set_pointerlockchange_callback(
+                EMSCRIPTEN_EVENT_TARGET_DOCUMENT, &_callbackData, EM_TRUE,
+                pointerlockchange_callback);
+        #endif
 
         // Init imgui
         std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
@@ -143,6 +155,11 @@ public:
         // Renders the ImGUI elements
         _guiLayer->EndFrame();
 
+        #ifdef __EMSCRIPTEN__
+            // Clicking Imgui elements isn't always captured without this call
+            EM_ASM({ window._imguiWantsMouse = $0; }, ImGui::GetIO().WantCaptureMouse ? 1 : 0);
+        #endif
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         Stopwatch stopwatch2("glfwSwapBuffers(_window);");
         _window.SwapBuffers();
@@ -153,9 +170,6 @@ private:
     // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
     void processInput(GLFWwindow *window, const std::shared_ptr<Camera>& camera)
     {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
-
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             _camera->ProcessKeyboard(FORWARD, _deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -169,12 +183,13 @@ private:
     inline static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
         auto& uiMode = data->uiMode;
-        if (key == GLFW_KEY_G && action == GLFW_PRESS) {
-            uiMode = !uiMode;
-            GuiLayer::SetMouseEnabled(uiMode);
-
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+            // On web, Esc is intercepted by the browser to release pointer lock.
+            // The pointerlockchange callback will flip uiMode back to true
             #ifndef __EMSCRIPTEN__
-                auto cursor_mode = uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
+                data->uiMode = !data->uiMode;
+                GuiLayer::SetMouseEnabled(data->uiMode);
+                auto cursor_mode = data->uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
                 glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
             #endif
         }
@@ -224,6 +239,28 @@ private:
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
         data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
     }
+
+    inline static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+        #ifndef __EMSCRIPTEN__
+            auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
+            if (ImGui::GetIO().WantCaptureMouse) return;
+
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && data->uiMode) {
+                data->uiMode = false;
+                GuiLayer::SetMouseEnabled(false);
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        #endif
+    }
+
+    #ifdef __EMSCRIPTEN__
+    static EM_BOOL pointerlockchange_callback(int eventType, const EmscriptenPointerlockChangeEvent* e, void* userData) {
+        auto* data = static_cast<AppCallbackData*>(userData);
+        data->uiMode = !e->isActive;
+        GuiLayer::SetMouseEnabled(data->uiMode);
+        return EM_TRUE;
+    }
+    #endif
 
     Window _window;
     ShaderCache _shaderCache;

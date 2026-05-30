@@ -26,6 +26,7 @@ public:
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         #ifdef __EMSCRIPTEN__
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
             ImGui_ImplOpenGL3_Init("#version 300 es");
         #else
             ImGui_ImplOpenGL3_Init("#version 450");

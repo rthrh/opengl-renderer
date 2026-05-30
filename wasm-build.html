@@ -35,7 +35,7 @@
 <body>
 <header>
     <h1>OpenGL Renderer</h1>
-    <div class="subtitle">Press escape to get cursor</div>
+    <div class="subtitle">Click canvas to enter camera mode · Esc to exit</div>
 </header>
 
 <div id="canvas-container">
@@ -43,25 +43,17 @@
     <div id="loading">Loading…</div>
 </div>
 
-<footer>
-    <a href="https://github.com/yourusername/opengl-renderer" target="_blank">View on GitHub</a>
-</footer>
-
 <script>
-    // Compute available canvas size, accounting for header/footer
     function getCanvasSize() {
-        var headerH = 80;   // TODO adjust
-        var footerH = 40;
         var w = window.innerWidth;
-        var h = window.innerHeight - headerH - footerH;
+        var h = window.innerHeight;
         return [w, h];
     }
-
     var screenSize = getCanvasSize();
 
     var Module = {
         canvas: document.getElementById('canvas'),
-        arguments: [String(screenSize[0]), String(screenSize[1])], // pass width and height to main.cpp
+        arguments: [String(screenSize[0]), String(screenSize[1])],
         print: function(text) { console.log(text); },
         printErr: function(text) { console.error(text); },
         setStatus: function(text) {
@@ -73,6 +65,16 @@
 </script>
 
 {{{ SCRIPT }}}
+
+<script>
+    // Request pointer lock on canvas click, unless ImGui wants the click.
+    document.getElementById('canvas').addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        if (document.pointerLockElement) return;
+        if (window._imguiWantsMouse) return;
+        this.requestPointerLock();
+    }, true);
+</script>
 
 </body>
 </html>
