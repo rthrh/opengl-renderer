@@ -54,7 +54,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libwayland-dev libx11-dev libxrandr-dev \
-          libxinerama-dev libxi-dev libxcursor-dev \
+          libxinerama-dev libxi-dev libxcursor-dev libxkbcommon-dev \
           libgl1-mesa-dev
 
     - name: Set reusable strings
