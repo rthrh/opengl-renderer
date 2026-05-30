@@ -52,10 +52,24 @@ public:
 
     void Build(UniformBuffer<ConfigUBO, 5>& configUBO, Scene& scene, float deltaTime, ModelLoader& modelLoader) {
         Stopwatch stopwatch("GuiLayer::Build");
+
+        const float pad = 10.0f;
+        float x = pad;
+        float y = pad;
+
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _settings.Build(configUBO);
+
+        x += 400.0;
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _modelList.Build(scene);
+
+        x += 240.0;
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _lightList.Build(scene);
-        //_modelLoader.Build(scene, modelLoader);
+
+        x += 100.0;
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _benchmark.Build(deltaTime);
     }
 

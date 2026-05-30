@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <cmath>
+#include <cstdio>
 #include <string>
 
 #include "renderer/scene.h"
@@ -10,7 +11,10 @@
 class LightList {
 public:
     void Build(Scene& scene) {
+        ImGui::SetNextWindowSize(ImVec2(kWindowWidth, 0), ImGuiCond_FirstUseEver);
         if (!ImGui::Begin("Lights")) { ImGui::End(); return; }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, kSliderHeight));
 
         if (ImGui::CollapsingHeader("Directional", ImGuiTreeNodeFlags_DefaultOpen)) {
             buildDirectional(scene.GetDirectionalLight());
@@ -22,11 +26,20 @@ public:
             buildSpotLights(scene.GetSpotLights());
         }
 
+        ImGui::PopStyleVar();
         ImGui::End();
         scene.UploadLights();
     }
 
 private:
+    static constexpr float kWindowWidth  = 420.0f;
+    static constexpr float kSliderHeight = 2.0f;
+
+    // Width of a slider, sized to fit a typical numeric value with some headroom.
+    static float sliderWidth() {
+        return ImGui::CalcTextSize("1000.000").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    }
+
     void buildDirectional(DirectionalLightUBO& dir) {
         editDirectionYawPitch(dir);
         editColor(dir);
@@ -40,8 +53,7 @@ private:
                 auto& light = lights.At(i);
                 editPosition(light);
                 editColor(light);
-                editIntensity(light);
-                editRange(light);
+                editIntensityAndRange(light);
                 ImGui::TreePop();
             }
             ImGui::PopID();
@@ -55,14 +67,16 @@ private:
                 auto& light = lights.At(i);
                 editPosition(light);
                 editColor(light);
-                editIntensity(light);
-                editRange(light);
+                editIntensityAndRange(light);
                 editDirectionYawPitch(light);
 
                 float inner = light.GetInnerConeDegrees();
                 float outer = light.GetOuterConeDegrees();
+                ImGui::PushItemWidth(sliderWidth());
                 if (ImGui::DragFloat("Inner cone", &inner, 0.5f, 0.f, 90.f)) light.SetCone(inner, outer);
+                ImGui::SameLine();
                 if (ImGui::DragFloat("Outer cone", &outer, 0.5f, 0.f, 90.f)) light.SetCone(inner, outer);
+                ImGui::PopItemWidth();
 
                 ImGui::TreePop();
             }
@@ -77,8 +91,11 @@ private:
         float yaw   = glm::degrees(std::atan2(d.z, d.x));
 
         bool changed = false;
+        ImGui::PushItemWidth(sliderWidth());
         if (ImGui::DragFloat("Yaw",   &yaw,   1.0f, -180.f, 180.f)) changed = true;
+        ImGui::SameLine();
         if (ImGui::DragFloat("Pitch", &pitch, 1.0f,  -90.f,  90.f)) changed = true;
+        ImGui::PopItemWidth();
 
         if (changed) {
             float p = glm::radians(pitch);
@@ -88,8 +105,41 @@ private:
         }
     }
 
-    template<typename L> void editPosition(L& light) { glm::vec3 v = light.GetPosition(); if (ImGui::DragFloat3("Position", &v.x, 0.05f)) light.SetPosition(v); }
-    template<typename L> void editColor(L& light)    { glm::vec3 v = light.GetColor();    if (ImGui::ColorEdit3("Color",    &v.x))         light.SetColor(v); }
-    template<typename L> void editIntensity(L& light){ float v = light.GetIntensity();    if (ImGui::DragFloat("Intensity", &v, 0.1f, 0.f, 1000.f)) light.SetIntensity(v); }
-    template<typename L> void editRange(L& light)    { float v = light.GetRange();        if (ImGui::DragFloat("Range",     &v, 0.1f, 0.01f, 1000.f)) light.SetRange(v); }
+    template<typename L>
+    void editPosition(L& light) {
+        glm::vec3 v = light.GetPosition();
+        ImGui::PushItemWidth(sliderWidth() * 3.0f + ImGui::GetStyle().ItemInnerSpacing.x * 2.0f);
+        if (ImGui::DragFloat3("Position", &v.x, 0.05f)) light.SetPosition(v);
+        ImGui::PopItemWidth();
+    }
+
+    template<typename L>
+    void editColor(L& light) {
+        glm::vec3 v = light.GetColor();
+        ImGui::PushItemWidth(sliderWidth() * 3.0f);
+        if (ImGui::ColorEdit3("Color", &v.x)) light.SetColor(v);
+        ImGui::PopItemWidth();
+    }
+
+    template<typename L>
+    void editIntensity(L& light) {
+        float intensity = light.GetIntensity();
+        ImGui::PushItemWidth(sliderWidth());
+        if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.f, 1000.f)) light.SetIntensity(intensity);
+        ImGui::PopItemWidth();
+    }
+
+    template<typename L>
+    void editIntensityAndRange(L& light) {
+        ImGui::PushItemWidth(sliderWidth());
+
+        float intensity = light.GetIntensity();
+        if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.f, 1000.f)) light.SetIntensity(intensity);
+
+        ImGui::SameLine();
+        float range = light.GetRange();
+        if (ImGui::DragFloat("Range", &range, 0.1f, 0.01f, 1000.f)) light.SetRange(range);
+
+        ImGui::PopItemWidth();
+    }
 };
