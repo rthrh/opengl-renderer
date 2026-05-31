@@ -80,7 +80,11 @@ float ShadowSpotLight(vec3 fragPos, vec3 normal, mat4 lightSpaceMatrix, float bi
     float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
 
     // PCSS
+    float intensity = spotLights.lights[lightIndex].colorAndIntensity.w;
+    float cosOuter = spotLights.lights[lightIndex].outerCone;
+    float lightSizeUV = ComputeLightSizeUV_Spot(intensity, cosOuter);
+
     vec3 biasedCoords = vec3(projCoords.xy, projCoords.z - bias);
-    float visibility = PCSS_Spot(biasedCoords, lightIndex);
+    float visibility = PCSS_Spot(biasedCoords, lightSizeUV, lightIndex);
     return 1.0 - visibility;
 }

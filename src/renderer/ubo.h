@@ -109,8 +109,8 @@ private:
     glm::vec4 _direction;
     glm::vec4 _colorAndIntensity;
     float _range;
-    float _innerCone;
-    float _outerCone;
+    float _innerCone; // stored as cosine
+    float _outerCone; // stored as cosine
     float _padding{0.0f};
 };
 
