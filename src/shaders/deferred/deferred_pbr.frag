@@ -30,7 +30,6 @@ void main() {
     float ssao = texture(ssaoMap, TexCoords).r;
     ao = ao * ssao;
     float roughness = orm.g;
-    roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
 
     float metallic = orm.b;
     vec3 emissive = texture(emissiveMap, TexCoords).rgb;
@@ -39,10 +38,8 @@ void main() {
 
     vec3 N = normalize(texture(normalMap, TexCoords).rgb);
     vec3 V = normalize(camera.position.xyz - FragPos);
-    //if (dot(N, V) < 0.0) N = -N; // flip normal if it points away from camera - turns black artifacts into grey TODO check
 
     // Improved Geometric Specular Antialiasing https://www.jp.square-enix.com/tech/library/pdf/ImprovedGeometricSpecularAA(slides).pdf
-    //TODO add to forward shader
     const float SIGMA2 = 0.25;
     const float KAPPA  = 0.18;
 
@@ -52,7 +49,7 @@ void main() {
     float kernelRoughness2 = min(variance, KAPPA);
     float filteredRoughness2 = clamp(roughness * roughness + kernelRoughness2, 0.0, 1.0);
     roughness = sqrt(filteredRoughness2);
-    //roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
+    roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
 
 
     // F0: base reflectance

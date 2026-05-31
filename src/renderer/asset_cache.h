@@ -66,7 +66,6 @@ public:
     }
 
     void UploadMaterials() {
-        Stopwatch stopwatch("AssetCache::UploadMaterials");
         _materialSSBO.Upload();
     }
 

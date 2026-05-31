@@ -129,6 +129,27 @@ public:
         return _position;
     }
 
+    void SetPosition(glm::vec3 position) {
+        _position = position;
+    }
+
+    void SetDirection(glm::vec3 dir) {
+        glm::vec3 n = glm::normalize(dir);
+        _pitch = glm::degrees(std::asin(glm::clamp(n.y, -1.0f, 1.0f)));
+        _yaw   = glm::degrees(std::atan2(n.z, n.x));
+        updateCameraVectors();
+    }
+
+    void SetYawPitch(float yaw, float pitch) {
+        _yaw = yaw;
+        _pitch = pitch;
+        updateCameraVectors();
+    }
+
+    void LookAt(glm::vec3 target) {
+        SetDirection(target - _position);
+    }
+
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()

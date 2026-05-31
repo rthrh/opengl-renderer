@@ -110,38 +110,19 @@ public:
 
         glCullFace(GL_FRONT);
         this->PassShadowDirectional(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowDirectional: {:x}", e);
         this->PassShadowPoint(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowPoint: {:x}", e);
-
         this->PassShadowSpot(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassShadowSpot: {:x}", e);
-
         glCullFace(GL_BACK);
-
         this->PassGeometryBuffer(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassGeometryBuffer: {:x}", e);
-
         this->PassSSAO(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassSSAO: {:x}", e);
         this->PassDeferred(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassDeferred: {:x}", e);
-
         this->PassForward(scene);
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassForward: {:x}", e);
-
         glDisable(GL_CULL_FACE);
         this->PassSkybox();
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassSkybox: {:x}", e);
-
         glEnable(GL_CULL_FACE);
-
         this->PassDebug(scene);
         this->PassBloom();
-        //if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassBloom: {:x}", e);
-
         this->PassFXAA();
-        if (GLenum e = glGetError(); e != GL_NO_ERROR) Info("Error after PassFXAA: {:x}", e);
     }
 
 private:
@@ -160,7 +141,6 @@ private:
         _shaders.shadowDir->Activate();
 
         this->render(_meshCache->GetQueue(Opaque), *_shaders.shadowDir, true);
-        //this->render(scene.GetQueue(Blend), shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, _scrWidth, _scrHeight);
@@ -186,7 +166,6 @@ private:
                 _shadowMapPoint.BindFramebufferFace(i, face);
                 _shaders.shadowPoint->SetMat4("lightSpaceMatrix", shadowMatrices[face]);
                 this->render(_meshCache->GetQueue(Opaque), *_shaders.shadowPoint, true);
-                //this->render(scene.GetQueue(Blend), shader);
             }
         }
 
@@ -214,7 +193,6 @@ private:
 
             _shaders.shadowSpot->SetMat4("spotLightSpaceMatrix", lightSpaceMatrix);
             this->render(_meshCache->GetQueue(Opaque), *_shaders.shadowSpot, true);
-            //this->render(scene.GetQueue(Blend), shader);
         }
 
         _shadowMapUBO.Upload();
@@ -253,7 +231,6 @@ private:
         glClear(GL_COLOR_BUFFER_BIT);
 
         _shaders.deferredLight->Activate();
-        // render empty fullscreen quad
         glDepthMask(GL_FALSE); // depth is shared via texture, not blit, so depth writes are disabled
         _emptyVAO.Bind();
         glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -267,7 +244,6 @@ private:
         _shaders.forward->Activate();
 
         // Render blend meshes
-        _shaders.forward->SetBool("blendPass", true);
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_FALSE);
@@ -315,7 +291,6 @@ private:
         _emptyVAO.Bind();
         _bloom.RenderDownsamples(*_shaders.bloomDownsample);
         _bloom.RenderUpsamples(*_shaders.bloomUpsample);
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
         _fxaa.BindFramebuffer();
         glViewport(0, 0, _scrWidth, _scrHeight);
         glClear(GL_COLOR_BUFFER_BIT);

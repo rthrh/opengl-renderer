@@ -11,31 +11,24 @@ in mat3 TBN;
 #include "include/brdf.glsl"
 #include "include/pbr_lights.glsl"
 #include "include/shadows.glsl"
-
 #include "include/material.glsl"
+
 uniform int materialIndex;
 
-uniform bool blendPass;
-//TODO update this shader
+//TODO add SSAO
 void main() {
     Material material = materials[materialIndex];
-
-    if (!blendPass && material.alphaMode == 2) discard; // discard BLEND in opaque pass
-    if (blendPass && material.alphaMode != 2) discard; // discard other in blend pass
 
     vec4  albedoSample = texture(albedoMap, TexCoords).rgba;
     vec3 albedo   = albedoSample.rgb * material.baseColorFactor.rgb;
 
-    float alpha = 1.0;
-    if (material.alphaMode == 2) // BLEND
-        alpha = albedoSample.a * material.baseColorFactor.a;
+    float alpha = albedoSample.a * material.baseColorFactor.a;
 
     vec3 orm      = texture(ormMap, TexCoords).rgb;
     float ao        = orm.r * material.occlusionStrength;
     float roughness = orm.g * material.roughnessFactor;
-    roughness = max(0.04, roughness);
-    float metallic  = orm.b * material.metallicFactor;
 
+    float metallic  = orm.b * material.metallicFactor;
     vec3 emissive = texture(emissiveMap, TexCoords).rgb * material.emissiveFactor.rgb;
 
     vec3 normalSample = texture(normalMap, TexCoords).rgb * 2.0 - 1.0;
@@ -43,8 +36,19 @@ void main() {
     vec3 N = normalize(TBN * normalSample);
     vec3 V = normalize(camera.position.xyz - FragPos);
 
-    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    // Improved Geometric Specular Antialiasing https://www.jp.square-enix.com/tech/library/pdf/ImprovedGeometricSpecularAA(slides).pdf
+    const float SIGMA2 = 0.25;
+    const float KAPPA  = 0.18;
 
+    vec3 dndu = dFdx(N);
+    vec3 dndv = dFdy(N);
+    float variance = SIGMA2 * (dot(dndu, dndu) + dot(dndv, dndv));
+    float kernelRoughness2 = min(variance, KAPPA);
+    float filteredRoughness2 = clamp(roughness * roughness + kernelRoughness2, 0.0, 1.0);
+    roughness = sqrt(filteredRoughness2);
+    roughness = max(0.04, roughness); // at lower roughness, specular highlights are broken
+
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
     // accumulate lights
     vec3 Lo = vec3(0.0);
@@ -62,7 +66,6 @@ void main() {
             float farPlane = pointLights.lights[i].positionAndRange.w;
             shadow = ShadowPointLight(FragPos, lightPos, farPlane, Config.pointShadowBias, i);
         }
-
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,
                              albedo, metallic, roughness, F0) * (1.0 - shadow);
     }
@@ -96,7 +99,6 @@ void main() {
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
-
     vec3 color = ambient + Lo + emissive;
     FragColor = vec4(color, alpha); // any(isnan(color)) TODO NaN sometimes on FragColor
 }

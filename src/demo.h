@@ -162,7 +162,7 @@ Scene setupSponza(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mo
     return scene;
 }
 
-Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
+Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader, Camera& camera) {
     Scene scene(assetCache);
     std::filesystem::path root = std::filesystem::path(PROJECT_SOURCE_DIR) / "resources";
 
@@ -185,14 +185,17 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     scene.AddDirectionalLight(std::move(dirLight));
 
 
-    auto light1 = PointLightBlockGPU({3.9, 1.15, 1.15}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
-    auto light2 = PointLightBlockGPU({-4.95, 1.15, 1.15}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
-    auto light3 = PointLightBlockGPU({3.9, 1.15, -1.75}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
-    auto light4 = PointLightBlockGPU({-4.95, 1.15, -1.75}).SetColor(247, 55, 24).SetRange(10).SetIntensity(10);
+    unsigned r = 247, g = 55, b = 24;
+    auto light1 = PointLightBlockGPU({3.9, 1.15, 1.15}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
+    auto light2 = PointLightBlockGPU({-4.95, 1.15, 1.15}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
+    auto light3 = PointLightBlockGPU({3.9, 1.15, -1.75}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
+    auto light4 = PointLightBlockGPU({-4.95, 1.15, -1.75}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
     scene.AddPointLight(std::move(light1));
     scene.AddPointLight(std::move(light2));
     scene.AddPointLight(std::move(light3));
     scene.AddPointLight(std::move(light4));
 
+    camera.SetPosition({-10.0, 2.0, 0.0});
+    camera.SetYawPitch(0.0, 0.0);
     return scene;
 }
