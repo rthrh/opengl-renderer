@@ -48,11 +48,12 @@ UBO_BINDING(4) uniform ShadowBlock {
 } Shadow;
 
 UBO_BINDING(5) uniform ConfigBlock {
+    bool  lightCubesEnabled;
+
     bool  bloomEnabled;
     float exposure;
     float gamma;
     float bloomStrength;
-    float filterRadius;
 
     bool  ssaoEnabled;
     float ssaoRadius;
@@ -63,13 +64,11 @@ UBO_BINDING(5) uniform ConfigBlock {
     bool  pointShadowsEnabled;
     bool  spotShadowsEnabled;
 
-    int   maxPointShadowCasters;
     float pointShadowBias;
 
     float dirShadowBiasMin;
     float dirShadowBiasMax;
 
-    int   maxSpotShadowCasters;
     float spotShadowBiasMin;
     float spotShadowBiasMax;
 
@@ -77,10 +76,11 @@ UBO_BINDING(5) uniform ConfigBlock {
     float fxaaEdgeThresholdMin;
     float fxaaEdgeThresholdMax;
     float fxaaSubpixelQuality;
-    int   fxaaIterations;
 
-    bool  lightCubesEnabled;
     float _pad0;
     float _pad1;
     float _pad2;
 } Config;
+
+#define MAX_POINT_SHADOW_CASTERS 4
+#define MAX_SPOT_SHADOW_CASTERS 4

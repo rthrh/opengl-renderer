@@ -17,7 +17,7 @@ SAMPLER_BINDING(0) uniform sampler2D screenTexture; ///< Image to filter.
 
 #define QUALITY(q) ((q) < 5 ? 1.0 : ((q) > 5 ? ((q) < 10 ? 2.0 : ((q) < 11 ? 4.0 : 8.0)) : 1.5))
 
-//#define ITERATIONS 12
+#define ITERATIONS 12
 
 // This can effect sharpness.
 // 1.00 - upper limit (softer) / 0.75 - default amount of filtering / 0.50 - lower limit (sharper, less sub-pixel aliasing removal) / 0.25 - almost off / 0.00 - completely off
@@ -158,7 +158,7 @@ void main(){
 	// If both sides have not been reached, continue to explore.
 	if(!reachedBoth){
 
-		for(int i = 2; i < Config.fxaaIterations; i++){
+		for(int i = 2; i < ITERATIONS; i++){
 			// If needed, read luma in 1st direction, compute delta.
 			if(!reached1){
 				lumaEnd1 = rgb2luma(textureLod(screenTexture, uv1, 0.0).rgb);

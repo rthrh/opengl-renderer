@@ -22,6 +22,11 @@ public:
         ImGui::Separator();
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Debug")) {
+            dirty |= ImGui::Checkbox("Light Cubes on/off",   (bool*)&config.lightCubesEnabled);
+        }
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Bloom & Tonemapping")) {
             dirty |= ImGui::Checkbox("Bloom Enabled", (bool*)&config.bloomEnabled);
             dirty |= ImGui::SliderFloat("Exposure",          &config.exposure,   0.1f, 10.0f);
@@ -46,8 +51,6 @@ public:
             dirty |= ImGui::Checkbox("Directional Shadows", (bool*)&config.dirShadowsEnabled);
             dirty |= ImGui::Checkbox("Point Shadows",       (bool*)&config.pointShadowsEnabled);
             dirty |= ImGui::Checkbox("Spot Shadows",        (bool*)&config.spotShadowsEnabled);
-            dirty |= ImGui::SliderInt("Max Point Casters",  &config.maxPointShadowCasters, 0, 4);
-            dirty |= ImGui::SliderInt("Max Spot Casters",   &config.maxSpotShadowCasers,   0, 4);
             dirty |= ImGui::SliderFloat("Dir Bias Min",     &config.dirShadowBiasMin,  0.0f, 0.1f,  "%.4f");
             dirty |= ImGui::SliderFloat("Dir Bias Max",     &config.dirShadowBiasMax,  0.0f, 0.5f,  "%.4f");
             dirty |= ImGui::SliderFloat("Point Bias",       &config.pointShadowBias,   0.0f, 0.5f,  "%.4f");
@@ -61,12 +64,6 @@ public:
             dirty |= ImGui::SliderFloat("Edge Threshold Min", &config.fxaaEdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
             dirty |= ImGui::SliderFloat("Edge Threshold Max", &config.fxaaEdgeThresholdMax, 0.063f,  0.333f,  "%.3f");
             dirty |= ImGui::SliderFloat("Subpixel Quality",   &config.fxaaSubpixelQuality,  0.0f,    1.0f,    "%.2f");
-            dirty |= ImGui::SliderInt("Iterations",           &config.fxaaIterations,       3,       12);
-        }
-
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Debug")) {
-            dirty |= ImGui::Checkbox("Light Cubes on/off",   (bool*)&config.lightCubesEnabled);
         }
 
         ImGui::End();

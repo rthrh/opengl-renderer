@@ -140,7 +140,8 @@ struct SpotLightUBO {
     int Count() const { return count.x; }
 };
 
-constexpr int MAX_SPOT_SHADOW_CASTERS = 4; //TODO move
+constexpr int MAX_SPOT_SHADOW_CASTERS = 4;
+constexpr int MAX_POINT_SHADOW_CASTERS = 4;
 struct ShadowMapUBO {
     glm::mat4 dirLightProjMatrix;
     glm::mat4 spotLightProjMatrices[MAX_SPOT_SHADOW_CASTERS];
@@ -149,12 +150,14 @@ struct ShadowMapUBO {
 
 // Bool on CPU is 1 byte, while on GPU 4 bytes, so int32_t is used here instead
 struct ConfigUBO {
+    // General
+    int32_t lightCubesEnabled = false;
+
     // Bloom + tonemapping
     int32_t bloomEnabled = true;
     float exposure = 1.0f;
     float gamma = 2.2f;
     float bloomStrength = 0.04f;
-    float filterRadius = 0.005f; // TODO fix in pcss
 
     // SSAO
     int32_t ssaoEnabled = true;
@@ -167,13 +170,11 @@ struct ConfigUBO {
     int32_t pointShadowsEnabled = true;
     int32_t spotShadowsEnabled = true;
 
-    int32_t maxPointShadowCasters = 4;
     float pointShadowBias = 0.05f;
 
     float dirShadowBiasMin = 0.005f;
     float dirShadowBiasMax = 0.05f;
 
-    int32_t maxSpotShadowCasers = 4;
     float spotShadowBiasMin = 0.0005f;
     float spotShadowBiasMax = 0.005f;
 
@@ -182,9 +183,7 @@ struct ConfigUBO {
     float fxaaEdgeThresholdMin = 0.0833f; // range [0.0312, 0.0833]
     float fxaaEdgeThresholdMax = 0.166f; // range [0.063, 0.333]
     float fxaaSubpixelQuality = 0.75f; // range [0.0, 1.0]
-    int32_t fxaaIterations = 12; // range [3, 12]
 
-    int32_t lightCubesEnabled = false;
     float _pad0;
     float _pad1;
     float _pad2;

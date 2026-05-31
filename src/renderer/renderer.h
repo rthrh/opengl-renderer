@@ -154,7 +154,7 @@ private:
         _shadowMapPoint.BindTextures();
         _shaders.shadowPoint->Activate();
 
-        const int count = std::min({pointLights.Count(), _configUBO.Data().maxPointShadowCasters, _shadowMapPoint.maxShadowCasters});
+        const int count = std::min(pointLights.Count(), MAX_POINT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto lightPos = pointLights.At(i).GetPosition();
             float farPlane = pointLights.At(i).GetRange();
@@ -182,7 +182,7 @@ private:
 
         _shadowMapSpot.BindTexture();
         _shaders.shadowSpot->Activate();
-        int count = std::min(spotLights.Count(), _configUBO.Data().maxSpotShadowCasers);
+        int count = std::min(spotLights.Count(), MAX_SPOT_SHADOW_CASTERS);
         for (int i = 0; i < count; i++) {
             auto& light = spotLights.At(i);
             float farPlane = light.GetRange();

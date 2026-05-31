@@ -67,7 +67,7 @@ void main() {
     int pointCount = pointLights.count.x;
     for (int i = 0; i < pointCount; i++) {
         float shadow = 0.0;
-        if (i < Config.maxPointShadowCasters && Config.pointShadowsEnabled) {
+        if (i < MAX_POINT_SHADOW_CASTERS && Config.pointShadowsEnabled) {
             vec3 lightPos = pointLights.lights[i].positionAndRange.xyz;
             float range = pointLights.lights[i].positionAndRange.w;
             shadow = ShadowPointLight(FragPos, lightPos, range, Config.pointShadowBias, i);
@@ -80,7 +80,7 @@ void main() {
     int spotCount = spotLights.count.x;
     for (int i = 0; i < spotCount; i++) {
         float shadow = 0.0;
-        if (i < Config.maxSpotShadowCasters && Config.spotShadowsEnabled) {
+        if (i < MAX_SPOT_SHADOW_CASTERS && Config.spotShadowsEnabled) {
             shadow = ShadowSpotLight(FragPos, N, Shadow.spotLightSpaceMatrices[i], Config.spotShadowBiasMin, Config.spotShadowBiasMax, i);
         }
         Lo += CalcSpotLight(spotLights.lights[i], N, V, FragPos,
