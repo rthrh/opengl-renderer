@@ -71,44 +71,6 @@ Scene setupScene(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     return scene;
 }
 
-/*
-void setupScene1k(Scene& scene, std::shared_ptr<AssetCache> assetCache, ModelLoader& modelLoader) {
-    std::mt19937 rng(888);
-    std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
-    std::uniform_real_distribution<float> heightDist(0.5f, 15.0f);
-    std::uniform_int_distribution<int> colorDist(50, 255);
-    std::uniform_real_distribution<float> rangeDist(5.0f, 30.0f);
-    std::uniform_real_distribution<float> intensityDist(1.0f, 20.0f);
-
-    std::filesystem::path root = PROJECT_SOURCE_DIR;
-    //std::filesystem::path modelPath = root / "resources" / "barrack/Models/Obj/Barrack.obj";
-    //std::filesystem::path modelPath = root / "resources" / "backpack/backpack.obj";
-    std::filesystem::path modelPath = root / ".." / "glTF-Sample-Models/2.0" / "DamagedHelmet/glTF/DamagedHelmet.gltf";
-    //std::filesystem::path modelPath = root / "resources" / "99-intergalactic_spaceship-obj/Intergalactic_Spaceship-(Wavefront).obj";
-    auto absPath = std::filesystem::absolute(modelPath);
-    auto ourModel = modelLoader.Load(absPath);
-    scene.AddModel(std::move(*ourModel), Opaque);
-
-    // floor model
-    uint32_t defaultMatIndex = assetCache->AddMaterial(assetCache->GetDefaultMaterial());
-    Mesh floorMesh(floor_vertices, floor_indices, defaultMatIndex);
-    auto floorModel = modelLoader.Load((std::move(floorMesh)));
-    floorModel.SetTranslation({0.0f, -2.0f, 0.0f});
-    floorModel.SetScale({50.0f, 1.0f, 50.0f});
-    scene.AddModel(std::move(floorModel));
-
-    for (int i = 0; i < 1000; i++) {
-        glm::vec3 pos = { posDist(rng), heightDist(rng), posDist(rng)
-        };
-
-        auto light = PointLightBlockGPU(pos)
-            .SetColor(colorDist(rng), colorDist(rng), colorDist(rng))
-            .SetRange(rangeDist(rng))
-            .SetIntensity(intensityDist(rng));
-
-        scene.AddPointLight(std::move(light));
-    }
-}*/
 
 Scene setupTestModels(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& modelLoader) {
     Scene scene(assetCache);
@@ -148,9 +110,8 @@ Scene setupSponza(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mo
 
     scene.AddModel(loadModel("Sponza/glTF/Sponza.gltf", {0, 0, 0}));
 
-    //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
     DirectionalLightUBO dirLight({0.0, -1.0, 0.0});
-    dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
+    dirLight.SetIntensity(2.0f).SetColor(255, 181, 110); // golden hour
     //dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
     //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
     //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
@@ -176,12 +137,11 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     //scene.AddModel(loadModel("DamagedHelmet/glTF/DamagedHelmet.gltf", {0, 0, 0}));
     scene.AddModel(loadModel("Sponza-downscaled/glTF/Sponza.gltf", {0, 0, 0}));
 
-    //DirectionalLightUBO dirLight({-1.0, -1.0, 0.0});
     DirectionalLightUBO dirLight({0.0, -0.9, 0.0});
-    dirLight.SetIntensity(10.0f).SetColor(255, 181, 110); // golden hour
-    //dirLight.SetIntensity(10.0f).SetColor(255, 248, 242); // high noon
-    //dirLight.SetIntensity(10.0f).SetColor(255, 133, 43); // deep sunset
-    //dirLight.SetIntensity(10.0f).SetColor(255, 89, 10); // dusk
+    dirLight.SetIntensity(1.0f).SetColor(255, 181, 110); // golden hour
+    //dirLight.SetIntensity(1.0f).SetColor(255, 248, 242); // high noon
+    //dirLight.SetIntensity(1.0f).SetColor(255, 133, 43); // deep sunset
+    //dirLight.SetIntensity(1.0f).SetColor(255, 89, 10); // dusk
     scene.AddDirectionalLight(std::move(dirLight));
 
 

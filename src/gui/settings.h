@@ -32,7 +32,13 @@ public:
             dirty |= ImGui::SliderFloat("Exposure",          &config.exposure,   0.1f, 10.0f);
             dirty |= ImGui::SliderFloat("Gamma",             &config.gamma,      1.0f, 3.0f);
             dirty |= ImGui::SliderFloat("Bloom Strength", &config.bloomStrength, 0.0f, 1.0f);
-            //dirty |= ImGui::Checkbox("Karis Average", (bool*)&config.bloomKarisMipLevel);
+        }
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Shadows")) {
+            dirty |= ImGui::Checkbox("Directional Shadows", (bool*)&config.dirShadowsEnabled);
+            dirty |= ImGui::Checkbox("Point Shadows",       (bool*)&config.pointShadowsEnabled);
+            dirty |= ImGui::Checkbox("Spot Shadows",        (bool*)&config.spotShadowsEnabled);
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
@@ -44,18 +50,6 @@ public:
             int currentIdx = std::ranges::find(kernelValues, config.ssaoKernel) - std::begin(kernelValues);
             dirty |= ImGui::SliderInt("Kernel Size", &currentIdx, 0, 3, std::to_string(kernelValues[currentIdx]).c_str());
             config.ssaoKernel = kernelValues[currentIdx];
-        }
-
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Shadows")) {
-            dirty |= ImGui::Checkbox("Directional Shadows", (bool*)&config.dirShadowsEnabled);
-            dirty |= ImGui::Checkbox("Point Shadows",       (bool*)&config.pointShadowsEnabled);
-            dirty |= ImGui::Checkbox("Spot Shadows",        (bool*)&config.spotShadowsEnabled);
-            dirty |= ImGui::SliderFloat("Dir Bias Min",     &config.dirShadowBiasMin,  0.0f, 0.1f,  "%.4f");
-            dirty |= ImGui::SliderFloat("Dir Bias Max",     &config.dirShadowBiasMax,  0.0f, 0.5f,  "%.4f");
-            dirty |= ImGui::SliderFloat("Point Bias",       &config.pointShadowBias,   0.0f, 0.5f,  "%.4f");
-            dirty |= ImGui::SliderFloat("Spot Bias Min",    &config.spotShadowBiasMin, 0.0f, 0.01f, "%.5f");
-            dirty |= ImGui::SliderFloat("Spot Bias Max",    &config.spotShadowBiasMax, 0.0f, 0.1f,  "%.4f");
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);

@@ -8,7 +8,7 @@ public:
         ImGuiIO& io = ImGui::GetIO();
         ImGui::SetNextWindowSize(ImVec2(500, 300), ImGuiCond_Once);
         ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 10.0f, 10.0f), ImGuiCond_Once, ImVec2(1.0f, 0.0f));
-        ImGui::Begin("Benchmark");
+        ImGui::Begin("Benchmark CPU");
 
         ImGui::Text("FPS: %.0f", 1.0f / deltaTime);
         ImGui::Separator();
