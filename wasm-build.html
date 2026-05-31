@@ -45,8 +45,9 @@
 
 <script>
     function getCanvasSize() {
+        var headerH = document.querySelector('header').offsetHeight;
         var w = window.innerWidth;
-        var h = window.innerHeight;
+        var h = window.innerHeight - headerH;
         return [w, h];
     }
     var screenSize = getCanvasSize();
@@ -67,13 +68,16 @@
 {{{ SCRIPT }}}
 
 <script>
-    // Request pointer lock on canvas click, unless ImGui wants the click.
     document.getElementById('canvas').addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         if (document.pointerLockElement) return;
         if (window._imguiWantsMouse) return;
         this.requestPointerLock();
     }, true);
+
+    document.getElementById('canvas').addEventListener('wheel', function(e) {
+        e.preventDefault();
+    }, { passive: false });
 </script>
 
 </body>

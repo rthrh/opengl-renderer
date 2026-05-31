@@ -30,6 +30,11 @@
 #include "utils/logger.h"
 #include "utils/stopwatch.h"
 
+inline void GLErrorCheck(const char* label) {
+    if (GLenum e = glGetError(); e != GL_NO_ERROR)
+        Info("GL error after {}: 0x{:x}", label, e);
+}
+
 class Renderer {
 public:
     explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache, ShaderCache& shaderCache) :
@@ -110,18 +115,31 @@ public:
 
         glCullFace(GL_FRONT);
         this->PassShadowDirectional(scene);
+
         this->PassShadowPoint(scene);
+
         this->PassShadowSpot(scene);
         glCullFace(GL_BACK);
+        GLErrorCheck("PassShadowSpot");
+
         this->PassGeometryBuffer(scene);
+        GLErrorCheck("PassGeometryBuffer");
+
         this->PassSSAO(scene);
+
         this->PassDeferred(scene);
+
         this->PassForward(scene);
+        GLErrorCheck("PassForward");
+
         glDisable(GL_CULL_FACE);
         this->PassSkybox();
         glEnable(GL_CULL_FACE);
+
         this->PassDebug(scene);
+
         this->PassBloom();
+
         this->PassFXAA();
     }
 
@@ -211,7 +229,6 @@ private:
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0); // restore default FBO
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
-        _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
     }
 
     void PassSSAO(Scene& scene) {

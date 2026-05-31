@@ -39,13 +39,9 @@ struct AppCallbackData {
     #endif
 
     // Mouse callback
-    float mouseLastX; //{ SCR_WIDTH / 2.0f };
-    float mouseLastY; //{ SCR_HEIGHT / 2.0f };
+    float mouseLastX;
+    float mouseLastY;
     bool firstMouse = true;
-
-    // Resize callback
-    int newScrWidth;
-    int newScrHeight;
 };
 
 
@@ -141,9 +137,8 @@ public:
         _guiLayer->BeginFrame();
 
         // Handle input
-        if (!_guiLayer->WantCaptureMouse()) { }
         if (!_guiLayer->WantCaptureKeyboard()) {
-            processInput(_window.GetHandle(), _camera);
+            processInput(_window.GetHandle());
         }
 
         // Create GUI
@@ -161,15 +156,13 @@ public:
         #endif
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        Stopwatch stopwatch2("glfwSwapBuffers(_window);");
+        Stopwatch stopwatch2("SwapBuffers");
         _window.SwapBuffers();
-
     }
 
 private:
     // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-    void processInput(GLFWwindow *window, const std::shared_ptr<Camera>& camera)
-    {
+    void processInput(GLFWwindow *window) {
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             _camera->ProcessKeyboard(FORWARD, _deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -182,7 +175,6 @@ private:
 
     inline static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
-        auto& uiMode = data->uiMode;
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             // On web, Esc is intercepted by the browser to release pointer lock.
             // The pointerlockchange callback will flip uiMode back to true
@@ -195,10 +187,9 @@ private:
         }
     }
 
-    // glfw: whenever the _window size changed (by OS or user resize) this callback function executes
-    inline static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-    {
-        // make sure the viewport matches the new _window dimensions; note that width and
+    // glfw: whenever the window size changed (by OS or user resize) this callback function executes
+    inline static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+        // make sure the viewport matches the new window dimensions; note that width and
         // height will be significantly larger than specified on retina displays.
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
         data->rendererPtr->Resize(width, height);
@@ -207,8 +198,7 @@ private:
     }
 
     // glfw: whenever the mouse moves, this callback is called
-    inline static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-    {
+    inline static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
         float xpos = static_cast<float>(xposIn);
         float ypos = static_cast<float>(yposIn);
@@ -234,9 +224,19 @@ private:
     }
 
     // glfw: whenever the mouse scroll wheel scrolls, this callback is called
-    inline static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-    {
+    inline static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
         auto* data = static_cast<AppCallbackData*>(glfwGetWindowUserPointer(window));
+        ImGuiIO& io = ImGui::GetIO();
+
+        #ifdef __EMSCRIPTEN__
+            // Chained callback is broken on web so manually pass scroll data into ImGui
+            io.MouseWheel  += static_cast<float>(yoffset);
+            io.MouseWheelH += static_cast<float>(xoffset);
+        #endif
+
+        if (io.WantCaptureMouse || data->uiMode)
+            return;
+
         data->cameraPtr->ProcessMouseScroll(static_cast<float>(yoffset));
     }
 
