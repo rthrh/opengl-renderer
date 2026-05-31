@@ -3,11 +3,6 @@ Source: https://developer.download.nvidia.com/whitepapers/2008/PCSS_Integration.
 */
 
 #define NEAR_PLANE 0.1
-//#define LIGHT_WORLD_SIZE .5 //TODO
-//#define LIGHT_FRUSTUM_WIDTH 3.75 //TODO should come from the light
-// Assuming that LIGHT_FRUSTUM_WIDTH == LIGHT_FRUSTUM_HEIGHT
-//#define LIGHT_SIZE_UV_SPOT (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH) // TODO range 0.05 – 0.15 / 0.15 – 0.3
-#define LIGHT_SIZE_UV_DIR 0.005 // should be tuned to something TODO range 0.001 – 0.005 / 0.005 – 0.01
 
 // To modify these values, poissonDisk must be also regenerated
 #define BLOCKER_SEARCH_NUM_SAMPLES 16
@@ -99,31 +94,6 @@ float PCSS_Spot(vec3 coords, float lightSizeUV, int lightIndex)
     return PCF_Filter_Spot(uv, zReceiver, filterRadiusUV, lightIndex);
 }
 
-
-// Dir lights
-void FindBlocker_Dir(out float avgBlockerDepth, out float numBlockers, vec2 uv, float zReceiver) {
-    //This uses similar triangles to compute what
-    //area of the shadow map we should search
-    //float searchWidth = LIGHT_SIZE_UV_DIR * (zReceiver - NEAR_PLANE) / zReceiver;
-    float searchWidth = LIGHT_SIZE_UV_DIR;
-    float blockerSum = 0.0;
-    numBlockers = 0.0;
-    for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
-    {
-        vec2 offset = poissonDisk[i] * searchWidth;
-        float shadowMapDepth = texture(shadowDirMap, uv + offset).r;
-        if (shadowMapDepth < zReceiver) {
-            blockerSum += shadowMapDepth;
-            numBlockers += 1.0;
-        }
-    }
-
-    if (numBlockers > 0.0)
-        avgBlockerDepth = blockerSum / numBlockers;
-    else
-        avgBlockerDepth = 0.0;
-}
-
 float PCF_Filter_Dir(vec2 uv, float zReceiver, float filterRadiusUV)
 {
     float sum = 0.0;
@@ -134,25 +104,7 @@ float PCF_Filter_Dir(vec2 uv, float zReceiver, float filterRadiusUV)
     }
     return sum / float(PCF_NUM_SAMPLES);
 }
-
-float PCSS_Dir(vec3 coords)
-{
-    vec2 uv = coords.xy;
-    float zReceiver = coords.z; // Assumed to be eye-space z in this code
-
-    // STEP 1: blocker search
-    float avgBlockerDepth = 0.0;
-    float numBlockers = 0.0;
-    FindBlocker_Dir(avgBlockerDepth, numBlockers, uv, zReceiver);
-    if( numBlockers < 1.0 )
-        //There are no occluders so early out (this saves filtering)
-        return 1.0;
-
-    // STEP 2: penumbra size
-    float penumbraRatio = PenumbraSize(zReceiver, avgBlockerDepth);
-    //float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV_DIR * NEAR_PLANE / coords.z;
-    float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV_DIR;
-
-    // STEP 3: filtering
-    return PCF_Filter_Dir(uv, zReceiver, filterRadiusUV);
+float PCSS_Dir(vec3 coords) {
+    float texelSize = 1.0 / float(textureSize(shadowDirMap, 0).x);
+    return PCF_Filter_Dir(coords.xy, coords.z, texelSize * 1.5);
 }
