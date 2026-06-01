@@ -37,6 +37,7 @@ struct AppCallbackData {
     #else
         bool uiMode = false;
     #endif
+    bool hideUI = false;
 
     // Mouse callback
     float mouseLastX;
@@ -142,7 +143,9 @@ public:
         }
 
         // Create GUI
-        _guiLayer->Build(_renderer->GetConfig(), *_scene, _deltaTime, _modelLoader);
+        if (!_callbackData.hideUI) {
+            _guiLayer->Build(_renderer->GetConfig(), *_scene, _deltaTime, _modelLoader);
+        }
 
         // Render scene
         _renderer->RenderFrame(*_scene);
@@ -184,6 +187,9 @@ private:
                 auto cursor_mode = data->uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
                 glfwSetInputMode(window, GLFW_CURSOR, cursor_mode);
             #endif
+        }
+        if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+            data->hideUI = !data->hideUI;
         }
     }
 

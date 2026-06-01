@@ -1,6 +1,6 @@
 # OpenGL Renderer
 
-[![Build](https://github.com/rthrh/opengl-renderer/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/rthrh/opengl-renderer/actions/workflows/cmake-multi-platform.yml)
+[![Build](https://github.com/rthrh/opengl-renderer/actions/workflows/ci-build.yml/badge.svg)](https://github.com/rthrh/opengl-renderer/actions/workflows/ci-build.yml)
 
 A real-time PBR renderer written in modern C++, mostly based on [LearnOpenGL](https://learnopengl.com/) and [OGLdev](https://ogldev.org/index.html),
 targeting desktop (Linux/Windows) and WebAssembly through Emscripten.
@@ -18,13 +18,17 @@ targeting desktop (Linux/Windows) and WebAssembly through Emscripten.
 - **Screen Space Ambient Occlusion (SSAO)**
 - **Fast Approximate Anti-Aliasing (FXAA)**
 - **Deferred shading** for opaque and masked meshes
-- **Forward pass** for blend meshes
+- **Forward pass** for transparent meshes
+- **HDR skybox**: .hdr and .exr formats supported
 - **glTF model loading** with ASSIMP
+- **glTF compliant materials** with metallic-roughness workflow
 - **Shader hot reload**: shaders recompile on file changed while app is running (desktop only)
+- **Cross-platform**: uses OpenGL 4.5 with DSA on Linux/Windows and WebGL 2.0 (OpenGL ES 3.0) for web build
 
 ## Demo controls
 - Click on canvas to enter camera mode. Esc to switch to UI mode
 - WASD and mouse to move
+- H to hide UI
 
 ## Building
 
