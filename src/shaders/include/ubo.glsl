@@ -80,7 +80,6 @@ UBO_BINDING(5) uniform ConfigBlock {
 
     float _pad0;
     float _pad1;
-    float _pad2;
 } Config;
 
 #define MAX_POINT_SHADOW_CASTERS 4

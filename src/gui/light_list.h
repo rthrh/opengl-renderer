@@ -11,8 +11,9 @@
 class LightList {
 public:
     void Build(Scene& scene) {
-        ImGui::SetNextWindowSize(ImVec2(kWindowWidth, 0), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin("Lights")) { ImGui::End(); return; }
+        constexpr int kMinWidth = 200;
+        ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, 0), ImVec2(FLT_MAX, FLT_MAX));
+        if (!ImGui::Begin("Lights", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) { ImGui::End(); return; }
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, kSliderHeight));
 
@@ -32,7 +33,6 @@ public:
     }
 
 private:
-    static constexpr float kWindowWidth  = 420.0f;
     static constexpr float kSliderHeight = 2.0f;
 
     // Width of a slider, sized to fit a typical numeric value with some headroom.

@@ -138,18 +138,25 @@ Scene setupLocal(const std::shared_ptr<AssetCache>& assetCache, ModelLoader& mod
     scene.AddModel(loadModel("Sponza-downscaled/glTF/Sponza.gltf", {0, 0, 0}));
 
     DirectionalLightUBO dirLight({0.0, -0.9, 0.0});
-    dirLight.SetIntensity(1.0f).SetColor(255, 181, 110); // golden hour
+    //dirLight.SetIntensity(1.0f).SetColor(255, 181, 110); // golden hour
     //dirLight.SetIntensity(1.0f).SetColor(255, 248, 242); // high noon
     //dirLight.SetIntensity(1.0f).SetColor(255, 133, 43); // deep sunset
     //dirLight.SetIntensity(1.0f).SetColor(255, 89, 10); // dusk
+    dirLight.SetIntensity(1.0f).SetColor(80, 150, 255); // moon
     scene.AddDirectionalLight(std::move(dirLight));
 
 
-    unsigned r = 247, g = 55, b = 24;
-    auto light1 = PointLightBlockGPU({3.9, 1.15, 1.15}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
-    auto light2 = PointLightBlockGPU({-4.95, 1.15, 1.15}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
-    auto light3 = PointLightBlockGPU({3.9, 1.15, -1.75}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
-    auto light4 = PointLightBlockGPU({-4.95, 1.15, -1.75}).SetColor(r, g, b).SetRange(10).SetIntensity(10);
+    //unsigned r1 = 255, g1 = 100, b1 = 30;
+    unsigned r1 = 80, g1 = 150, b1 = 255;
+    unsigned r2 = 255, g2 = 100, b2 = 30;
+    //unsigned r2 = 80, g2 = 150, b2 = 255;
+    float intensity = 5;
+    auto light1 = PointLightBlockGPU({3.9, 1.2, 1.15}).SetColor(r1, g1, b1).SetRange(10).SetIntensity(intensity);
+    auto light2 = PointLightBlockGPU({3.9, 1.2, -1.75}).SetColor(r1, g1, b1).SetRange(10).SetIntensity(intensity);
+
+    auto light3 = PointLightBlockGPU({-4.95, 1.2, 1.15}).SetColor(r2, g2, b2).SetRange(10).SetIntensity(intensity);
+    auto light4 = PointLightBlockGPU({-4.95, 1.2, -1.75}).SetColor(r2, g2, b2).SetRange(10).SetIntensity(intensity);
+
     scene.AddPointLight(std::move(light1));
     scene.AddPointLight(std::move(light2));
     scene.AddPointLight(std::move(light3));

@@ -60,13 +60,15 @@ public:
         ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _settings.Build(configUBO);
 
-        x += 400.0;
+        x += 300.0;
+        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
+        _lightList.Build(scene);
+
+        x += 300.0;
         ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
         _modelList.Build(scene);
 
-        x += 240.0;
-        ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
-        _lightList.Build(scene);
+
 
         x += 100.0;
         ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);

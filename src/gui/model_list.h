@@ -8,8 +8,11 @@
 class ModelList {
 public:
     void Build(Scene& scene) {
-        ImGui::SetNextWindowSize(ImVec2(_windowWidth, 0), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin("Models")) { ImGui::End(); return; }
+        constexpr int kMinWidth = 200;
+        ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, 0), ImVec2(FLT_MAX, FLT_MAX));
+        if (!ImGui::Begin("Models", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) { ImGui::End(); return; }
+
+        ImGui::PushItemWidth(sliderWidth() * 3.0f + ImGui::GetStyle().ItemInnerSpacing.x * 2.0f);
 
         for (auto& [handle, model] : scene.GetModels()) {
             ImGui::PushID(static_cast<int>(handle));
@@ -43,9 +46,13 @@ public:
             }
             ImGui::PopID();
         }
+
+        ImGui::PopItemWidth();
         ImGui::End();
     }
 
 private:
-    static constexpr float _windowWidth = 200.0f;
+    static float sliderWidth() {
+        return ImGui::CalcTextSize("1000.000").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    }
 };

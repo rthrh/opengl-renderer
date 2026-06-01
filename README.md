@@ -5,7 +5,7 @@
 A real-time PBR renderer written in modern C++, mostly based on [LearnOpenGL](https://learnopengl.com/) and [OGLdev](https://ogldev.org/index.html),
 targeting desktop (Linux/Windows) and WebAssembly through Emscripten.
 
-**[Live web demo](https://rthrh.github.io/openglrenderer/)**
+**[Live web demo](https://rthrh.github.io/opengl-renderer/)**
 
 ![Screenshot](docs/screenshot.png)
 
@@ -13,13 +13,13 @@ targeting desktop (Linux/Windows) and WebAssembly through Emscripten.
 - **Physically Based Rendering (PBR) shading**
 - **Image Based Lighting (IBL)**
 - **Physically Based Bloom**
-- **Light types**: directional, point and spot lights
-- **Real-time shadows**: with PCSS for spot lights and Poisson disk/sphere PCF kernel for directional and point lights
+- **Multiple light types**: directional, point and spot lights
+- **Real-time shadows** with PCSS for spot lights and Poisson disk/sphere PCF kernel for directional and point lights
 - **Screen Space Ambient Occlusion (SSAO)**
 - **Fast Approximate Anti-Aliasing (FXAA)**
-- **Deferred pipeline**: for opaque and masked meshes
-- **Forward pipeline**: for blend meshes
-- **glTF model loading**: with ASSIMP
+- **Deferred shading** for opaque and masked meshes
+- **Forward pass** for blend meshes
+- **glTF model loading** with ASSIMP
 - **Shader hot reload**: shaders recompile on file changed while app is running (desktop only)
 
 ## Demo controls
