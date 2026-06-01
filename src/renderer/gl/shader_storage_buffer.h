@@ -3,7 +3,7 @@
 #include <gl/headers.h>
 #include <utility>
 
-template<typename T, int BindSlot>
+template<typename T>
 class ShaderStorageBuffer {
 public:
     // Treat SSBO as UBO in WASM
@@ -17,13 +17,14 @@ public:
         static constexpr int MaxCount = 0; // unused
     #endif
 
-    ShaderStorageBuffer() {
+    ShaderStorageBuffer(GLuint bindSlot) : _bindSlot(bindSlot)
+    {
         #ifdef USE_GL_DSA
             glCreateBuffers(1, &_ssbo);
         #else
             glGenBuffers(1, &_ssbo);
         #endif
-        glBindBufferBase(BufferTarget, BindSlot, _ssbo);
+        glBindBufferBase(BufferTarget, _bindSlot, _ssbo);
         this->Upload();
     }
 
@@ -72,10 +73,11 @@ public:
             glBindBuffer(BufferTarget, 0);
         }
         #endif
-        glBindBufferBase(BufferTarget, BindSlot, _ssbo);
+        glBindBufferBase(BufferTarget, _bindSlot, _ssbo);
     }
 
 private:
     GLuint _ssbo = 0;
     std::vector<T> _data;
+    GLuint _bindSlot = 0;
 };

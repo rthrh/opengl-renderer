@@ -40,7 +40,8 @@ public:
     explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache, ShaderCache& shaderCache) :
         _shaders(shaderCache),
         _cameraPtr(std::move(camera)),
-        _configUBO(),
+        _configUBO(5),
+        _shadowMapUBO(4),
         _gBuffer(scrWidth, scrHeight),
         _scrWidth(scrWidth),
         _scrHeight(scrHeight),
@@ -82,7 +83,7 @@ public:
     }
 
     // Returns GPU config. Call UploadConfig after editing
-    UniformBuffer<ConfigUBO, 5>& GetConfig() {
+    UniformBuffer<ConfigUBO>& GetConfig() {
         return _configUBO; // TODO should return raw ConfigUBO
     }
 
@@ -357,7 +358,8 @@ private:
 
     ShaderSet _shaders;
     std::shared_ptr<Camera> _cameraPtr;
-    UniformBuffer<ConfigUBO, 5> _configUBO;
+    UniformBuffer<ConfigUBO> _configUBO;
+    UniformBuffer<ShadowMapUBO> _shadowMapUBO;
 
     GBuffer _gBuffer;
     VertexArray _emptyVAO;
@@ -367,7 +369,6 @@ private:
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;
     ShadowMapSpot _shadowMapSpot;
-    UniformBuffer<ShadowMapUBO, 4> _shadowMapUBO;
     Bloom _bloom;
     SSAO _ssao;
     FXAA _fxaa;

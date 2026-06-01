@@ -31,6 +31,9 @@ public:
     using ModelHandle = uint32_t;
 
     Scene(const std::shared_ptr<AssetCache>& assetCache) :
+        _directionalLightUBO(0),
+        _pointLightUBO(1),
+        _spotLightUBO(2),
         _assetCache(assetCache)
     {
 
@@ -106,9 +109,9 @@ public:
 
 private:
     uint32_t _handleNext = 0;
-    UniformBuffer<DirectionalLightUBO, 0> _directionalLightUBO;
-    UniformBuffer<PointLightUBO, 1> _pointLightUBO;
-    UniformBuffer<SpotLightUBO, 2> _spotLightUBO;
+    UniformBuffer<DirectionalLightUBO> _directionalLightUBO;
+    UniformBuffer<PointLightUBO> _pointLightUBO;
+    UniformBuffer<SpotLightUBO> _spotLightUBO;
     std::shared_ptr<AssetCache> _assetCache;
     std::unordered_map<ModelHandle, Model> _modelMap;
 };

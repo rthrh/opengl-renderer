@@ -37,7 +37,8 @@ public:
         _pitch(pitch),
         _movementSpeed(5.0f),
         _mouseSensitivity(0.1f),
-        _zoom(45.0f)
+        _zoom(45.0f),
+        _cameraUBO(3)
     {
         this->updateCameraVectors();
     }
@@ -179,5 +180,5 @@ private:
     float _movementSpeed;
     float _mouseSensitivity;
     float _zoom;
-    UniformBuffer<CameraUBO, 3> _cameraUBO;
+    UniformBuffer<CameraUBO> _cameraUBO;
 };

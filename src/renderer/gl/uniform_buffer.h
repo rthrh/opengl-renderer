@@ -5,19 +5,21 @@
 
 #include "dsa_config.h"
 
-template<typename T, int BindSlot>
+template<typename T>
 class UniformBuffer {
 public:
-    UniformBuffer() {
+    UniformBuffer(GLuint bindSlot) :
+        _bindSlot(bindSlot)
+    {
         #ifdef USE_GL_DSA
             glCreateBuffers(1, &_ubo);
             glNamedBufferData(_ubo, sizeof(T), nullptr, GL_DYNAMIC_DRAW);
-            glBindBufferBase(GL_UNIFORM_BUFFER, BindSlot, _ubo);
+            glBindBufferBase(GL_UNIFORM_BUFFER, _bindSlot, _ubo);
         #else
             glGenBuffers(1, &_ubo);
             glBindBuffer(GL_UNIFORM_BUFFER, _ubo);
             glBufferData(GL_UNIFORM_BUFFER, sizeof(T), nullptr, GL_DYNAMIC_DRAW);
-            glBindBufferBase(GL_UNIFORM_BUFFER, BindSlot, _ubo);
+            glBindBufferBase(GL_UNIFORM_BUFFER, _bindSlot, _ubo);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
         #endif
     }
@@ -59,5 +61,6 @@ public:
 
 private:
     GLuint _ubo = 0;
+    GLuint _bindSlot = 0;
     T _data {};
 };

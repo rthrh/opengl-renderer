@@ -21,7 +21,9 @@ enum class TextureType {
 
 class AssetCache {
 public:
-    AssetCache() {
+    AssetCache() :
+        _materialSSBO(10)
+    {
         // Initialize dummy 1x1 fallback textures in case real ones are missing
         uint8_t white[]      = {255, 255, 255, 255};
         uint8_t black[]      = {0, 0, 0, 0};
@@ -132,7 +134,7 @@ private:
 
     std::unordered_map<std::string, GLuint> _pathToId;
     std::vector<Texture2D> _textures;
-    ShaderStorageBuffer<Material, 10> _materialSSBO;
+    ShaderStorageBuffer<Material> _materialSSBO;
 
     std::vector<GLuint> _dummyTextures;
 };

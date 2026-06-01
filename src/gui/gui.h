@@ -50,7 +50,7 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void Build(UniformBuffer<ConfigUBO, 5>& configUBO, Scene& scene, float deltaTime, ModelLoader& modelLoader) {
+    void Build(UniformBuffer<ConfigUBO>& configUBO, Scene& scene, float deltaTime, ModelLoader& modelLoader) {
         Stopwatch stopwatch("GuiLayer::Build");
 
         const float pad = 10.0f;

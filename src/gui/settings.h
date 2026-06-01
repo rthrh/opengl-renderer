@@ -7,7 +7,7 @@
 
 class Settings {
 public:
-    void Build(UniformBuffer<ConfigUBO, 5>& configUBO) {
+    void Build(UniformBuffer<ConfigUBO>& configUBO) {
         ConfigUBO& config = configUBO.Data();
         bool dirty = false;
 
