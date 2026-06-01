@@ -145,7 +145,7 @@ public:
 
 private:
     void PassShadowDirectional(Scene& scene) {
-        Stopwatch stopwatch("PassShadowDirectional");
+        Stopwatch stopwatch("ShadowDirectional");
         if (!_configUBO.Data().dirShadowsEnabled) return;
 
         auto directionalLight = scene.GetDirectionalLight();
@@ -165,7 +165,7 @@ private:
     }
 
     void PassShadowPoint(Scene& scene) {
-        Stopwatch stopwatch("PassShadowPoint");
+        Stopwatch stopwatch("ShadowPoint");
         if (!_configUBO.Data().pointShadowsEnabled) return;
 
         const auto& pointLights = scene.GetPointLights();
@@ -192,7 +192,7 @@ private:
     }
 
     void PassShadowSpot(Scene& scene) {
-        Stopwatch stopwatch("PassShadowSpot");
+        Stopwatch stopwatch("ShadowSpot");
         if (!_configUBO.Data().spotShadowsEnabled) return;
 
         auto& spotLights = scene.GetSpotLights();
@@ -219,7 +219,7 @@ private:
     }
 
     void PassGeometryBuffer(Scene& scene) {
-        Stopwatch stopwatch("PassGeometryBuffer");
+        Stopwatch stopwatch("GeometryBuffer");
         _gBuffer.BindFramebuffer();
         _shaders.gBuffer->Activate();
 
@@ -232,7 +232,7 @@ private:
     }
 
     void PassSSAO(Scene& scene) {
-        Stopwatch stopwatch("PassSSAO");
+        Stopwatch stopwatch("SSAO");
         _gBuffer.BindTextures();
         _ssao.Run(*_shaders.ssao);
         _ssao.Blur(*_shaders.ssaoBlur);
@@ -240,7 +240,7 @@ private:
     }
 
     void PassDeferred(Scene& scene) {
-        Stopwatch stopwatch("PassDeferred");
+        Stopwatch stopwatch("DeferredPass");
         _gBuffer.BindTextures();
         _ssao.BindSSAOTexture();
         _skybox.BindTexturesIBL();
@@ -255,7 +255,7 @@ private:
     }
 
     void PassForward(Scene& scene) {
-        Stopwatch stopwatch("PassForward");
+        Stopwatch stopwatch("ForwardPass");
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
         _shaders.forward->Activate();
@@ -270,7 +270,7 @@ private:
     }
 
     void PassDebug(Scene& scene) {
-        Stopwatch stopwatch("PassDebug");
+        Stopwatch stopwatch("DebugPass");
         if (!_configUBO.Data().lightCubesEnabled) return;
 
         _bloom.BindHdrFramebuffer();
@@ -291,7 +291,7 @@ private:
     }
 
     void PassSkybox() {
-        Stopwatch stopwatch("PassSkybox");
+        Stopwatch stopwatch("Skybox");
         _bloom.BindHdrFramebuffer();
 
         glDepthFunc(GL_LEQUAL);  // pass when depth equals 1.0
@@ -304,7 +304,7 @@ private:
     }
 
     void PassBloom() {
-        Stopwatch stopwatch("PassBloom");
+        Stopwatch stopwatch("Bloom");
         _emptyVAO.Bind();
         _bloom.RenderDownsamples(*_shaders.bloomDownsample);
         _bloom.RenderUpsamples(*_shaders.bloomUpsample);
