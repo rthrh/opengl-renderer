@@ -170,7 +170,8 @@ struct ConfigUBO {
     int32_t pointShadowsEnabled = true;
     int32_t spotShadowsEnabled = true;
 
-    float pointShadowBias = 0.05f;
+    float pointShadowBiasMin = 0.005f;
+    float pointShadowBiasMax = 0.05f;
 
     float dirShadowBiasMin = 0.005f;
     float dirShadowBiasMax = 0.05f;
@@ -186,5 +187,4 @@ struct ConfigUBO {
 
     float _pad0;
     float _pad1;
-    float _pad2;
 };

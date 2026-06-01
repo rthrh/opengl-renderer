@@ -113,14 +113,14 @@ public:
         _assetCache->UploadMaterials();
         scene.UploadTransforms(_meshCache);
 
-        glCullFace(GL_FRONT);
+        glDisable(GL_CULL_FACE);
         this->PassShadowDirectional(scene);
-
+        GLErrorCheck("PassShadowDirectional");
         this->PassShadowPoint(scene);
-
+        GLErrorCheck("PassShadowPoint");
         this->PassShadowSpot(scene);
-        glCullFace(GL_BACK);
         GLErrorCheck("PassShadowSpot");
+        glEnable(GL_CULL_FACE);
 
         this->PassGeometryBuffer(scene);
         GLErrorCheck("PassGeometryBuffer");

@@ -70,7 +70,7 @@ void main() {
         if (i < MAX_POINT_SHADOW_CASTERS && Config.pointShadowsEnabled) {
             vec3 lightPos = pointLights.lights[i].positionAndRange.xyz;
             float range = pointLights.lights[i].positionAndRange.w;
-            shadow = ShadowPointLight(FragPos, lightPos, range, Config.pointShadowBias, i);
+            shadow = ShadowPointLight(FragPos, N, lightPos, range, Config.pointShadowBiasMin, Config.pointShadowBiasMax, i);
         }
 
         Lo += CalcPointLight(pointLights.lights[i], N, V, FragPos,

@@ -64,7 +64,8 @@ UBO_BINDING(5) uniform ConfigBlock {
     bool  pointShadowsEnabled;
     bool  spotShadowsEnabled;
 
-    float pointShadowBias;
+    float pointShadowBiasMin;
+    float pointShadowBiasMax;
 
     float dirShadowBiasMin;
     float dirShadowBiasMax;

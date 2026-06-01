@@ -1,9 +1,9 @@
 # OpenGL Renderer
 
-[![Build](https://github.com/rthrh/opengl-renderer/actions/workflows/ci.yml/badge.svg)](https://github.com/rthrh/opengl-renderer/actions/workflows/ci.yml)
+[![Build](https://github.com/rthrh/opengl-renderer/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/rthrh/opengl-renderer/actions/workflows/cmake-multi-platform.yml)
 
 A real-time PBR renderer written in modern C++, mostly based on [LearnOpenGL](https://learnopengl.com/) and [OGLdev](https://ogldev.org/index.html),
-targeting desktop (Linux/Windows) and WebAssembly through Emscripten
+targeting desktop (Linux/Windows) and WebAssembly through Emscripten.
 
 **[Live web demo](https://rthrh.github.io/openglrenderer/)**
 

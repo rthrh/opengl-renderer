@@ -59,10 +59,12 @@ float SamplePointShadowDepth(vec3 dir, int lightIdx) {
     return texture(shadowPointMap3, dir).r;
 }
 
-float ShadowPointLight(vec3 fragPos, vec3 lightPos, float farPlane, float bias, int lightIndex)
-{
+float ShadowPointLight(vec3 fragPos, vec3 normal, vec3 lightPos, float farPlane, float biasMin, float biasMax, int lightIndex) {
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
+
+    vec3 lightDir = normalize(-fragToLight);  // from fragment to light
+    float bias = max(biasMax * (1.0 - dot(normal, lightDir)), biasMin);
 
     // PCF kernel
     float shadow = 0.0;
