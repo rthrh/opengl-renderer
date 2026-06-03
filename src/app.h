@@ -94,7 +94,7 @@ public:
 
         // Init imgui
         std::filesystem::path modelsDirectory = root / ".." / "glTF-Sample-Models/2.0";
-        _guiLayer = std::make_unique<GuiLayer>(_window.GetHandle(), modelsDirectory, _assetCache);
+        _guiLayer = std::make_unique<GuiLayer>(_window.GetHandle(), modelsDirectory, _assetCache, _meshCache);
 
         // Scene setup
         //_scene = std::make_unique<Scene>(setupTestModels(_assetCache, _modelLoader));

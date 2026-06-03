@@ -8,6 +8,8 @@
 
 #include "gl/uniform_buffer.h"
 #include "renderer/ubo.h"
+#include "renderer/asset_cache.h"
+#include "renderer/mesh_cache.h"
 #include "gui/settings.h"
 #include "gui/model_list.h"
 #include "gui/light_list.h"
@@ -16,8 +18,9 @@
 
 class GuiLayer {
 public:
-    GuiLayer(GLFWwindow* window, const std::filesystem::path& modelsDir, const std::shared_ptr<AssetCache>& assetCache)
-        //: _modelLoader(modelsDir, assetCache)
+    GuiLayer(GLFWwindow* window, const std::filesystem::path& modelsDir, const std::shared_ptr<AssetCache>& assetCache, const std::shared_ptr<MeshCache>& meshCache) :
+        _assetCache(assetCache),
+        _meshCache(meshCache)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -66,8 +69,7 @@ public:
 
         x += 300.0;
         ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
-        _modelList.Build(scene);
-
+        _modelList.Build(scene, *_meshCache, *_assetCache);
 
 
         x += 100.0;
@@ -90,6 +92,7 @@ private:
     Settings _settings;
     ModelList _modelList;
     LightList _lightList;
-    //ModelLoaderGUI _modelLoader;
     Benchmark _benchmark;
+    std::shared_ptr<AssetCache> _assetCache;
+    std::shared_ptr<MeshCache> _meshCache;
 };
