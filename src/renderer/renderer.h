@@ -37,7 +37,8 @@ inline void GLErrorCheck(const char* label) {
 
 class Renderer {
 public:
-    explicit Renderer(int scrWidth, int scrHeight, std::shared_ptr<Camera> camera, std::shared_ptr<AssetCache>& assetCache, std::shared_ptr<MeshCache>& meshCache, ShaderCache& shaderCache) :
+    explicit Renderer(int scrWidth, int scrHeight, const std::shared_ptr<Camera>& camera, const std::shared_ptr<AssetCache>& assetCache,
+        std::shared_ptr<MeshCache>& meshCache, ShaderCache& shaderCache) :
         _shaders(shaderCache),
         _cameraPtr(std::move(camera)),
         _configUBO(5),
@@ -59,7 +60,8 @@ public:
 
         // Init GL state
         #ifndef __EMSCRIPTEN__
-            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // Fixes skybox seams
+            // Fixes skybox seams. This enum value doesn't exist in emscripten, but this option is enabled there by default
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         #endif
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE); // Cull back faces
@@ -84,16 +86,12 @@ public:
 
     // Returns GPU config. Call UploadConfig after editing
     UniformBuffer<ConfigUBO>& GetConfig() {
-        return _configUBO; // TODO should return raw ConfigUBO
+        return _configUBO;
     }
 
     // Uploads current ConfigUBO to GPU
     void UploadConfig() {
         _configUBO.Upload();
-    }
-
-    void Draw(Mesh& mesh, Shader& shader, bool depthOnly = false) const {
-        this->drawMesh(mesh, shader, depthOnly);
     }
 
     void Resize(int scrWidth, int scrHeight) {
@@ -123,14 +121,14 @@ public:
         GLErrorCheck("PassShadowSpot");
         glEnable(GL_CULL_FACE);
 
-        this->PassGeometryBuffer(scene);
+        this->PassGeometryBuffer();
         GLErrorCheck("PassGeometryBuffer");
 
-        this->PassSSAO(scene);
+        this->PassSSAO();
 
-        this->PassDeferred(scene);
+        this->PassDeferred();
 
-        this->PassForward(scene);
+        this->PassForward();
         GLErrorCheck("PassForward");
 
         glDisable(GL_CULL_FACE);
@@ -219,7 +217,7 @@ private:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassGeometryBuffer(Scene& scene) {
+    void PassGeometryBuffer() {
         Stopwatch stopwatch("GeometryBuffer");
         _gBuffer.BindFramebuffer();
         _shaders.gBuffer->Activate();
@@ -232,7 +230,7 @@ private:
         glViewport(0, 0, _scrWidth, _scrHeight); // restore viewport
     }
 
-    void PassSSAO(Scene& scene) {
+    void PassSSAO() {
         Stopwatch stopwatch("SSAO");
         _gBuffer.BindTextures();
         _ssao.Run(*_shaders.ssao);
@@ -240,7 +238,7 @@ private:
         glViewport(0, 0, _scrWidth, _scrHeight);
     }
 
-    void PassDeferred(Scene& scene) {
+    void PassDeferred() {
         Stopwatch stopwatch("DeferredPass");
         _gBuffer.BindTextures();
         _ssao.BindSSAOTexture();
@@ -255,7 +253,7 @@ private:
         glDepthMask(GL_TRUE);
     }
 
-    void PassForward(Scene& scene) {
+    void PassForward() {
         Stopwatch stopwatch("ForwardPass");
         _gBuffer.BlitFramebuffer(_bloom.GetHdrFBO(), _scrWidth, _scrHeight);
         _bloom.BindHdrFramebuffer();
@@ -336,7 +334,7 @@ private:
 
     void render(MeshQueue& meshQueue, Shader& shader, bool depthOnly = false) {
         for (auto& [handle, mesh] : meshQueue) {
-            Draw(mesh, shader, depthOnly);
+            this->drawMesh(mesh, shader, depthOnly);
         }
     }
 
@@ -364,7 +362,6 @@ private:
     GBuffer _gBuffer;
     VertexArray _emptyVAO;
     int _scrWidth, _scrHeight;
-    float _aspectRatio = 0;
 
     ShadowMapDirectional _shadowMapDirectional;
     ShadowMapPoint _shadowMapPoint;

@@ -40,8 +40,8 @@ struct AppCallbackData {
     bool hideUI = false;
 
     // Mouse callback
-    float mouseLastX;
-    float mouseLastY;
+    float mouseLastX = 0.0f;
+    float mouseLastY = 0.0f;
     bool firstMouse = true;
 };
 

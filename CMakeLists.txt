@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -42,15 +41,12 @@ if(NOT EMSCRIPTEN)
         if(MSVC)
             add_compile_options(/W4)
         else()
-            add_compile_options(-Wall)
+            #add_compile_options(-Wall)
+            add_compile_options(-Wall -Wextra)
         endif()
     endif()
 
     find_package(OpenGL REQUIRED)
-    add_definitions(${OPENGL_DEFINITIONS})
-    if(UNIX AND NOT APPLE)
-        find_package(X11 REQUIRED)
-    endif()
 endif()
 
 ### DSA and GLSL version settings
@@ -65,7 +61,6 @@ elseif(WIN32)
     set(LIBS glfw ${OPENGL_LIBRARIES} assimp glm tinyexr)
 elseif(UNIX)
     set(LIBS glfw GL dl pthread assimp glm tinyexr)
-    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 endif()
 
 ### Sources
@@ -75,7 +70,6 @@ file(GLOB IMGUI_SRC
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.h
     ${CMAKE_SOURCE_DIR}/deps/imgui/*.cpp
 )
-include_directories(${CMAKE_SOURCE_DIR}/deps/imgui)
 
 file(GLOB IMGUI_BACKEND
     ${CMAKE_SOURCE_DIR}/deps/imgui/backends/imgui_impl_glfw.*
@@ -88,7 +82,6 @@ file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/*.h
     ${CMAKE_SOURCE_DIR}/src/renderer/*.cpp
     ${CMAKE_SOURCE_DIR}/src/renderer/*.h
-    ${CMAKE_SOURCE_DIR}/src/renderer/renderpass/*.h
     ${CMAKE_SOURCE_DIR}/src/utils/*.h
     ${CMAKE_SOURCE_DIR}/src/gui/*.h
 )
@@ -96,7 +89,6 @@ file(GLOB SRC_FILES
 ### Create exe
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${STB_IMAGE_SRC} ${IMGUI_SRC} ${IMGUI_BACKEND})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
-link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 if(EMSCRIPTEN)
     target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_SOURCE_DIR="/")
@@ -131,20 +123,19 @@ if(EMSCRIPTEN)
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/resources@/resources"
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/wasm-build.html"
     )
-else()
-
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/src/gl)
-include_directories(${CMAKE_SOURCE_DIR}/src/gui)
-include_directories(${CMAKE_SOURCE_DIR}/src/renderer)
-include_directories(${CMAKE_SOURCE_DIR}/src/renderpass)
-include_directories(${CMAKE_SOURCE_DIR}/utils)
-include_directories(${CMAKE_SOURCE_DIR}/deps/)
-include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
-include_directories(${CMAKE_SOURCE_DIR}/deps/stb_image)
-include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr)
-include_directories(${CMAKE_SOURCE_DIR}/deps/tinyexr/deps/miniz)
-include_directories(${CMAKE_SOURCE_DIR}/deps/assimp/include)
-include_directories(${CMAKE_SOURCE_DIR}/deps/glad)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/gl
+    ${CMAKE_SOURCE_DIR}/src/gui
+    ${CMAKE_SOURCE_DIR}/src/renderer
+    ${CMAKE_SOURCE_DIR}/src/utils
+    ${CMAKE_SOURCE_DIR}/deps
+    ${CMAKE_SOURCE_DIR}/deps/assimp/include
+    ${CMAKE_SOURCE_DIR}/deps/stb_image
+    ${CMAKE_SOURCE_DIR}/deps/tinyexr
+    ${CMAKE_SOURCE_DIR}/deps/tinyexr/deps/miniz
+    ${CMAKE_SOURCE_DIR}/deps/glad
+    ${CMAKE_SOURCE_DIR}/deps/imgui
+)
